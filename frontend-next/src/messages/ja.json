@@ -1,0 +1,78 @@
+{
+    "common": {
+        "appName": "ラオスHRシステム",
+        "welcome": "おかえりなさい！チームの最新状況です。",
+        "viewAll": "すべて表示",
+        "save": "保存",
+        "cancel": "キャンセル",
+        "delete": "削除",
+        "edit": "編集",
+        "add": "追加",
+        "search": "検索",
+        "loading": "読み込み中...",
+        "noData": "データがありません"
+    },
+    "nav": {
+        "dashboard": "ダッシュボード",
+        "employees": "従業員",
+        "attendance": "勤怠",
+        "payroll": "給与",
+        "leave": "休暇",
+        "reports": "レポート",
+        "settings": "設定",
+        "logout": "ログアウト",
+        "mainMenu": "メインメニュー",
+        "system": "システム"
+    },
+    "dashboard": {
+        "title": "ダッシュボード",
+        "totalEmployees": "従業員総数",
+        "presentToday": "本日出勤",
+        "pendingLeave": "承認待ち休暇",
+        "estPayroll": "給与見込",
+        "attendanceOverview": "勤怠概要",
+        "weeklyTrends": "週間勤怠傾向",
+        "departmentDistribution": "部門分布",
+        "employeesByDept": "部門別従業員数",
+        "recentEmployees": "最近の従業員",
+        "newlyAdded": "新規追加メンバー"
+    },
+    "employees": {
+        "title": "従業員",
+        "addEmployee": "従業員追加",
+        "name": "氏名",
+        "department": "部門",
+        "position": "役職",
+        "startDate": "入社日",
+        "status": "状態",
+        "active": "在職",
+        "inactive": "退職"
+    },
+    "login": {
+        "title": "ログイン",
+        "username": "ユーザー名",
+        "password": "パスワード",
+        "signIn": "ログイン",
+        "signingIn": "ログイン中...",
+        "demoAccounts": "デモアカウント",
+        "invalidCredentials": "ユーザー名またはパスワードが正しくありません"
+    },
+    "settings": {
+        "title": "設定",
+        "language": "言語",
+        "selectLanguage": "言語を選択"
+    },
+    "sidebar": {
+        "dashboard": "ダッシュボード",
+        "employees": "従業員",
+        "attendance": "勤怠",
+        "payroll": "給与",
+        "leave": "休暇",
+        "holidays": "祝日",
+        "reports": "レポート",
+        "settings": "設定",
+        "logout": "ログアウト",
+        "mainMenu": "メインメニュー",
+        "management": "管理"
+    }
+}

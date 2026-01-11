@@ -1,0 +1,78 @@
+{
+    "common": {
+        "appName": "Système RH Lao",
+        "welcome": "Bienvenue ! Voici ce qui se passe avec votre équipe.",
+        "viewAll": "Voir tout",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "edit": "Modifier",
+        "add": "Ajouter",
+        "search": "Rechercher",
+        "loading": "Chargement...",
+        "noData": "Aucune donnée"
+    },
+    "nav": {
+        "dashboard": "Tableau de bord",
+        "employees": "Employés",
+        "attendance": "Présence",
+        "payroll": "Paie",
+        "leave": "Congés",
+        "reports": "Rapports",
+        "settings": "Paramètres",
+        "logout": "Déconnexion",
+        "mainMenu": "Menu principal",
+        "system": "Système"
+    },
+    "dashboard": {
+        "title": "Tableau de bord",
+        "totalEmployees": "Total employés",
+        "presentToday": "Présents aujourd'hui",
+        "pendingLeave": "Congés en attente",
+        "estPayroll": "Paie estimée",
+        "attendanceOverview": "Aperçu présence",
+        "weeklyTrends": "Tendances hebdomadaires",
+        "departmentDistribution": "Répartition départements",
+        "employeesByDept": "Employés par département",
+        "recentEmployees": "Employés récents",
+        "newlyAdded": "Membres nouvellement ajoutés"
+    },
+    "employees": {
+        "title": "Employés",
+        "addEmployee": "Ajouter employé",
+        "name": "Nom",
+        "department": "Département",
+        "position": "Poste",
+        "startDate": "Date début",
+        "status": "Statut",
+        "active": "Actif",
+        "inactive": "Inactif"
+    },
+    "login": {
+        "title": "Connexion",
+        "username": "Nom d'utilisateur",
+        "password": "Mot de passe",
+        "signIn": "Se connecter",
+        "signingIn": "Connexion...",
+        "demoAccounts": "Comptes démo",
+        "invalidCredentials": "Nom d'utilisateur ou mot de passe incorrect"
+    },
+    "settings": {
+        "title": "Paramètres",
+        "language": "Langue",
+        "selectLanguage": "Choisir la langue"
+    },
+    "sidebar": {
+        "dashboard": "Tableau de bord",
+        "employees": "Employés",
+        "attendance": "Présence",
+        "payroll": "Paie",
+        "leave": "Congés",
+        "holidays": "Jours fériés",
+        "reports": "Rapports",
+        "settings": "Paramètres",
+        "logout": "Déconnexion",
+        "mainMenu": "Menu principal",
+        "management": "Gestion"
+    }
+}
