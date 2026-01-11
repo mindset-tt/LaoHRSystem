@@ -1,0 +1,78 @@
+{
+    "common": {
+        "appName": "老挝人力资源系统",
+        "welcome": "欢迎回来！这是您团队的最新动态。",
+        "viewAll": "查看全部",
+        "save": "保存",
+        "cancel": "取消",
+        "delete": "删除",
+        "edit": "编辑",
+        "add": "添加",
+        "search": "搜索",
+        "loading": "加载中...",
+        "noData": "暂无数据"
+    },
+    "nav": {
+        "dashboard": "仪表盘",
+        "employees": "员工",
+        "attendance": "考勤",
+        "payroll": "工资",
+        "leave": "请假",
+        "reports": "报表",
+        "settings": "设置",
+        "logout": "退出登录",
+        "mainMenu": "主菜单",
+        "system": "系统"
+    },
+    "dashboard": {
+        "title": "仪表盘",
+        "totalEmployees": "员工总数",
+        "presentToday": "今日出勤",
+        "pendingLeave": "待审请假",
+        "estPayroll": "预计工资",
+        "attendanceOverview": "考勤概览",
+        "weeklyTrends": "每周考勤趋势",
+        "departmentDistribution": "部门分布",
+        "employeesByDept": "按部门员工数",
+        "recentEmployees": "最近员工",
+        "newlyAdded": "新加入的成员"
+    },
+    "employees": {
+        "title": "员工",
+        "addEmployee": "添加员工",
+        "name": "姓名",
+        "department": "部门",
+        "position": "职位",
+        "startDate": "入职日期",
+        "status": "状态",
+        "active": "在职",
+        "inactive": "离职"
+    },
+    "login": {
+        "title": "登录",
+        "username": "用户名",
+        "password": "密码",
+        "signIn": "登录",
+        "signingIn": "登录中...",
+        "demoAccounts": "演示账号",
+        "invalidCredentials": "用户名或密码错误"
+    },
+    "settings": {
+        "title": "设置",
+        "language": "语言",
+        "selectLanguage": "选择语言"
+    },
+    "sidebar": {
+        "dashboard": "仪表盘",
+        "employees": "员工",
+        "attendance": "考勤",
+        "payroll": "工资",
+        "leave": "请假",
+        "holidays": "假期",
+        "reports": "报表",
+        "settings": "设置",
+        "logout": "退出登录",
+        "mainMenu": "主菜单",
+        "management": "管理"
+    }
+}

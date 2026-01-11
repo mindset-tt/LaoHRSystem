@@ -1,0 +1,78 @@
+{
+    "common": {
+        "appName": "Hệ thống HR Lào",
+        "welcome": "Chào mừng trở lại! Đây là những gì đang xảy ra với nhóm của bạn.",
+        "viewAll": "Xem tất cả",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "delete": "Xóa",
+        "edit": "Sửa",
+        "add": "Thêm",
+        "search": "Tìm kiếm",
+        "loading": "Đang tải...",
+        "noData": "Không có dữ liệu"
+    },
+    "nav": {
+        "dashboard": "Bảng điều khiển",
+        "employees": "Nhân viên",
+        "attendance": "Chấm công",
+        "payroll": "Bảng lương",
+        "leave": "Nghỉ phép",
+        "reports": "Báo cáo",
+        "settings": "Cài đặt",
+        "logout": "Đăng xuất",
+        "mainMenu": "Menu chính",
+        "system": "Hệ thống"
+    },
+    "dashboard": {
+        "title": "Bảng điều khiển",
+        "totalEmployees": "Tổng nhân viên",
+        "presentToday": "Có mặt hôm nay",
+        "pendingLeave": "Chờ duyệt nghỉ",
+        "estPayroll": "Lương ước tính",
+        "attendanceOverview": "Tổng quan chấm công",
+        "weeklyTrends": "Xu hướng chấm công hàng tuần",
+        "departmentDistribution": "Phân bố phòng ban",
+        "employeesByDept": "Nhân viên theo phòng ban",
+        "recentEmployees": "Nhân viên mới",
+        "newlyAdded": "Thành viên mới thêm"
+    },
+    "employees": {
+        "title": "Nhân viên",
+        "addEmployee": "Thêm nhân viên",
+        "name": "Tên",
+        "department": "Phòng ban",
+        "position": "Vị trí",
+        "startDate": "Ngày bắt đầu",
+        "status": "Trạng thái",
+        "active": "Đang hoạt động",
+        "inactive": "Không hoạt động"
+    },
+    "login": {
+        "title": "Đăng nhập",
+        "username": "Tên đăng nhập",
+        "password": "Mật khẩu",
+        "signIn": "Đăng nhập",
+        "signingIn": "Đang đăng nhập...",
+        "demoAccounts": "Tài khoản demo",
+        "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không đúng"
+    },
+    "settings": {
+        "title": "Cài đặt",
+        "language": "Ngôn ngữ",
+        "selectLanguage": "Chọn ngôn ngữ"
+    },
+    "sidebar": {
+        "dashboard": "Bảng điều khiển",
+        "employees": "Nhân viên",
+        "attendance": "Chấm công",
+        "payroll": "Bảng lương",
+        "leave": "Nghỉ phép",
+        "holidays": "Ngày lễ",
+        "reports": "Báo cáo",
+        "settings": "Cài đặt",
+        "logout": "Đăng xuất",
+        "mainMenu": "Menu chính",
+        "management": "Quản lý"
+    }
+}

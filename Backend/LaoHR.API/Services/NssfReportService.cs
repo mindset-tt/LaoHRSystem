@@ -1,0 +1,107 @@
+using LaoHR.Shared.Data;
+using LaoHR.Shared.Models;
+using Microsoft.EntityFrameworkCore;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using QuestPDF.Infrastructure;
+
+namespace LaoHR.API.Services;
+
+public class NssfReportService
+{
+    private readonly LaoHRDbContext _context;
+
+    public NssfReportService(LaoHRDbContext context)
+    {
+        _context = context;
+    }
+
+    public async Task<byte[]> GenerateNssfReport(int periodId)
+    {
+        var period = await _context.PayrollPeriods.FindAsync(periodId);
+        if (period == null) throw new FileNotFoundException("Period not found");
+
+        var slips = await _context.SalarySlips
+            .Include(s => s.Employee)
+            .Where(s => s.PeriodId == periodId)
+            .OrderBy(s => s.Employee.EmployeeCode)
+            .ToListAsync();
+
+        var totalBase = slips.Sum(s => s.NssfBase);
+        var totalEmp = slips.Sum(s => s.NssfEmployeeDeduction);
+        var totalEr = slips.Sum(s => s.NssfEmployerContribution);
+
+        var document = Document.Create(container =>
+        {
+            container.Page(page =>
+            {
+                page.Size(PageSizes.A4);
+                page.Margin(2, Unit.Centimetre);
+                page.PageColor(Colors.White);
+                page.DefaultTextStyle(x => x.FontSize(11).FontFamily("Phetsarath OT"));
+
+                page.Header().Column(col =>
+                {
+                    col.Item().Text("Lao People's Democratic Republic").AlignCenter().FontSize(12);
+                    col.Item().Text("Peace Independence Democracy Unity Prosperity").AlignCenter().FontSize(12);
+                    col.Item().PaddingTop(10).Text("National Social Security Fund Report").SemiBold().FontSize(16).AlignCenter();
+                    col.Item().Text($"Period: {period.PeriodName}").AlignCenter();
+                    col.Item().PaddingBottom(10);
+                });
+
+                page.Content().Table(table =>
+                {
+                    table.ColumnsDefinition(columns =>
+                    {
+                        columns.ConstantColumn(40); // No
+                        columns.RelativeColumn(3); // Name
+                        columns.RelativeColumn(2); // Salary Base
+                        columns.RelativeColumn(1.5f); // Emp (5.5%)
+                        columns.RelativeColumn(1.5f); // Er (6.0%)
+                        columns.RelativeColumn(1.5f); // Total
+                    });
+
+                    table.Header(header =>
+                    {
+                        header.Cell().BorderBottom(1).Padding(5).Text("No").SemiBold();
+                        header.Cell().BorderBottom(1).Padding(5).Text("Employee Name").SemiBold();
+                        header.Cell().BorderBottom(1).Padding(5).Text("Salary Base").SemiBold().AlignRight();
+                        header.Cell().BorderBottom(1).Padding(5).Text("5.5%").SemiBold().AlignRight();
+                        header.Cell().BorderBottom(1).Padding(5).Text("6.0%").SemiBold().AlignRight();
+                        header.Cell().BorderBottom(1).Padding(5).Text("Total").SemiBold().AlignRight();
+                    });
+
+                    int index = 1;
+                    foreach (var slip in slips)
+                    {
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(index.ToString());
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(slip.Employee.LaoName);
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(slip.NssfBase.ToString("N0")).AlignRight();
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(slip.NssfEmployeeDeduction.ToString("N0")).AlignRight();
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(slip.NssfEmployerContribution.ToString("N0")).AlignRight();
+                        
+                        var total = slip.NssfEmployeeDeduction + slip.NssfEmployerContribution;
+                        table.Cell().BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).Padding(5).Text(total.ToString("N0")).AlignRight();
+
+                        index++;
+                    }
+
+                    // Footer Row
+                    table.Cell().ColumnSpan(2).Padding(5).Text("TOTAL").Bold();
+                    table.Cell().Padding(5).Text(totalBase.ToString("N0")).Bold().AlignRight();
+                    table.Cell().Padding(5).Text(totalEmp.ToString("N0")).Bold().AlignRight();
+                    table.Cell().Padding(5).Text(totalEr.ToString("N0")).Bold().AlignRight();
+                    table.Cell().Padding(5).Text((totalEmp + totalEr).ToString("N0")).Bold().AlignRight();
+                });
+
+                page.Footer().AlignCenter().Text(x =>
+                {
+                    x.Span("Generated by Lao HR System - Page ");
+                    x.CurrentPageNumber();
+                });
+            });
+        });
+
+        return document.GeneratePdf();
+    }
+}
