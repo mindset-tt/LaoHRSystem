@@ -1,0 +1,219 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+/* Welcome Section */
+.welcomeSection {
+    margin-bottom: var(--space-2);
+}
+
+.welcomeContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.welcomeTitle {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: rgb(var(--color-text));
+    margin: 0;
+}
+
+.welcomeSubtitle {
+    font-size: var(--font-size-base);
+    color: rgb(var(--color-text-secondary));
+    margin: 0;
+}
+
+/* Stats Section */
+.statsSection {
+    margin-bottom: var(--space-2);
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+}
+
+@media (max-width: 1200px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .statsGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Stat Card */
+.statCard {
+    padding: var(--space-5);
+}
+
+.statContent {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.statIcon {
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xl);
+    flex-shrink: 0;
+}
+
+.statIcon.primary {
+    background: rgb(var(--color-primary-100));
+    color: rgb(var(--color-primary-600));
+}
+
+.statIcon.success {
+    background: rgb(var(--color-success-100));
+    color: rgb(var(--color-success-600));
+}
+
+.statIcon.accent {
+    background: rgb(var(--color-accent-100));
+    color: rgb(var(--color-accent-600));
+}
+
+.statIcon.warning {
+    background: rgb(var(--color-warning-100));
+    color: rgb(var(--color-warning-600));
+}
+
+.statInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.statTitle {
+    font-size: var(--font-size-sm);
+    color: rgb(var(--color-text-secondary));
+}
+
+.statValue {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
+    color: rgb(var(--color-text));
+    line-height: 1;
+}
+
+/* Content Section */
+.contentSection {
+    margin-top: var(--space-2);
+}
+
+.contentGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+}
+
+@media (max-width: 900px) {
+    .contentGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.cardContent {
+    padding: var(--space-6);
+}
+
+/* Quick Actions */
+.quickActions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.quickActionButton {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    padding: var(--space-4);
+    background: rgb(var(--color-neutral-50));
+    border-radius: var(--radius-lg);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.quickActionButton:hover {
+    background: rgb(var(--color-primary-50));
+    transform: translateY(-2px);
+}
+
+.quickActionIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgb(var(--color-surface));
+    border-radius: var(--radius-lg);
+    color: rgb(var(--color-primary-600));
+    box-shadow: var(--shadow-xs);
+}
+
+.quickActionLabel {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: rgb(var(--color-text));
+}
+
+/* Activity List */
+.activityList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin-top: var(--space-4);
+}
+
+.activityItem {
+    display: flex;
+    gap: var(--space-3);
+}
+
+.activityDot {
+    width: 8px;
+    height: 8px;
+    background: rgb(var(--color-primary-500));
+    border-radius: var(--radius-full);
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.activityContent {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.activityTitle {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    color: rgb(var(--color-text));
+}
+
+.activityDescription {
+    font-size: var(--font-size-sm);
+    color: rgb(var(--color-text-secondary));
+}
+
+.activityTime {
+    font-size: var(--font-size-xs);
+    color: rgb(var(--color-text-muted));
+}

@@ -1,0 +1,121 @@
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--text-secondary, #374151);
+}
+
+.select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #111827);
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.select:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #111827);
+    transition: all 0.15s ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.textarea {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color, #d1d5db);
+    border-radius: 8px;
+    font-size: 0.9375rem;
+    background: var(--input-bg, #ffffff);
+    color: var(--text-primary, #111827);
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    transition: all 0.15s ease;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--primary, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.error {
+    color: #ef4444;
+    font-size: 0.8125rem;
+    margin-top: 0.25rem;
+}
+
+.totalDays {
+    padding: 1rem;
+    background: var(--bg-accent, #f0f9ff);
+    border-radius: 8px;
+    text-align: center;
+}
+
+.totalDaysLabel {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.totalDaysValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary, #6366f1);
+    margin-top: 0.25rem;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+
+    .select,
+    .input,
+    .textarea {
+        --input-bg: #1f2937;
+        --border-color: #374151;
+        --text-primary: #f9fafb;
+    }
+
+    .totalDays {
+        --bg-accent: rgba(99, 102, 241, 0.1);
+    }
+}

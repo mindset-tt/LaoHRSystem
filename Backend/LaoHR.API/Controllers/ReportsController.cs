@@ -8,10 +8,12 @@ namespace LaoHR.API.Controllers;
 public class ReportsController : ControllerBase
 {
     private readonly NssfReportService _nssfService;
+    private readonly PdfFormService _pdfFormService;
 
-    public ReportsController(NssfReportService nssfService)
+    public ReportsController(NssfReportService nssfService, PdfFormService pdfFormService)
     {
         _nssfService = nssfService;
+        _pdfFormService = pdfFormService;
     }
 
     [HttpGet("nssf/{periodId}")]
@@ -19,8 +21,9 @@ public class ReportsController : ControllerBase
     {
         try
         {
-            var pdfBytes = await _nssfService.GenerateNssfReport(periodId);
-            return File(pdfBytes, "application/pdf", $"NSSF_Report_{periodId}.pdf");
+            // Use the new Form Filling Service
+            var pdfBytes = await _pdfFormService.FillNssfForm(periodId);
+            return File(pdfBytes, "application/pdf", $"NSSF_Payment_Form_{periodId}.pdf");
         }
         catch (Exception ex)
         {
