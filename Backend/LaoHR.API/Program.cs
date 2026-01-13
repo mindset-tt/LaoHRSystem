@@ -69,11 +69,20 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogInterceptor>();
 
-builder.Services.AddDbContext<LaoHRDbContext>((sp, options) => {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("LaoHR.API"))
+// Database Configuration
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<LaoHRDbContext>(options =>
+        options.UseInMemoryDatabase("InMemoryDbForTesting"));
+}
+else
+{
+    builder.Services.AddDbContext<LaoHRDbContext>((sp, options) => {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+            b => b.MigrationsAssembly("LaoHR.API"))
            .AddInterceptors(sp.GetRequiredService<AuditLogInterceptor>());
-});
+    });
+}
 
 // Custom services
 builder.Services.AddScoped<PayrollService>();
@@ -109,10 +118,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-// Authentication & Authorization middleware
+// Authenticate & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
+}
 
 app.MapControllers();
 
@@ -121,7 +134,14 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LaoHRDbContext>();
     // Apply any pending migrations
-    db.Database.Migrate();
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        db.Database.Migrate();
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+    }
 }
 
 Console.WriteLine("🚀 Lao HR System API running at http://localhost:5000");
@@ -129,3 +149,5 @@ Console.WriteLine("📚 Swagger UI: http://localhost:5000");
 Console.WriteLine("🔐 Default users: admin/admin123, hr/hr123, employee/emp123");
 
 app.Run();
+
+public partial class Program { }

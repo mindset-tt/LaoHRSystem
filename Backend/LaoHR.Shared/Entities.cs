@@ -282,8 +282,10 @@ public class LeaveRequest
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
     // Navigation
+    //[ForeignKey("EmployeeId")] -- Standard Convention prefers placement or attribute
     [ForeignKey("EmployeeId")]
-    public virtual Employee Employee { get; set; } = null!;
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
 }
 
 /// <summary>
