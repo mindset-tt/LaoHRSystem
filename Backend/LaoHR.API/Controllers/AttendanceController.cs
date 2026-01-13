@@ -38,16 +38,32 @@ public class AttendanceController : ControllerBase
     }
     
     /// <summary>
+    /// Get today's attendance for current user
+    /// </summary>
+    [HttpGet("today")]
+    public async Task<ActionResult<Attendance>> GetToday()
+    {
+        var employeeId = GetCurrentEmployeeId();
+        var today = DateTime.UtcNow.Date;
+        
+        var attendance = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.AttendanceDate == today);
+            
+        return Ok(attendance);
+    }
+
+    /// <summary>
     /// Clock in
     /// </summary>
     [HttpPost("clock-in")]
     public async Task<ActionResult<Attendance>> ClockIn(ClockRequest request)
     {
+        var employeeId = GetCurrentEmployeeId();
         var today = DateTime.UtcNow.Date;
         
         // Check if already clocked in
         var existing = await _context.Attendances
-            .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.AttendanceDate == today);
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.AttendanceDate == today);
         
         if (existing?.ClockIn != null)
             return BadRequest("Already clocked in today");
@@ -58,7 +74,7 @@ public class AttendanceController : ControllerBase
         
         var attendance = existing ?? new Attendance
         {
-            EmployeeId = request.EmployeeId,
+            EmployeeId = employeeId,
             AttendanceDate = today
         };
         
@@ -83,10 +99,11 @@ public class AttendanceController : ControllerBase
     [HttpPost("clock-out")]
     public async Task<ActionResult<Attendance>> ClockOut(ClockRequest request)
     {
+        var employeeId = GetCurrentEmployeeId();
         var today = DateTime.UtcNow.Date;
         
         var attendance = await _context.Attendances
-            .FirstOrDefaultAsync(a => a.EmployeeId == request.EmployeeId && a.AttendanceDate == today);
+            .FirstOrDefaultAsync(a => a.EmployeeId == employeeId && a.AttendanceDate == today);
         
         if (attendance == null)
             return BadRequest("Not clocked in today");
@@ -113,6 +130,19 @@ public class AttendanceController : ControllerBase
         await _context.SaveChangesAsync();
         
         return Ok(attendance);
+    }
+
+    private int GetCurrentEmployeeId()
+    {
+        // For MVP, map hardcoded users to basic Employee IDs
+        var username = User.Identity?.Name?.ToLower();
+        
+        return username switch
+        {
+            "admin" => 1,
+            "hr" => 2,
+            _ => 1 // Fallback
+        };
     }
     
     /// <summary>

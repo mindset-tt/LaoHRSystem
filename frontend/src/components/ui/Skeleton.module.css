@@ -1,0 +1,72 @@
+.skeleton {
+    background: linear-gradient(90deg,
+            rgb(var(--color-neutral-200)) 0%,
+            rgb(var(--color-neutral-100)) 50%,
+            rgb(var(--color-neutral-200)) 100%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-md);
+}
+
+.circle {
+    border-radius: var(--radius-full);
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Text wrapper */
+.textWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+/* Table */
+.table {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgb(var(--color-border-light));
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+}
+
+.tableRow {
+    display: flex;
+    border-bottom: 1px solid rgb(var(--color-border-light));
+}
+
+.tableRow:last-child {
+    border-bottom: none;
+}
+
+.tableRow:first-child {
+    background: rgb(var(--color-neutral-50));
+}
+
+.tableCell {
+    flex: 1;
+    padding: var(--space-3) var(--space-4);
+}
+
+/* Card */
+.card {
+    background: rgb(var(--color-surface));
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid rgb(var(--color-border-light));
+}
+
+.cardBody {
+    padding: var(--space-4);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}

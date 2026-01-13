@@ -21,6 +21,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
 // FluentValidation
@@ -89,17 +90,19 @@ builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<PayslipPdfService>();
 builder.Services.AddScoped<IBankTransferService, BankTransferService>();
 builder.Services.AddScoped<NssfReportService>();
+builder.Services.AddScoped<PdfFormService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 
 
-// CORS for frontend
+// CORS for frontend - allow all origins for development
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true) // Allow any origin
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
@@ -136,11 +139,17 @@ using (var scope = app.Services.CreateScope())
     // Apply any pending migrations
     if (!builder.Environment.IsEnvironment("Testing"))
     {
+        // RESET DATABASE to apply new mock data (Wipe old data)
+        // Remove this line later if you want to keep data between restarts
+        db.Database.EnsureDeleted(); 
+        
         db.Database.Migrate();
+        DbSeeder.Seed(db);
     }
     else
     {
         db.Database.EnsureCreated();
+        DbSeeder.Seed(db);
     }
 }
 

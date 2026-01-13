@@ -1,0 +1,51 @@
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.label {
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: rgb(var(--color-text-muted));
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+}
+
+.fieldWrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.value {
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: rgb(var(--color-text));
+    letter-spacing: 0.1em;
+}
+
+.toggleButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    background: rgb(var(--color-neutral-100));
+    border: none;
+    border-radius: var(--radius-md);
+    color: rgb(var(--color-text-muted));
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.toggleButton:hover {
+    background: rgb(var(--color-neutral-200));
+    color: rgb(var(--color-text-secondary));
+}
+
+.toggleButton:focus-visible {
+    outline: var(--ring-width) solid var(--ring-color);
+    outline-offset: var(--ring-offset);
+}
