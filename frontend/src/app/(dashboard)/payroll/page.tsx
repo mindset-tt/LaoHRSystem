@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
@@ -19,6 +20,7 @@ import styles from './page.module.css';
  */
 export default function PayrollPage() {
     const { role } = useAuth();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
     const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
@@ -51,8 +53,6 @@ export default function PayrollPage() {
     useEffect(() => {
         const loadSlips = async () => {
             if (!selectedPeriod) return;
-            // Don't set global loading here to avoid screen flash
-            // Maybe add a local loading state for table
             try {
                 const data = await payrollApi.getSlips(selectedPeriod.periodId);
                 setSlips(data);
@@ -72,7 +72,7 @@ export default function PayrollPage() {
             setShowNewPeriodModal(false);
         } catch (err) {
             console.error('Failed to create period:', err);
-            throw err; // Re-throw to be handled by modal
+            throw err;
         }
     };
 
@@ -82,7 +82,6 @@ export default function PayrollPage() {
         try {
             setError(null);
             await payrollApi.runPayroll(selectedPeriod.periodId);
-            // Refresh slips and periods (status might change)
             await Promise.all([
                 payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
                 loadPeriods()
@@ -121,14 +120,14 @@ export default function PayrollPage() {
             {/* Header */}
             <div className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>Payroll</h1>
+                    <h1 className={styles.title}>{t.payroll.title}</h1>
                     <p className={styles.subtitle}>
-                        Manage payroll periods and process salaries
+                        {t.payroll.subtitle}
                     </p>
                 </div>
                 {canManage && (
                     <Button leftIcon={<PlusIcon />} onClick={() => setShowNewPeriodModal(true)}>
-                        New Period
+                        {t.payroll.newPeriod}
                     </Button>
                 )}
             </div>
@@ -144,12 +143,12 @@ export default function PayrollPage() {
             {/* Period Selector */}
             <Card>
                 <div className={styles.periodSelector}>
-                    <label className={styles.periodLabel}>Payroll Period</label>
+                    <label className={styles.periodLabel}>{t.payroll.periodLabel}</label>
                     <div className={styles.periodOptions}>
                         {loading ? (
                             <Skeleton width={200} height={40} />
                         ) : periods.length === 0 ? (
-                            <p className={styles.noPeriods}>No payroll periods found. Create one to get started.</p>
+                            <p className={styles.noPeriods}>{t.payroll.noPeriods}</p>
                         ) : (
                             periods.map((period) => (
                                 <button
@@ -175,22 +174,22 @@ export default function PayrollPage() {
             {selectedPeriod && !loading && (
                 <div className={styles.summaryGrid}>
                     <SummaryCard
-                        label="Total Gross"
+                        label={t.payroll.summary.gross}
                         value={formatCurrency(slips.reduce((sum, s) => sum + s.grossIncome, 0))}
                         icon={<DollarIcon />}
                     />
                     <SummaryCard
-                        label="Total Deductions"
+                        label={t.payroll.summary.deductions}
                         value={formatCurrency(slips.reduce((sum, s) => sum + s.nssfEmployeeDeduction + s.taxDeduction + s.otherDeductions, 0))}
                         icon={<MinusCircleIcon />}
                     />
                     <SummaryCard
-                        label="Total Net"
+                        label={t.payroll.summary.net}
                         value={formatCurrency(slips.reduce((sum, s) => sum + s.netSalary, 0))}
                         icon={<WalletIcon />}
                     />
                     <SummaryCard
-                        label="Employees"
+                        label={t.payroll.summary.employees}
                         value={slips.length.toString()}
                         icon={<UsersIcon />}
                     />
@@ -202,15 +201,15 @@ export default function PayrollPage() {
                 <Card>
                     <div className={styles.actionsCard}>
                         <div className={styles.actionInfo}>
-                            <h3>Run Payroll for {formatPayrollPeriod(selectedPeriod.year, selectedPeriod.month)}</h3>
-                            <p>Calculate salaries for all active employees based on their attendance records.</p>
+                            <h3>{t.payroll.runPayrollTitle.replace('{period}', formatPayrollPeriod(selectedPeriod.year, selectedPeriod.month))}</h3>
+                            <p>{t.payroll.runPayrollDesc}</p>
                         </div>
                         <Button
                             leftIcon={<PlayIcon />}
                             onClick={handleRunPayroll}
                             loading={actionLoading}
                         >
-                            Run Payroll
+                            {t.payroll.runPayroll}
                         </Button>
                     </div>
                 </Card>
@@ -220,10 +219,10 @@ export default function PayrollPage() {
             {selectedPeriod && (
                 <Card noPadding>
                     <div className={styles.tableHeader}>
-                        <CardTitle>Salary Slips</CardTitle>
+                        <CardTitle>{t.payroll.table.title}</CardTitle>
                         {slips.length > 0 && (
                             <Button variant="secondary" size="sm" leftIcon={<DownloadIcon />} disabled title="Not implemented yet">
-                                Export All
+                                {t.payroll.table.exportAll}
                             </Button>
                         )}
                     </div>
@@ -235,9 +234,9 @@ export default function PayrollPage() {
                     ) : slips.length === 0 ? (
                         <div className={styles.emptyState}>
                             <WalletIcon />
-                            <p>No salary slips for this period</p>
+                            <p>{t.payroll.table.empty}</p>
                             {selectedPeriod.status === 'DRAFT' && (
-                                <span>Run payroll to generate salary slips</span>
+                                <span>{t.payroll.table.runToGenerate}</span>
                             )}
                         </div>
                     ) : (
@@ -245,11 +244,11 @@ export default function PayrollPage() {
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
-                                        <th>Employee</th>
-                                        <th>Gross Income</th>
-                                        <th>Deductions</th>
-                                        <th>Net Salary</th>
-                                        <th>Status</th>
+                                        <th>{t.payroll.table.headers.employee}</th>
+                                        <th>{t.payroll.table.headers.gross}</th>
+                                        <th>{t.payroll.table.headers.deductions}</th>
+                                        <th>{t.payroll.table.headers.net}</th>
+                                        <th>{t.payroll.table.headers.status}</th>
                                         <th></th>
                                     </tr>
                                 </thead>
@@ -289,7 +288,7 @@ export default function PayrollPage() {
                                                     onClick={() => handleDownloadPdf(slip.slipId)}
                                                 >
                                                     <DownloadIcon />
-                                                    PDF
+                                                    {t.payroll.table.viewPdf}
                                                 </button>
                                             </td>
                                         </tr>

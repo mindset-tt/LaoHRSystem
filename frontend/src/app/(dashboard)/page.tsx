@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { apiClient } from '@/lib/apiClient';
 import { Card, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -21,6 +22,7 @@ interface DashboardStats {
  */
 export default function DashboardPage() {
     const { user } = useAuth();
+    const { t, language } = useLanguage();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -47,10 +49,10 @@ export default function DashboardPage() {
             <section className={styles.welcomeSection}>
                 <div className={styles.welcomeContent}>
                     <h1 className={styles.welcomeTitle}>
-                        {getGreeting()}, {user?.displayName || 'User'}
+                        {getGreeting(t)}, {user?.displayName || 'User'}
                     </h1>
                     <p className={styles.welcomeSubtitle}>
-                        Here&apos;s what&apos;s happening today, {formatDate(today)}
+                        {t.dashboardPage.welcome}, {formatDate(today)}
                     </p>
                 </div>
             </section>
@@ -59,25 +61,25 @@ export default function DashboardPage() {
             <section className={styles.statsSection}>
                 <div className={styles.statsGrid}>
                     <StatCard
-                        title="Total Employees"
+                        title={t.dashboardPage.stats.totalEmployees}
                         value={loading ? null : stats?.totalEmployees ?? 0}
                         icon={<UsersIcon />}
                         color="primary"
                     />
                     <StatCard
-                        title="Active Employees"
+                        title={t.dashboardPage.stats.activeEmployees}
                         value={loading ? null : stats?.activeEmployees ?? 0}
                         icon={<UserCheckIcon />}
                         color="success"
                     />
                     <StatCard
-                        title="Present Today"
+                        title={t.dashboardPage.stats.presentToday}
                         value={loading ? null : stats?.presentToday ?? 0}
                         icon={<ClockIcon />}
                         color="accent"
                     />
                     <StatCard
-                        title="Pending Leave"
+                        title={t.dashboardPage.stats.pendingLeave}
                         value={loading ? null : stats?.pendingLeave ?? 0}
                         icon={<CalendarIcon />}
                         color="warning"
@@ -91,27 +93,27 @@ export default function DashboardPage() {
                     {/* Quick Actions */}
                     <Card>
                         <div className={styles.cardContent}>
-                            <CardTitle>Quick Actions</CardTitle>
-                            <CardDescription>Common tasks you can perform</CardDescription>
+                            <CardTitle>{t.dashboardPage.quickActions.title}</CardTitle>
+                            <CardDescription>{t.dashboardPage.quickActions.subtitle}</CardDescription>
                             <div className={styles.quickActions}>
                                 <QuickActionButton
                                     icon={<PlusIcon />}
-                                    label="Add Employee"
+                                    label={t.dashboardPage.quickActions.addEmployee}
                                     href="/employees/new"
                                 />
                                 <QuickActionButton
                                     icon={<ClockIcon />}
-                                    label="View Attendance"
+                                    label={t.dashboardPage.quickActions.viewAttendance}
                                     href="/attendance"
                                 />
                                 <QuickActionButton
                                     icon={<CalendarIcon />}
-                                    label="Manage Leave"
+                                    label={t.dashboardPage.quickActions.manageLeave}
                                     href="/leave"
                                 />
                                 <QuickActionButton
                                     icon={<WalletIcon />}
-                                    label="Run Payroll"
+                                    label={t.dashboardPage.quickActions.runPayroll}
                                     href="/payroll"
                                 />
                             </div>
@@ -121,22 +123,22 @@ export default function DashboardPage() {
                     {/* Recent Activity */}
                     <Card>
                         <div className={styles.cardContent}>
-                            <CardTitle>Recent Activity</CardTitle>
-                            <CardDescription>Latest updates from the system</CardDescription>
+                            <CardTitle>{t.dashboardPage.activity.title}</CardTitle>
+                            <CardDescription>{t.dashboardPage.activity.subtitle}</CardDescription>
                             <div className={styles.activityList}>
                                 <ActivityItem
-                                    title="Leave request approved"
-                                    description="John Doe - Annual Leave (3 days)"
+                                    title={t.dashboardPage.activity.mock.leave.title}
+                                    description={t.dashboardPage.activity.mock.leave.desc}
                                     time="2 hours ago"
                                 />
                                 <ActivityItem
-                                    title="New employee added"
-                                    description="Jane Smith joined Engineering"
+                                    title={t.dashboardPage.activity.mock.employee.title}
+                                    description={t.dashboardPage.activity.mock.employee.desc}
                                     time="Yesterday"
                                 />
                                 <ActivityItem
-                                    title="Payroll completed"
-                                    description="December 2025 payroll processed"
+                                    title={t.dashboardPage.activity.mock.payroll.title}
+                                    description={t.dashboardPage.activity.mock.payroll.desc}
                                     time="3 days ago"
                                 />
                             </div>
@@ -215,11 +217,12 @@ function ActivityItem({
 }
 
 // Greeting based on time
-function getGreeting(): string {
+function getGreeting(t: any): string {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
+
+    if (hour < 12) return t.dashboardPage.greetings.morning;
+    if (hour < 17) return t.dashboardPage.greetings.afternoon;
+    return t.dashboardPage.greetings.evening;
 }
 
 // Icons

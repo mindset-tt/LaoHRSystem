@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -20,6 +21,7 @@ interface EmployeeFormProps {
  */
 export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
     const router = useRouter();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [departments, setDepartments] = useState<Department[]>([]);
@@ -68,19 +70,19 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
         const newErrors: Record<string, string> = {};
 
         if (!formData.employeeCode.trim()) {
-            newErrors.employeeCode = 'Employee code is required';
+            newErrors.employeeCode = `${t.employeeForm.fields.employeeCode} ${t.employeeForm.validation.required}`;
         }
         if (!formData.laoName.trim()) {
-            newErrors.laoName = 'Lao name is required';
+            newErrors.laoName = `${t.employeeForm.fields.laoName} ${t.employeeForm.validation.required}`;
         }
         if (!formData.departmentId) {
-            newErrors.departmentId = 'Department is required';
+            newErrors.departmentId = `${t.employeeForm.fields.department} ${t.employeeForm.validation.required}`;
         }
         if (!formData.baseSalary || parseFloat(formData.baseSalary) <= 0) {
-            newErrors.baseSalary = 'Base salary must be greater than 0';
+            newErrors.baseSalary = t.employeeForm.validation.salary;
         }
         if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-            newErrors.email = 'Invalid email format';
+            newErrors.email = t.employeeForm.validation.email;
         }
 
         setErrors(newErrors);
@@ -132,7 +134,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
             router.push('/employees');
         } catch (err) {
             console.error('Failed to save employee:', err);
-            setError('Failed to save employee. Please try again.');
+            setError(t.common.error);
         } finally {
             setLoading(false);
         }
@@ -149,10 +151,10 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
             {/* Basic Information */}
             <Card>
                 <div className={styles.section}>
-                    <h3 className={styles.sectionTitle}>Basic Information</h3>
+                    <h3 className={styles.sectionTitle}>{t.employeeForm.basicInfo}</h3>
                     <div className={styles.row}>
                         <Input
-                            label="Employee Code *"
+                            label={`${t.employeeForm.fields.employeeCode} *`}
                             value={formData.employeeCode}
                             onChange={(e) => handleChange('employeeCode', e.target.value)}
                             error={errors.employeeCode}
@@ -160,7 +162,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                             disabled={isEditing}
                         />
                         <Input
-                            label="Lao Name *"
+                            label={`${t.employeeForm.fields.laoName} *`}
                             value={formData.laoName}
                             onChange={(e) => handleChange('laoName', e.target.value)}
                             error={errors.laoName}
@@ -169,33 +171,33 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                     </div>
                     <div className={styles.row}>
                         <Input
-                            label="English Name"
+                            label={t.employeeForm.fields.englishName}
                             value={formData.englishName}
                             onChange={(e) => handleChange('englishName', e.target.value)}
                             placeholder="Full name in English"
                         />
                         <div className={styles.field}>
-                            <label className={styles.label}>Gender</label>
+                            <label className={styles.label}>{t.employeeForm.fields.gender}</label>
                             <select
                                 className={styles.select}
                                 value={formData.gender}
                                 onChange={(e) => handleChange('gender', e.target.value)}
                             >
-                                <option value="">Select gender</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
+                                <option value="">{t.employeeForm.fields.selectGender}</option>
+                                <option value="Male">{t.employeeForm.fields.male}</option>
+                                <option value="Female">{t.employeeForm.fields.female}</option>
                             </select>
                         </div>
                     </div>
                     <div className={styles.row}>
                         <Input
-                            label="Date of Birth"
+                            label={t.employeeForm.fields.dob}
                             type="date"
                             value={formData.dateOfBirth}
                             onChange={(e) => handleChange('dateOfBirth', e.target.value)}
                         />
                         <Input
-                            label="Dependents"
+                            label={t.employeeForm.fields.dependents}
                             type="number"
                             min="0"
                             value={formData.dependentCount}
@@ -208,10 +210,10 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
             {/* Contact Information */}
             <Card>
                 <div className={styles.section}>
-                    <h3 className={styles.sectionTitle}>Contact Information</h3>
+                    <h3 className={styles.sectionTitle}>{t.employeeForm.contactInfo}</h3>
                     <div className={styles.row}>
                         <Input
-                            label="Email"
+                            label={t.employeeForm.fields.email}
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleChange('email', e.target.value)}
@@ -219,7 +221,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                             placeholder="name@company.com"
                         />
                         <Input
-                            label="Phone"
+                            label={t.employeeForm.fields.phone}
                             type="tel"
                             value={formData.phone}
                             onChange={(e) => handleChange('phone', e.target.value)}
@@ -232,16 +234,16 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
             {/* Employment Details */}
             <Card>
                 <div className={styles.section}>
-                    <h3 className={styles.sectionTitle}>Employment Details</h3>
+                    <h3 className={styles.sectionTitle}>{t.employeeForm.employmentDetails}</h3>
                     <div className={styles.row}>
                         <div className={styles.field}>
-                            <label className={styles.label}>Department *</label>
+                            <label className={styles.label}>{t.employeeForm.fields.department} *</label>
                             <select
                                 className={`${styles.select} ${errors.departmentId ? styles.selectError : ''}`}
                                 value={formData.departmentId}
                                 onChange={(e) => handleChange('departmentId', e.target.value)}
                             >
-                                <option value="">Select department</option>
+                                <option value="">{t.employeeForm.fields.selectDepartment}</option>
                                 {departments.map((dept) => (
                                     <option key={dept.departmentId} value={dept.departmentId}>
                                         {dept.departmentName}
@@ -253,7 +255,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                             )}
                         </div>
                         <Input
-                            label="Job Title"
+                            label={t.employeeForm.fields.jobTitle}
                             value={formData.jobTitle}
                             onChange={(e) => handleChange('jobTitle', e.target.value)}
                             placeholder="e.g. Senior Developer"
@@ -261,13 +263,13 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                     </div>
                     <div className={styles.row}>
                         <Input
-                            label="Hire Date"
+                            label={t.employeeForm.fields.hireDate}
                             type="date"
                             value={formData.hireDate}
                             onChange={(e) => handleChange('hireDate', e.target.value)}
                         />
                         <Input
-                            label="Base Salary (LAK) *"
+                            label={`${t.employeeForm.fields.baseSalary} *`}
                             type="number"
                             min="0"
                             value={formData.baseSalary}
@@ -282,16 +284,16 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
             {/* Bank Information */}
             <Card>
                 <div className={styles.section}>
-                    <h3 className={styles.sectionTitle}>Bank Information</h3>
+                    <h3 className={styles.sectionTitle}>{t.employeeForm.bankInfo}</h3>
                     <div className={styles.row}>
                         <Input
-                            label="Bank Name"
+                            label={t.employeeForm.fields.bankName}
                             value={formData.bankName}
                             onChange={(e) => handleChange('bankName', e.target.value)}
                             placeholder="e.g. BCEL, LDB"
                         />
                         <Input
-                            label="Bank Account Number"
+                            label={t.employeeForm.fields.bankAccount}
                             value={formData.bankAccount}
                             onChange={(e) => handleChange('bankAccount', e.target.value)}
                             placeholder="Account number"
@@ -307,10 +309,10 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                     variant="secondary"
                     onClick={() => router.back()}
                 >
-                    Cancel
+                    {t.employeeForm.buttons.cancel}
                 </Button>
                 <Button type="submit" loading={loading}>
-                    {isEditing ? 'Update Employee' : 'Create Employee'}
+                    {isEditing ? t.employeeForm.buttons.update : t.employeeForm.buttons.create}
                 </Button>
             </div>
         </form>

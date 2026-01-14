@@ -92,6 +92,9 @@ builder.Services.AddScoped<IBankTransferService, BankTransferService>();
 builder.Services.AddScoped<NssfReportService>();
 builder.Services.AddScoped<PdfFormService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICompanySettingsService, CompanySettingsService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
 
 
 // CORS for frontend - allow all origins for development
@@ -141,7 +144,7 @@ using (var scope = app.Services.CreateScope())
     {
         // RESET DATABASE to apply new mock data (Wipe old data)
         // Remove this line later if you want to keep data between restarts
-        db.Database.EnsureDeleted(); 
+        // db.Database.EnsureDeleted();   
         
         db.Database.Migrate();
         DbSeeder.Seed(db);

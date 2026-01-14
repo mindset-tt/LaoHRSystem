@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { payrollApi, reportsApi } from '@/lib/endpoints';
 import type { PayrollPeriod } from '@/lib/types';
 import styles from './page.module.css';
 import { formatDate } from '@/lib/datetime';
 
 export default function ReportsPage() {
+    const { t } = useLanguage();
     const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
     const [loading, setLoading] = useState(true);
     const [nssfPeriod, setNssfPeriod] = useState<string>('');
@@ -56,8 +58,8 @@ export default function ReportsPage() {
     return (
         <div className={styles.container}>
             <div className={styles.header}>
-                <h1 className={styles.title}>Reports</h1>
-                <p className={styles.subtitle}>Generate and download HR and Payroll reports</p>
+                <h1 className={styles.title}>{t.reports.title}</h1>
+                <p className={styles.subtitle}>{t.reports.subtitle}</p>
             </div>
 
             <div className={styles.grid}>
@@ -66,13 +68,13 @@ export default function ReportsPage() {
                     <div className={styles.cardIcon}>
                         <FileTextIcon />
                     </div>
-                    <h3 className={styles.cardTitle}>NSSF Report</h3>
+                    <h3 className={styles.cardTitle}>{t.reports.nssf.title}</h3>
                     <p className={styles.cardDescription}>
-                        Generate standard NSSF contribution report (PDF) for a specific payroll period.
+                        {t.reports.nssf.description}
                     </p>
 
                     <div className={styles.formGroup}>
-                        <label className={styles.label}>Select Period</label>
+                        <label className={styles.label}>{t.reports.nssf.selectPeriod}</label>
                         <select
                             className={styles.select}
                             value={nssfPeriod}
@@ -94,7 +96,7 @@ export default function ReportsPage() {
                         className={styles.downloadBtn}
                     >
                         <DownloadIcon />
-                        Download PDF
+                        {t.reports.nssf.download}
                     </Button>
                 </div>
 
@@ -103,12 +105,12 @@ export default function ReportsPage() {
                     <div className={styles.cardIcon}>
                         <ChartIcon />
                     </div>
-                    <h3 className={styles.cardTitle}>Employee Statistics</h3>
+                    <h3 className={styles.cardTitle}>{t.reports.stats.title}</h3>
                     <p className={styles.cardDescription}>
-                        Overview of employee demographics, department distribution, and status.
+                        {t.reports.stats.description}
                     </p>
                     <Button variant="secondary" disabled>
-                        Coming Soon
+                        {t.reports.stats.comingSoon}
                     </Button>
                 </div>
             </div>

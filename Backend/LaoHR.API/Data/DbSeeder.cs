@@ -346,5 +346,75 @@ public static class DbSeeder
                 context.SaveChanges();
             }
         }
+            // 6. Seed Address Data (Provinces, Districts, Villages)
+        SeedAddresses(context);
+    }
+
+    private static void SeedAddresses(LaoHRDbContext context)
+    {
+        // Only seed if no provinces exist
+        if (context.Provinces.Any())
+        {
+            Console.WriteLine("Address data already exists. Skipping seed.");
+            return;
+        }
+
+        Console.WriteLine("Seeding Address Data from SQL Script...");
+        
+        try
+        {
+            // Path relative to LaoHR.API project execution directory
+            // We need to go up from Backend/LaoHR.API to root, then to Database/AddressinLao
+            var baseDir = AppContext.BaseDirectory; // This might be in bin/Debug/net...
+            // Let's try finding the solution root by traversing up
+            var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
+            // Navigate up to find 'Database' folder
+            string? sqlFilePath = null;
+            
+            // Search strategy: Check typical relative paths
+            string[] possiblePaths = new[]
+            {
+                Path.Combine(Directory.GetCurrentDirectory(), "../../Database/AddressinLao/data_sqlserver.sql"), // From Backend/LaoHR.API
+                Path.Combine(Directory.GetCurrentDirectory(), "../../../Database/AddressinLao/data_sqlserver.sql"),
+                Path.Combine(Directory.GetCurrentDirectory(), "Database/AddressinLao/data_sqlserver.sql"),
+                @"C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Database\AddressinLao\data_sqlserver.sql" // Fallback absolute path as per user env
+            };
+
+            foreach (var path in possiblePaths)
+            {
+                if (File.Exists(path))
+                {
+                    sqlFilePath = path;
+                    break;
+                }
+            }
+
+            if (sqlFilePath == null || !File.Exists(sqlFilePath))
+            {
+                Console.WriteLine("Could not find data_sqlserver.sql. Skipping address seed.");
+                return;
+            }
+
+            var sqlContent = File.ReadAllText(sqlFilePath);
+            
+            // Split by "GO" command (case insensitive, on its own line)
+            // Regex to find GO on a separate line
+            var batches = System.Text.RegularExpressions.Regex.Split(sqlContent, @"^\s*GO\s*$", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            foreach (var batch in batches)
+            {
+                var cmd = batch.Trim();
+                if (!string.IsNullOrWhiteSpace(cmd))
+                {
+                    context.Database.ExecuteSqlRaw(cmd);
+                }
+            }
+            
+            Console.WriteLine("Address data seeded successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error seeding address data: {ex.Message}");
+        }
     }
 }

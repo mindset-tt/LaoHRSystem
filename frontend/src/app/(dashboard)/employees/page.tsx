@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -18,6 +19,7 @@ import styles from './page.module.css';
  */
 export default function EmployeesPage() {
     const { role } = useAuth();
+    const { t, language } = useLanguage();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [departments, setDepartments] = useState<Department[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,14 +95,14 @@ export default function EmployeesPage() {
             {/* Header */}
             <div className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>Employees</h1>
+                    <h1 className={styles.title}>{t.employees.title}</h1>
                     <p className={styles.subtitle}>
-                        Manage your organization&apos;s workforce
+                        {t.employees.subtitle}
                     </p>
                 </div>
                 {canAddEmployee && (
                     <Link href="/employees/new">
-                        <Button leftIcon={<PlusIcon />}>Add Employee</Button>
+                        <Button leftIcon={<PlusIcon />}>{t.employees.addEmployee}</Button>
                     </Link>
                 )}
             </div>
@@ -110,7 +112,7 @@ export default function EmployeesPage() {
                 <div className={styles.filters}>
                     <div className={styles.searchWrapper}>
                         <Input
-                            placeholder="Search by name or code..."
+                            placeholder={t.employees.searchPlaceholder}
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             leftIcon={<SearchIcon />}
@@ -121,7 +123,7 @@ export default function EmployeesPage() {
                         value={departmentFilter}
                         onChange={(e) => setDepartmentFilter(e.target.value)}
                     >
-                        <option value="">All Departments</option>
+                        <option value="">{t.employees.filterDepartment}</option>
                         {departments.map((dept) => (
                             <option key={dept.departmentId} value={dept.departmentId}>
                                 {dept.departmentName}
@@ -133,9 +135,9 @@ export default function EmployeesPage() {
                         value={statusFilter}
                         onChange={(e) => setStatusFilter(e.target.value)}
                     >
-                        <option value="all">All Status</option>
-                        <option value="active">Active</option>
-                        <option value="inactive">Inactive</option>
+                        <option value="all">{t.employees.filterStatus}</option>
+                        <option value="active">{t.employees.statusActive}</option>
+                        <option value="inactive">{t.employees.statusInactive}</option>
                     </select>
                 </div>
             </Card>
@@ -151,11 +153,11 @@ export default function EmployeesPage() {
                         <div className={styles.emptyIcon}>
                             <UsersIcon />
                         </div>
-                        <h3 className={styles.emptyTitle}>No employees found</h3>
+                        <h3 className={styles.emptyTitle}>{t.employees.empty.title}</h3>
                         <p className={styles.emptyDescription}>
                             {search || departmentFilter
-                                ? 'Try adjusting your filters'
-                                : 'Add your first employee to get started'}
+                                ? t.employees.empty.description
+                                : t.employees.empty.descriptionInit}
                         </p>
                     </div>
                 ) : (
@@ -163,10 +165,10 @@ export default function EmployeesPage() {
                         <table className={styles.table}>
                             <thead>
                                 <tr>
-                                    <th>Employee</th>
-                                    <th>Department</th>
-                                    <th>Job Title</th>
-                                    <th>Status</th>
+                                    <th>{t.employees.table.employee}</th>
+                                    <th>{t.employees.table.department}</th>
+                                    <th>{t.employees.table.jobTitle}</th>
+                                    <th>{t.employees.table.status}</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -180,7 +182,7 @@ export default function EmployeesPage() {
                                                 </div>
                                                 <div className={styles.employeeInfo}>
                                                     <span className={styles.employeeName}>
-                                                        {employee.englishName || employee.laoName}
+                                                        {language === 'lo' ? employee.laoName : (employee.englishName || employee.laoName)}
                                                     </span>
                                                     <span className={styles.employeeCode}>
                                                         {employee.employeeCode}
@@ -203,13 +205,13 @@ export default function EmployeesPage() {
                                                 className={`${styles.status} ${employee.isActive ? styles.active : styles.inactive
                                                     }`}
                                             >
-                                                {employee.isActive ? 'Active' : 'Inactive'}
+                                                {employee.isActive ? t.employees.statusActive : t.employees.statusInactive}
                                             </span>
                                         </td>
                                         <td>
                                             <Link href={`/employees/${employee.employeeId}`}>
                                                 <button className={styles.viewButton}>
-                                                    View
+                                                    {t.employees.table.view}
                                                 </button>
                                             </Link>
                                         </td>
@@ -224,7 +226,9 @@ export default function EmployeesPage() {
             {/* Results count */}
             {!loading && (
                 <p className={styles.resultCount}>
-                    Showing {filteredEmployees.length} of {employees.length} employees
+                    {t.employees.results
+                        .replace('{count}', filteredEmployees.length.toString())
+                        .replace('{total}', employees.length.toString())}
                 </p>
             )}
         </div>

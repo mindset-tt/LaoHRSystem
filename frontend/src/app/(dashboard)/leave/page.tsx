@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { LeaveRequestForm } from '@/components/forms/LeaveRequestForm';
+import { LeaveCalendar } from '@/components/leave/LeaveCalendar';
 import { leaveApi } from '@/lib/endpoints';
 import { formatDate, formatRelativeTime } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
@@ -18,21 +20,43 @@ import styles from './page.module.css';
  */
 export default function LeavePage() {
     const { role } = useAuth();
+    const { t } = useLanguage();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'my-leave' | 'approvals'>('my-leave');
+    const [activeTab, setActiveTab] = useState<'my-leave' | 'approvals' | 'calendar'>('my-leave');
     const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [actionLoading, setActionLoading] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
 
     const canApprove = isHROrAdmin(role);
 
-    // Leave balances (could be fetched from API if endpoint exists)
-    const leaveBalances = {
-        annual: { used: 5, total: 15 },
-        sick: { used: 2, total: 10 },
-        personal: { used: 1, total: 3 },
+    // Leave quotas per person
+    const LEAVE_QUOTAS = {
+        ANNUAL: 15,
+        SICK: 30,
+        PERSONAL: 3,
     };
+
+    // Calculate leave balances from loaded leave requests (per person)
+    const leaveBalances = useMemo(() => {
+        const currentYear = new Date().getFullYear();
+
+        // Filter to approved leaves in current year (used days)
+        const approvedLeaves = leaveRequests.filter(
+            (r) => r.status === 'APPROVED' && new Date(r.startDate).getFullYear() === currentYear
+        );
+
+        const usedAnnual = approvedLeaves.filter(r => r.leaveType === 'ANNUAL').reduce((sum, r) => sum + r.totalDays, 0);
+        const usedSick = approvedLeaves.filter(r => r.leaveType === 'SICK').reduce((sum, r) => sum + r.totalDays, 0);
+        const usedPersonal = approvedLeaves.filter(r => r.leaveType === 'PERSONAL').reduce((sum, r) => sum + r.totalDays, 0);
+
+        return {
+            annual: { used: usedAnnual, total: LEAVE_QUOTAS.ANNUAL },
+            sick: { used: usedSick, total: LEAVE_QUOTAS.SICK },
+            personal: { used: usedPersonal, total: LEAVE_QUOTAS.PERSONAL },
+        };
+    }, [leaveRequests]);
 
     const loadLeaveRequests = useCallback(async () => {
         try {
@@ -41,11 +65,11 @@ export default function LeavePage() {
             setLeaveRequests(data);
         } catch (err) {
             console.error('Failed to load leave requests:', err);
-            setError('Failed to load leave requests. Please try again.');
+            setError(t.common.error);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t.common.error]);
 
     useEffect(() => {
         loadLeaveRequests();
@@ -63,7 +87,7 @@ export default function LeavePage() {
             await loadLeaveRequests();
         } catch (err) {
             console.error('Failed to approve leave:', err);
-            setError('Failed to approve leave request');
+            setError(t.common.error);
         } finally {
             setActionLoading(null);
         }
@@ -76,9 +100,29 @@ export default function LeavePage() {
             await loadLeaveRequests();
         } catch (err) {
             console.error('Failed to reject leave:', err);
-            setError('Failed to reject leave request');
+            setError(t.common.error);
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            const blob = await leaveApi.exportHistory();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `LeaveHistory_${new Date().getFullYear()}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            a.remove();
+        } catch (err) {
+            console.error('Export failed:', err);
+            setError(t.common.error);
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -89,19 +133,34 @@ export default function LeavePage() {
     );
     const pendingApprovals = leaveRequests.filter((r) => r.status === 'PENDING');
 
+    const getLeaveStatusLabel = (status: string) => {
+        const key = status.toLowerCase() as keyof typeof t.leave.status;
+        return t.leave.status[key] || status;
+    };
+
+    const getLeaveTypeLabel = (type: string) => {
+        const key = type.toLowerCase() as keyof typeof t.leave.form.types;
+        return t.leave.form.types[key] || type;
+    };
+
     return (
         <div className={styles.page}>
             {/* Header */}
             <div className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>Leave Management</h1>
+                    <h1 className={styles.title}>{t.leave.title}</h1>
                     <p className={styles.subtitle}>
-                        Request time off and manage leave approvals
+                        {t.leave.subtitle}
                     </p>
                 </div>
-                <Button leftIcon={<PlusIcon />} onClick={() => setShowRequestModal(true)}>
-                    Request Leave
-                </Button>
+                <div className={styles.headerActions}>
+                    <Button variant="secondary" onClick={handleExport} loading={exporting}>
+                        📥 {t.leave.export || 'Export'}
+                    </Button>
+                    <Button leftIcon={<PlusIcon />} onClick={() => setShowRequestModal(true)}>
+                        {t.leave.requestLeave}
+                    </Button>
+                </div>
             </div>
 
             {/* Error Alert */}
@@ -115,124 +174,144 @@ export default function LeavePage() {
             {/* Leave Balances */}
             <div className={styles.balanceGrid}>
                 <BalanceCard
-                    type="Annual Leave"
+                    type={t.leave.balances.annual}
                     used={leaveBalances.annual.used}
                     total={leaveBalances.annual.total}
                     color="primary"
+                    t={t}
                 />
                 <BalanceCard
-                    type="Sick Leave"
+                    type={t.leave.balances.sick}
                     used={leaveBalances.sick.used}
                     total={leaveBalances.sick.total}
                     color="warning"
+                    t={t}
                 />
                 <BalanceCard
-                    type="Personal Leave"
+                    type={t.leave.balances.personal}
                     used={leaveBalances.personal.used}
                     total={leaveBalances.personal.total}
                     color="accent"
+                    t={t}
                 />
             </div>
 
             {/* Tabs */}
-            {canApprove && (
-                <div className={styles.tabs}>
-                    <button
-                        className={`${styles.tab} ${activeTab === 'my-leave' ? styles.activeTab : ''}`}
-                        onClick={() => setActiveTab('my-leave')}
-                    >
-                        All Requests
-                    </button>
+            <div className={styles.tabs}>
+                <button
+                    className={`${styles.tab} ${activeTab === 'my-leave' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('my-leave')}
+                >
+                    {t.leave.tabs.myLeave}
+                </button>
+                {canApprove && (
                     <button
                         className={`${styles.tab} ${activeTab === 'approvals' ? styles.activeTab : ''}`}
                         onClick={() => setActiveTab('approvals')}
                     >
-                        Pending Approvals
+                        {t.leave.tabs.approvals}
                         {pendingApprovals.length > 0 && (
                             <span className={styles.badge}>{pendingApprovals.length}</span>
                         )}
                     </button>
-                </div>
+                )}
+                <button
+                    className={`${styles.tab} ${activeTab === 'calendar' ? styles.activeTab : ''}`}
+                    onClick={() => setActiveTab('calendar')}
+                >
+                    📅 {t.leave.tabs.calendar || 'Calendar'}
+                </button>
+            </div>
+
+            {/* Calendar View */}
+            {activeTab === 'calendar' && (
+                <Card>
+                    <LeaveCalendar />
+                </Card>
             )}
 
             {/* Leave Requests */}
-            <Card noPadding>
-                {loading ? (
-                    <div className={styles.loading}>
-                        <Skeleton height={200} />
-                    </div>
-                ) : (
-                    <div className={styles.requestList}>
-                        {(activeTab === 'my-leave' ? leaveRequests : pendingApprovals).length === 0 ? (
-                            <div className={styles.emptyState}>
-                                <CalendarIcon />
-                                <p>No {activeTab === 'my-leave' ? 'leave requests' : 'pending approvals'}</p>
-                            </div>
-                        ) : (
-                            (activeTab === 'my-leave' ? leaveRequests : pendingApprovals).map((request) => (
-                                <div key={request.leaveId} className={styles.requestCard}>
-                                    <div className={styles.requestHeader}>
-                                        <div className={styles.requestType}>
-                                            <span className={`${styles.typeTag} ${styles[request.leaveType.toLowerCase()]}`}>
-                                                {request.leaveType}
-                                            </span>
-                                            <span className={styles.requestDays}>{request.totalDays} day(s)</span>
-                                        </div>
-                                        <span className={`${styles.statusTag} ${styles[request.status.toLowerCase()]}`}>
-                                            {request.status}
-                                        </span>
-                                    </div>
-
-                                    <div className={styles.requestDates}>
-                                        <CalendarSmallIcon />
-                                        {formatDate(request.startDate)}
-                                        {request.startDate !== request.endDate && (
-                                            <> → {formatDate(request.endDate)}</>
-                                        )}
-                                    </div>
-
-                                    {request.reason && (
-                                        <p className={styles.requestReason}>{request.reason}</p>
-                                    )}
-
-                                    <div className={styles.requestFooter}>
-                                        {request.employee && (
-                                            <span className={styles.requestEmployee}>
-                                                {request.employee.englishName || request.employee.laoName}
-                                            </span>
-                                        )}
-                                        <span className={styles.requestTime}>
-                                            {formatRelativeTime(request.createdAt)}
-                                        </span>
-                                    </div>
-
-                                    {canApprove && request.status === 'PENDING' && (
-                                        <div className={styles.requestActions}>
-                                            <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                onClick={() => handleReject(request.leaveId)}
-                                                loading={actionLoading === request.leaveId}
-                                                disabled={actionLoading !== null}
-                                            >
-                                                Reject
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleApprove(request.leaveId)}
-                                                loading={actionLoading === request.leaveId}
-                                                disabled={actionLoading !== null}
-                                            >
-                                                Approve
-                                            </Button>
-                                        </div>
-                                    )}
+            {activeTab !== 'calendar' && (
+                <Card noPadding>
+                    {loading ? (
+                        <div className={styles.loading}>
+                            <Skeleton height={200} />
+                        </div>
+                    ) : (
+                        <div className={styles.requestList}>
+                            {(activeTab === 'my-leave' ? leaveRequests : pendingApprovals).length === 0 ? (
+                                <div className={styles.emptyState}>
+                                    <CalendarIcon />
+                                    <p>{activeTab === 'my-leave' ? t.leave.requests.empty : t.leave.requests.emptyApprovals}</p>
                                 </div>
-                            ))
-                        )}
-                    </div>
-                )}
-            </Card>
+                            ) : (
+                                (activeTab === 'my-leave' ? leaveRequests : pendingApprovals).map((request) => (
+                                    <div key={request.leaveId} className={styles.requestCard}>
+                                        <div className={styles.requestHeader}>
+                                            <div className={styles.requestType}>
+                                                <span className={`${styles.typeTag} ${styles[request.leaveType.toLowerCase()]}`}>
+                                                    {getLeaveTypeLabel(request.leaveType)}
+                                                </span>
+                                                <span className={styles.requestDays}>
+                                                    {request.totalDays} {request.totalDays === 1 ? t.leave.requests.day : t.leave.requests.days}
+                                                </span>
+                                            </div>
+                                            <span className={`${styles.statusTag} ${styles[request.status.toLowerCase()]}`}>
+                                                {getLeaveStatusLabel(request.status)}
+                                            </span>
+                                        </div>
+
+                                        <div className={styles.requestDates}>
+                                            <CalendarSmallIcon />
+                                            {formatDate(request.startDate)}
+                                            {request.startDate !== request.endDate && (
+                                                <> → {formatDate(request.endDate)}</>
+                                            )}
+                                        </div>
+
+                                        {request.reason && (
+                                            <p className={styles.requestReason}>{request.reason}</p>
+                                        )}
+
+                                        <div className={styles.requestFooter}>
+                                            {request.employee && (
+                                                <span className={styles.requestEmployee}>
+                                                    {request.employee.englishName || request.employee.laoName}
+                                                </span>
+                                            )}
+                                            <span className={styles.requestTime}>
+                                                {formatRelativeTime(request.createdAt)}
+                                            </span>
+                                        </div>
+
+                                        {canApprove && request.status === 'PENDING' && (
+                                            <div className={styles.requestActions}>
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    onClick={() => handleReject(request.leaveId)}
+                                                    loading={actionLoading === request.leaveId}
+                                                    disabled={actionLoading !== null}
+                                                >
+                                                    {t.leave.requests.reject}
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => handleApprove(request.leaveId)}
+                                                    loading={actionLoading === request.leaveId}
+                                                    disabled={actionLoading !== null}
+                                                >
+                                                    {t.leave.requests.approve}
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    )}
+                </Card>
+            )}
 
             {/* Request Leave Modal */}
             <LeaveRequestForm
@@ -250,11 +329,13 @@ function BalanceCard({
     used,
     total,
     color,
+    t,
 }: {
     type: string;
     used: number;
     total: number;
     color: 'primary' | 'warning' | 'accent';
+    t: any;
 }) {
     const remaining = total - used;
     const percentage = (used / total) * 100;
@@ -265,7 +346,7 @@ function BalanceCard({
                 <span className={styles.balanceType}>{type}</span>
                 <div className={styles.balanceNumbers}>
                     <span className={styles.balanceRemaining}>{remaining}</span>
-                    <span className={styles.balanceTotal}>/ {total} days</span>
+                    <span className={styles.balanceTotal}>/ {total} {t.leave.balances.days}</span>
                 </div>
                 <div className={styles.progressBar}>
                     <div
@@ -273,7 +354,7 @@ function BalanceCard({
                         style={{ width: `${percentage}%` }}
                     />
                 </div>
-                <span className={styles.balanceUsed}>{used} days used</span>
+                <span className={styles.balanceUsed}>{used} {t.leave.balances.used}</span>
             </div>
         </Card>
     );

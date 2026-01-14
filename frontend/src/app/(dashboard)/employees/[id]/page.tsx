@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MaskedField } from '@/components/ui/MaskedField';
@@ -20,6 +21,7 @@ import styles from './page.module.css';
 export default function EmployeeDetailPage() {
     const params = useParams();
     const { role } = useAuth();
+    const { t } = useLanguage();
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'personal' | 'employment' | 'documents'>('personal');
@@ -87,9 +89,9 @@ export default function EmployeeDetailPage() {
         return (
             <div className={styles.page}>
                 <div className={styles.notFound}>
-                    <h2>Employee not found</h2>
+                    <h2>{t.employeeDetail.notFound}</h2>
                     <Link href="/employees">
-                        <Button>Back to Employees</Button>
+                        <Button>{t.employeeDetail.back}</Button>
                     </Link>
                 </div>
             </div>
@@ -102,7 +104,7 @@ export default function EmployeeDetailPage() {
             <div className={styles.header}>
                 <div className={styles.breadcrumbs}>
                     <Link href="/employees" className={styles.breadcrumbLink}>
-                        Employees
+                        {t.employees.title}
                     </Link>
                     <span className={styles.breadcrumbSeparator}>/</span>
                     <span className={styles.breadcrumbCurrent}>{employee.englishName}</span>
@@ -110,7 +112,7 @@ export default function EmployeeDetailPage() {
                 {canEdit && (
                     <Link href={`/employees/${employeeId}/edit`}>
                         <Button variant="secondary" leftIcon={<EditIcon />}>
-                            Edit Employee
+                            {t.employeeDetail.edit}
                         </Button>
                     </Link>
                 )}
@@ -132,7 +134,7 @@ export default function EmployeeDetailPage() {
                             <span className={styles.dot}>•</span>
                             <span className={styles.jobTitle}>{employee.jobTitle}</span>
                             <span className={`${styles.status} ${employee.isActive ? styles.active : styles.inactive}`}>
-                                {employee.isActive ? 'Active' : 'Inactive'}
+                                {employee.isActive ? t.employeeDetail.status.active : t.employeeDetail.status.inactive}
                             </span>
                         </div>
                     </div>
@@ -145,19 +147,19 @@ export default function EmployeeDetailPage() {
                     className={`${styles.tab} ${activeTab === 'personal' ? styles.activeTab : ''}`}
                     onClick={() => setActiveTab('personal')}
                 >
-                    Personal Info
+                    {t.employeeDetail.tabs.personal}
                 </button>
                 <button
                     className={`${styles.tab} ${activeTab === 'employment' ? styles.activeTab : ''}`}
                     onClick={() => setActiveTab('employment')}
                 >
-                    Employment
+                    {t.employeeDetail.tabs.employment}
                 </button>
                 <button
                     className={`${styles.tab} ${activeTab === 'documents' ? styles.activeTab : ''}`}
                     onClick={() => setActiveTab('documents')}
                 >
-                    Documents
+                    {t.employeeDetail.tabs.documents}
                 </button>
             </div>
 
@@ -166,19 +168,19 @@ export default function EmployeeDetailPage() {
                 <div className={styles.tabContent}>
                     {activeTab === 'personal' && (
                         <div className={styles.infoGrid}>
-                            <InfoItem label="Email" value={employee.email || '-'} />
-                            <InfoItem label="Phone" value={employee.phone || '-'} />
-                            <InfoItem label="Date of Birth" value={employee.dateOfBirth ? formatDate(employee.dateOfBirth) : '-'} />
-                            <InfoItem label="Gender" value={employee.gender || '-'} />
-                            <InfoItem label="Dependents" value={employee.dependentCount.toString()} />
+                            <InfoItem label={t.employeeForm.fields.email} value={employee.email || '-'} />
+                            <InfoItem label={t.employeeForm.fields.phone} value={employee.phone || '-'} />
+                            <InfoItem label={t.employeeForm.fields.dob} value={employee.dateOfBirth ? formatDate(employee.dateOfBirth) : '-'} />
+                            <InfoItem label={t.employeeForm.fields.gender} value={employee.gender || '-'} />
+                            <InfoItem label={t.employeeForm.fields.dependents} value={employee.dependentCount.toString()} />
                             <div />
                             {/* Sensitive Data - Masked */}
                             <div className={styles.sensitiveSection}>
-                                <h3 className={styles.sectionTitle}>Financial Information</h3>
+                                <h3 className={styles.sectionTitle}>{t.employeeDetail.sections.financial}</h3>
                                 <div className={styles.sensitiveGrid}>
-                                    <MaskedField label="Bank Account" value={employee.bankAccount || ''} />
-                                    <MaskedField label="NSSF ID" value={employee.nssfId || ''} />
-                                    <MaskedField label="Tax ID" value={employee.taxId || ''} />
+                                    <MaskedField label={t.employeeForm.fields.bankAccount} value={employee.bankAccount || ''} />
+                                    <MaskedField label={t.employeeDetail.labels.nssfId} value={employee.nssfId || ''} />
+                                    <MaskedField label={t.employeeDetail.labels.taxId} value={employee.taxId || ''} />
                                 </div>
                             </div>
                         </div>
@@ -186,18 +188,18 @@ export default function EmployeeDetailPage() {
 
                     {activeTab === 'employment' && (
                         <div className={styles.infoGrid}>
-                            <InfoItem label="Employee Code" value={employee.employeeCode} />
-                            <InfoItem label="Department" value={employee.department?.departmentName || '-'} />
-                            <InfoItem label="Job Title" value={employee.jobTitle || '-'} />
-                            <InfoItem label="Hire Date" value={employee.hireDate ? formatDate(employee.hireDate) : '-'} />
-                            <InfoItem label="Status" value={employee.isActive ? 'Active' : 'Inactive'} />
+                            <InfoItem label={t.employeeForm.fields.employeeCode} value={employee.employeeCode} />
+                            <InfoItem label={t.employeeForm.fields.department} value={employee.department?.departmentName || '-'} />
+                            <InfoItem label={t.employeeForm.fields.jobTitle} value={employee.jobTitle || '-'} />
+                            <InfoItem label={t.employeeForm.fields.hireDate} value={employee.hireDate ? formatDate(employee.hireDate) : '-'} />
+                            <InfoItem label={t.employees.table.status} value={employee.isActive ? t.employeeDetail.status.active : t.employeeDetail.status.inactive} />
                             <div />
                             {/* Salary - Masked */}
                             <div className={styles.sensitiveSection}>
-                                <h3 className={styles.sectionTitle}>Compensation</h3>
+                                <h3 className={styles.sectionTitle}>{t.employeeDetail.sections.compensation}</h3>
                                 <div className={styles.sensitiveGrid}>
                                     <MaskedField
-                                        label="Base Salary"
+                                        label={t.employeeForm.fields.baseSalary}
                                         value={`${employee.baseSalary.toLocaleString()} ${employee.salaryCurrency}`}
                                     />
                                 </div>
@@ -208,18 +210,18 @@ export default function EmployeeDetailPage() {
                     {activeTab === 'documents' && (
                         <div className={styles.documentsTab}>
                             <p className={styles.emptyDocuments}>
-                                No documents uploaded yet.
+                                {t.employeeDetail.documents.empty}
                             </p>
                             {canEdit && (
                                 <Button variant="secondary" leftIcon={<UploadIcon />}>
-                                    Upload Document
+                                    {t.employeeDetail.documents.upload}
                                 </Button>
                             )}
                         </div>
                     )}
                 </div>
             </Card>
-        </div>
+        </div >
     );
 }
 

@@ -8,6 +8,7 @@ using iText.Kernel.Font;
 using iText.Layout;
 using iText.Layout.Element;
 using Microsoft.EntityFrameworkCore;
+using LaoHR.Shared.Models;
 
 namespace LaoHR.API.Services;
 
@@ -38,6 +39,15 @@ public class PdfFormService
         var totalEmp = slips.Sum(s => s.NssfEmployeeDeduction);
         var totalEr = slips.Sum(s => s.NssfEmployerContribution);
         var totalAll = totalEmp + totalEr;
+        
+        // Fetch Company Settings
+        var company = await _context.CompanySettings
+            .Include(c => c.Village)
+            .Include(c => c.District)
+            .Include(c => c.Province)
+            .FirstOrDefaultAsync();
+
+        if (company == null) company = new CompanySetting(); // Fallback to empty if not set
 
         using var outputStream = new MemoryStream();
         
@@ -51,9 +61,6 @@ public class PdfFormService
         
         FontProgram fontProgram = FontProgramFactory.CreateFont(_fontPath);
 
-        // Use standard font for numbers (safe)
-        // For Lao text we would need the .ttf file loaded
-        // var font = iText.Kernel.Font.PdfFontFactory.CreateFont(_fontPath, iText.IO.Font.Constants.StandardFonts.HELVETICA);
         // Create font with embedding (Strategy: Parse file, then create font)
         // var font = PdfFontFactory.CreateFont(_fontPath, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.FORCE_EMBEDDED);
         // For iText 7.x, the signature is typically (program, encoding, embedded)
@@ -92,6 +99,20 @@ public class PdfFormService
         // or put the number in parentheses if preferred.
         DrawText(canvas, $"{LaoNumberUtils.NumberToKipWords(totalAll):N0}", 180, 354); 
 
+        // --- Company Information (Added as requested) ---
+        // TODO: User to adjust positions (X, Y)
+        DrawText(canvas, company.CompanyNameLao ?? "", 120, 540);
+        // Draw LSSO Code with spacing (adjust spacing '15' and size '13' as needed to fit boxes)
+        DrawSpacedText(canvas, company.LSSOCode ?? "", 425, 537, font, 13, 18);
+        DrawText(canvas, company.Tel ?? "", 100, 515);
+        DrawText(canvas, company.Phone ?? "", 245, 515);
+        DrawText(canvas, company.Email ?? "", 420, 515);
+        
+        // Address
+        DrawText(canvas, company.Village?.VillName ?? "", 120, 490);
+        DrawText(canvas, company.District?.DiName ?? "", 270, 490);
+        DrawText(canvas, company.Province?.PrName ?? "", 420, 490); 
+
         pdfDoc.Close();
         
         return outputStream.ToArray();
@@ -103,5 +124,25 @@ public class PdfFormService
         canvas.MoveText(x, y);
         canvas.ShowText(text);
         canvas.EndText();
+    }
+
+    private void DrawSpacedText(PdfCanvas canvas, string text, float x, float y, PdfFont font, float fontSize, float charSpacing)
+    {
+        canvas.SaveState();
+        canvas.SetFontAndSize(font, fontSize);
+        
+        float currentX = x;
+        if (!string.IsNullOrEmpty(text))
+        {
+            foreach (char c in text)
+            {
+                canvas.BeginText();
+                canvas.MoveText(currentX, y);
+                canvas.ShowText(c.ToString());
+                canvas.EndText();
+                currentX += charSpacing;
+            }
+        }
+        canvas.RestoreState();
     }
 }
