@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useLanguage } from '@/components/providers/LanguageProvider';
+
+// ... (keep imports)
+
 import { useAuth } from '@/components/providers/AuthProvider';
 import styles from './Sidebar.module.css';
 
@@ -13,55 +17,52 @@ interface NavItem {
     permission?: string;
 }
 
-const navItems: NavItem[] = [
-    {
-        label: 'Dashboard',
-        href: '/',
-        icon: <DashboardIcon />,
-    },
-    {
-        label: 'Employees',
-        href: '/employees',
-        icon: <UsersIcon />,
-    },
-    {
-        label: 'Attendance',
-        href: '/attendance',
-        icon: <ClockIcon />,
-    },
-    {
-        label: 'Leave',
-        href: '/leave',
-        icon: <CalendarIcon />,
-    },
-    {
-        label: 'Payroll',
-        href: '/payroll',
-        icon: <WalletIcon />,
-        permission: 'payroll.view',
-    },
-    {
-        label: 'Reports',
-        href: '/reports',
-        icon: <ChartIcon />,
-        permission: 'payroll.view',
-    },
-    {
-        label: 'Settings',
-        href: '/settings',
-        icon: <SettingsIcon />,
-        permission: 'settings.edit',
-    },
-];
-
-/**
- * Sidebar Navigation Component
- * Responsive with collapse functionality
- */
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
     const pathname = usePathname();
     const { user, logout, can } = useAuth();
+    const { t } = useLanguage();
+
+    const navItems: NavItem[] = [
+        {
+            label: t.sidebar.dashboard,
+            href: '/',
+            icon: <DashboardIcon />,
+        },
+        {
+            label: t.sidebar.employees,
+            href: '/employees',
+            icon: <UsersIcon />,
+        },
+        {
+            label: t.sidebar.attendance,
+            href: '/attendance',
+            icon: <ClockIcon />,
+        },
+        {
+            label: t.sidebar.leave,
+            href: '/leave',
+            icon: <CalendarIcon />,
+        },
+        {
+            label: t.sidebar.payroll,
+            href: '/payroll',
+            icon: <WalletIcon />,
+            permission: 'payroll.view',
+        },
+        {
+            label: t.sidebar.reports,
+            href: '/reports',
+            icon: <ChartIcon />,
+            permission: 'payroll.view',
+        },
+        {
+            label: t.sidebar.settings,
+            href: '/settings/company',
+            icon: <SettingsIcon />,
+            permission: 'settings.edit',
+        },
+    ];
 
     const filteredNavItems = navItems.filter((item) => {
         if (!item.permission) return true;
@@ -94,7 +95,7 @@ export function Sidebar() {
                 <button
                     className={styles.collapseButton}
                     onClick={() => setCollapsed(!collapsed)}
-                    aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                    aria-label={collapsed ? t.sidebar.expand : t.sidebar.collapse}
                 >
                     <ChevronIcon direction={collapsed ? 'right' : 'left'} />
                 </button>
@@ -139,7 +140,7 @@ export function Sidebar() {
                 <button
                     className={styles.logoutButton}
                     onClick={logout}
-                    title="Logout"
+                    title={t.common.logout}
                 >
                     <LogoutIcon />
                 </button>

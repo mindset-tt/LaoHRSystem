@@ -1,6 +1,8 @@
 'use client';
 
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
+import { LanguageSelector } from '@/components/ui/LanguageSelector';
 import styles from './Header.module.css';
 
 interface HeaderProps {
@@ -18,8 +20,14 @@ interface HeaderProps {
  */
 export function Header({ title, breadcrumbs, actions }: HeaderProps) {
     const { user } = useAuth();
+    const { t } = useLanguage();
 
-    const greeting = getGreeting();
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return t.dashboardPage.greetings.morning;
+        if (hour < 17) return t.dashboardPage.greetings.afternoon;
+        return t.dashboardPage.greetings.evening;
+    };
 
     return (
         <header className={styles.header}>
@@ -43,7 +51,7 @@ export function Header({ title, breadcrumbs, actions }: HeaderProps) {
                     <h1 className={styles.title}>{title}</h1>
                 ) : (
                     <div className={styles.greeting}>
-                        <span className={styles.greetingText}>{greeting}</span>
+                        <span className={styles.greetingText}>{getGreeting()},</span>
                         {user && (
                             <span className={styles.userName}>{user.displayName}</span>
                         )}
@@ -51,18 +59,11 @@ export function Header({ title, breadcrumbs, actions }: HeaderProps) {
                 )}
             </div>
 
-            {actions && <div className={styles.actions}>{actions}</div>}
+            {actions ? <div className={styles.actions}>{actions}</div> : (
+                <div className={styles.actions}>
+                    <LanguageSelector />
+                </div>
+            )}
         </header>
     );
-}
-
-/**
- * Get greeting based on time of day (Lao timezone)
- */
-function getGreeting(): string {
-    const hour = new Date().getHours();
-
-    if (hour < 12) return 'Good morning,';
-    if (hour < 17) return 'Good afternoon,';
-    return 'Good evening,';
 }

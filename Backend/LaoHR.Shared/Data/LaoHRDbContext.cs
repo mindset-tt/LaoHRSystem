@@ -16,11 +16,17 @@ public class LaoHRDbContext : DbContext
     public DbSet<PayrollPeriod> PayrollPeriods { get; set; }
     public DbSet<SalarySlip> SalarySlips { get; set; }
     public DbSet<LeaveRequest> LeaveRequests { get; set; }
+    public DbSet<LeavePolicy> LeavePolicies { get; set; }
+    public DbSet<LeaveBalance> LeaveBalances { get; set; }
     public DbSet<TaxBracket> TaxBrackets { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<Holiday> Holidays { get; set; }
     public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<CompanySetting> CompanySettings { get; set; }
+    public DbSet<Province> Provinces { get; set; }
+    public DbSet<District> Districts { get; set; }
+    public DbSet<Village> Villages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -47,6 +53,26 @@ public class LaoHRDbContext : DbContext
         modelBuilder.Entity<Holiday>()
             .HasIndex(h => h.Date)
             .IsUnique();
+        
+        // Leave policy unique constraint
+        modelBuilder.Entity<LeavePolicy>()
+            .HasIndex(lp => lp.LeaveType)
+            .IsUnique();
+        
+        // Leave balance unique constraint (one balance per employee/type/year)
+        modelBuilder.Entity<LeaveBalance>()
+            .HasIndex(lb => new { lb.EmployeeId, lb.LeaveType, lb.Year })
+            .IsUnique();
+        
+        // Seed default leave policies
+        modelBuilder.Entity<LeavePolicy>().HasData(
+            new LeavePolicy { LeavePolicyId = 1, LeaveType = "ANNUAL", LeaveTypeLao = "ພັກປະຈຳປີ", AnnualQuota = 15, MaxCarryOver = 5, AccrualPerMonth = 1.25m, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 2, LeaveType = "SICK", LeaveTypeLao = "ພັກປ່ວຍ", AnnualQuota = 30, MaxCarryOver = 0, RequiresAttachment = true, MinDaysForAttachment = 3, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 3, LeaveType = "PERSONAL", LeaveTypeLao = "ພັກສ່ວນຕົວ", AnnualQuota = 3, MaxCarryOver = 0, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 4, LeaveType = "MATERNITY", LeaveTypeLao = "ພັກເກີດລູກ", AnnualQuota = 90, MaxCarryOver = 0, AllowHalfDay = false },
+            new LeavePolicy { LeavePolicyId = 5, LeaveType = "PATERNITY", LeaveTypeLao = "ພັກພໍ່ເກີດລູກ", AnnualQuota = 15, MaxCarryOver = 0, AllowHalfDay = false },
+            new LeavePolicy { LeavePolicyId = 6, LeaveType = "UNPAID", LeaveTypeLao = "ພັກບໍ່ໄດ້ເງິນ", AnnualQuota = 365, MaxCarryOver = 0, AllowHalfDay = false }
+        );
         
         // Seed default tax brackets (Lao PIT)
         modelBuilder.Entity<TaxBracket>().HasData(

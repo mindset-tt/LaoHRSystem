@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { EmployeeForm } from '@/components/forms/EmployeeForm';
 import { isHROrAdmin } from '@/lib/permissions';
 import { useRouter } from 'next/navigation';
@@ -14,6 +15,7 @@ import styles from './page.module.css';
  */
 export default function NewEmployeePage() {
     const { role, loading } = useAuth();
+    const { t } = useLanguage();
     const router = useRouter();
     const canAdd = isHROrAdmin(role);
 
@@ -33,16 +35,16 @@ export default function NewEmployeePage() {
             <div className={styles.header}>
                 <div className={styles.breadcrumbs}>
                     <Link href="/employees" className={styles.breadcrumbLink}>
-                        Employees
+                        {t.employees.title}
                     </Link>
                     <span className={styles.breadcrumbSeparator}>/</span>
-                    <span className={styles.breadcrumbCurrent}>New Employee</span>
+                    <span className={styles.breadcrumbCurrent}>{t.employeeForm.createTitle}</span>
                 </div>
             </div>
 
-            <h1 className={styles.title}>Add New Employee</h1>
+            <h1 className={styles.title}>{t.employeeForm.createTitle}</h1>
             <p className={styles.subtitle}>
-                Fill in the information below to create a new employee record
+                {t.employeeForm.subtitle}
             </p>
 
             <EmployeeForm />

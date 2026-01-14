@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -17,6 +18,7 @@ import styles from './page.module.css';
  */
 export default function AttendancePage() {
     const { role } = useAuth();
+    const { t, language } = useLanguage();
     const [view, setView] = useState<'calendar' | 'list'>('calendar');
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(getCurrentLaoDate());
@@ -55,11 +57,11 @@ export default function AttendancePage() {
             setTodayAttendance(today);
         } catch (err) {
             console.error('Failed to load attendance:', err);
-            setError('Failed to load attendance records');
+            setError(t.common.error);
         } finally {
             setLoading(false);
         }
-    }, [currentMonth, currentYear]);
+    }, [currentMonth, currentYear, t.common.error]);
 
     useEffect(() => {
         loadData();
@@ -89,7 +91,7 @@ export default function AttendancePage() {
             await loadData();
         } catch (err) {
             console.error('Clock in failed:', err);
-            setError(err instanceof Error ? err.message : 'Failed to clock in');
+            setError(err instanceof Error ? err.message : t.common.error);
         } finally {
             setActionLoading(false);
         }
@@ -116,7 +118,7 @@ export default function AttendancePage() {
             await loadData();
         } catch (err) {
             console.error('Clock out failed:', err);
-            setError(err instanceof Error ? err.message : 'Failed to clock out');
+            setError(err instanceof Error ? err.message : t.common.error);
         } finally {
             setActionLoading(false);
         }
@@ -165,9 +167,9 @@ export default function AttendancePage() {
             {/* Header */}
             <div className={styles.header}>
                 <div>
-                    <h1 className={styles.title}>Attendance</h1>
+                    <h1 className={styles.title}>{t.attendance.title}</h1>
                     <p className={styles.subtitle}>
-                        Track employee attendance and work hours
+                        {t.attendance.subtitle}
                     </p>
                 </div>
                 <div className={styles.viewToggle}>
@@ -176,14 +178,14 @@ export default function AttendancePage() {
                         onClick={() => setView('calendar')}
                     >
                         <CalendarIcon />
-                        Calendar
+                        {t.attendance.viewCalendar}
                     </button>
                     <button
                         className={`${styles.toggleBtn} ${view === 'list' ? styles.active : ''}`}
                         onClick={() => setView('list')}
                     >
                         <ListIcon />
-                        List
+                        {t.attendance.viewList}
                     </button>
                 </div>
             </div>
@@ -199,7 +201,7 @@ export default function AttendancePage() {
             {/* Today's Status Card */}
             <div className={styles.statusCard}>
                 <div className={styles.statusInfo}>
-                    <h2 className={styles.statusTitle}>Today&apos;s Status</h2>
+                    <h2 className={styles.statusTitle}>{t.attendance.todayStatus}</h2>
                     <span className={styles.statusText}>
                         {formatDate(new Date().toISOString())}
                     </span>
@@ -207,17 +209,17 @@ export default function AttendancePage() {
                         <div className={styles.attendanceDetails}>
                             {todayAttendance.clockIn && (
                                 <span className={styles.statusText}>
-                                    Clocked In: {formatTime(todayAttendance.clockIn)}
+                                    {t.attendance.clockedIn}: {formatTime(todayAttendance.clockIn)}
                                 </span>
                             )}
                             {todayAttendance.clockOut && (
                                 <span className={styles.statusText}>
-                                    • Clocked Out: {formatTime(todayAttendance.clockOut)}
+                                    • {t.attendance.clockedOut}: {formatTime(todayAttendance.clockOut)}
                                 </span>
                             )}
                         </div>
                     ) : (
-                        <span className={styles.statusText}>Not checked in yet</span>
+                        <span className={styles.statusText}>{t.attendance.notCheckedIn}</span>
                     )}
                 </div>
 
@@ -229,7 +231,7 @@ export default function AttendancePage() {
                         loading={actionLoading && !todayAttendance?.clockIn}
                         variant={todayAttendance?.clockIn ? "secondary" : "primary"}
                     >
-                        Clock In
+                        {t.attendance.clockIn}
                     </Button>
                     <Button
                         onClick={handleClockOut}
@@ -237,7 +239,7 @@ export default function AttendancePage() {
                         loading={actionLoading && !!todayAttendance?.clockIn && !todayAttendance?.clockOut}
                         variant={(!todayAttendance?.clockIn || !!todayAttendance?.clockOut) ? "secondary" : "primary"}
                     >
-                        Clock Out
+                        {t.attendance.clockOut}
                     </Button>
                 </div>
             </div>
@@ -251,7 +253,7 @@ export default function AttendancePage() {
                                 <ChevronLeftIcon />
                             </button>
                             <h2 className={styles.monthTitle}>
-                                {new Intl.DateTimeFormat('en-US', { month: 'long', year: 'numeric' }).format(selectedDate)}
+                                {new Intl.DateTimeFormat(language === 'lo' ? 'lo-LA' : 'en-US', { month: 'long', year: 'numeric' }).format(selectedDate)}
                             </h2>
                             <button className={styles.navBtn} onClick={() => navigateMonth(1)}>
                                 <ChevronRightIcon />
@@ -269,9 +271,16 @@ export default function AttendancePage() {
                             <div className={styles.calendar}>
                                 {/* Weekday headers */}
                                 <div className={styles.weekdays}>
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                                        <div key={day} className={styles.weekday}>{day}</div>
-                                    ))}
+                                    {Array.from({ length: 7 }).map((_, i) => {
+                                        const date = new Date(2024, 0, i); // Jan 2024 starts on Monday? No, Jan 1 2024 is Monday. I need Sunday start.
+                                        // Jan 7 2024 is Sunday.
+                                        const d = new Date(2024, 0, 7 + i);
+                                        return (
+                                            <div key={i} className={styles.weekday}>
+                                                {new Intl.DateTimeFormat(language === 'lo' ? 'lo-LA' : 'en-US', { weekday: 'short' }).format(d)}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Days grid */}
@@ -315,19 +324,19 @@ export default function AttendancePage() {
                     <div className={styles.legend}>
                         <div className={styles.legendItem}>
                             <span className={`${styles.statusDot} ${styles.present}`} />
-                            <span>Present</span>
+                            <span>{t.attendance.legend.present}</span>
                         </div>
                         <div className={styles.legendItem}>
                             <span className={`${styles.statusDot} ${styles.late}`} />
-                            <span>Late</span>
+                            <span>{t.attendance.legend.late}</span>
                         </div>
                         <div className={styles.legendItem}>
                             <span className={`${styles.statusDot} ${styles.absent}`} />
-                            <span>Absent</span>
+                            <span>{t.attendance.legend.absent}</span>
                         </div>
                         <div className={styles.legendItem}>
                             <span className={`${styles.statusDot} ${styles.leave}`} />
-                            <span>Leave</span>
+                            <span>{t.attendance.legend.leave}</span>
                         </div>
                     </div>
                 </>
@@ -343,18 +352,18 @@ export default function AttendancePage() {
                             <table className={styles.table}>
                                 <thead>
                                     <tr>
-                                        <th>Date</th>
-                                        <th>Clock In</th>
-                                        <th>Clock Out</th>
-                                        <th>Work Hours</th>
-                                        <th>Status</th>
+                                        <th>{t.attendance.table.date}</th>
+                                        <th>{t.attendance.table.clockIn}</th>
+                                        <th>{t.attendance.table.clockOut}</th>
+                                        <th>{t.attendance.table.workHours}</th>
+                                        <th>{t.attendance.table.status}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {attendanceRecords.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
-                                                No attendance records found for this month
+                                                {t.attendance.table.empty}
                                             </td>
                                         </tr>
                                     ) : (
@@ -365,16 +374,16 @@ export default function AttendancePage() {
                                                     <span className={record.isLate ? styles.lateText : ''}>
                                                         {record.clockIn ? formatTime(record.clockIn) : '-'}
                                                     </span>
-                                                    {record.isLate && <span className={styles.lateTag}>Late</span>}
+                                                    {record.isLate && <span className={styles.lateTag}>{t.attendance.legend.late}</span>}
                                                 </td>
                                                 <td>
                                                     {record.clockOut ? formatTime(record.clockOut) : '-'}
-                                                    {record.isEarlyLeave && <span className={styles.earlyTag}>Early</span>}
+                                                    {record.isEarlyLeave && <span className={styles.earlyTag}>{t.attendance.early}</span>}
                                                 </td>
-                                                <td>{record.workHours?.toFixed(1) || '-'} hrs</td>
+                                                <td>{record.workHours?.toFixed(1) || '-'} {t.attendance.hrs}</td>
                                                 <td>
                                                     <span className={`${styles.status} ${styles[record.status.toLowerCase()]}`}>
-                                                        {record.status}
+                                                        {t.attendance.legend[record.status.toLowerCase() as keyof typeof t.attendance.legend] || record.status}
                                                     </span>
                                                 </td>
                                             </tr>

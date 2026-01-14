@@ -145,7 +145,10 @@ export interface LeaveRequest {
     startDate: string;
     endDate: string;
     totalDays: number;
+    isHalfDay: boolean;
+    halfDayType?: 'MORNING' | 'AFTERNOON';
     reason?: string;
+    attachmentPath?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
     approvedById?: number;
     approvedAt?: string;
@@ -155,10 +158,52 @@ export interface LeaveRequest {
 }
 
 export interface CreateLeaveRequest {
+    employeeId?: number;
     leaveType: LeaveRequest['leaveType'];
     startDate: string;
     endDate: string;
+    isHalfDay?: boolean;
+    halfDayType?: 'MORNING' | 'AFTERNOON';
     reason?: string;
+    attachment?: File;
+}
+
+export interface LeavePolicy {
+    leavePolicyId: number;
+    leaveType: string;
+    leaveTypeLao?: string;
+    annualQuota: number;
+    maxCarryOver: number;
+    accrualPerMonth: number;
+    requiresAttachment: boolean;
+    minDaysForAttachment: number;
+    allowHalfDay: boolean;
+    isActive: boolean;
+    updatedAt: string;
+}
+
+export interface LeaveBalance {
+    leaveType: string;
+    leaveTypeLao?: string;
+    total: number;
+    used: number;
+    remaining: number;
+    allowHalfDay: boolean;
+    requiresAttachment: boolean;
+    minDaysForAttachment: number;
+}
+
+export interface LeaveCalendarItem {
+    leaveId: number;
+    employeeId: number;
+    employeeName: string;
+    leaveType: string;
+    startDate: string;
+    endDate: string;
+    totalDays: number;
+    isHalfDay: boolean;
+    halfDayType?: string;
+    status: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -183,6 +228,54 @@ export interface EmployeeDocument {
     fileName: string;
     filePath: string;
     uploadedAt: string;
+}
+
+// -----------------------------------------------------------------------------
+// Address
+// -----------------------------------------------------------------------------
+export interface Province {
+    prId: number;
+    prName: string;
+    prNameEn: string;
+}
+
+export interface District {
+    diId: number;
+    diName: string;
+    diNameEn: string;
+    prId: number;
+}
+
+export interface Village {
+    villId: number;
+    villName: string;
+    villNameEn: string;
+    diId: number;
+}
+
+// -----------------------------------------------------------------------------
+// Company Settings
+// -----------------------------------------------------------------------------
+export interface CompanySetting {
+    id: number;
+    companyNameLao: string;
+    companyNameEn: string;
+    lssoCode?: string;
+    taxRisId?: string;
+    bankAccountNo?: string;
+    bankName?: string;
+    tel?: string;
+    phone?: string;
+    email?: string;
+    villageId?: number;
+    districtId?: number;
+    provinceId?: number;
+    updatedAt: string;
+
+    // Expanded for display if needed, though usually just IDs for form
+    village?: Village;
+    district?: District;
+    province?: Province;
 }
 
 // -----------------------------------------------------------------------------

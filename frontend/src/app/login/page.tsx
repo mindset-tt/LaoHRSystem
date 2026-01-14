@@ -3,6 +3,7 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
@@ -18,6 +19,7 @@ import styles from './page.module.css';
 export default function LoginPage() {
     const router = useRouter();
     const { login, isAuthenticated, loading: authLoading } = useAuth();
+    const { t } = useLanguage();
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
@@ -46,7 +48,7 @@ export default function LoginPage() {
         setError('');
 
         if (!username.trim() || !password.trim()) {
-            setError('Please enter your username and password');
+            setError(t.login.errors.required);
             return;
         }
 
@@ -65,7 +67,7 @@ export default function LoginPage() {
                 setError(
                     err instanceof Error
                         ? err.message
-                        : 'An error occurred. Please try again.'
+                        : t.login.errors.generic
                 );
             }
         } finally {
@@ -107,17 +109,17 @@ export default function LoginPage() {
                             </defs>
                         </svg>
                     </div>
-                    <h1 className={styles.title}>LaoHR</h1>
-                    <p className={styles.subtitle}>Human Resource Management System</p>
+                    <h1 className={styles.title}>{t.login.title}</h1>
+                    <p className={styles.subtitle}>{t.login.subtitle}</p>
                 </div>
 
                 {/* Login Card */}
                 <Card className={styles.loginCard}>
                     <form onSubmit={handleSubmit} className={styles.form}>
                         <div className={styles.formHeader}>
-                            <h2 className={styles.formTitle}>Welcome back</h2>
+                            <h2 className={styles.formTitle}>{t.login.welcome}</h2>
                             <p className={styles.formDescription}>
-                                Sign in to your account to continue
+                                {t.login.instruction}
                             </p>
                         </div>
 
@@ -141,22 +143,22 @@ export default function LoginPage() {
 
                         <div className={styles.formFields}>
                             <Input
-                                label="Username"
+                                label={t.login.username}
                                 type="text"
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Enter your username"
+                                placeholder={t.login.usernamePlaceholder}
                                 autoComplete="username"
                                 disabled={loading}
                                 size="lg"
                             />
 
                             <Input
-                                label="Password"
+                                label={t.login.password}
                                 type="password"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
-                                placeholder="Enter your password"
+                                placeholder={t.login.passwordPlaceholder}
                                 autoComplete="current-password"
                                 disabled={loading}
                                 size="lg"
@@ -169,14 +171,14 @@ export default function LoginPage() {
                             fullWidth
                             loading={loading}
                         >
-                            Sign in
+                            {loading ? t.login.loading : t.login.signIn}
                         </Button>
                     </form>
                 </Card>
 
                 {/* Footer */}
                 <p className={styles.footer}>
-                    © {new Date().getFullYear()} LaoHR. All rights reserved.
+                    {t.login.copyright.replace('{year}', new Date().getFullYear().toString())}
                 </p>
             </div>
 
