@@ -4,9 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
-
-// ... (keep imports)
-
 import { useAuth } from '@/components/providers/AuthProvider';
 import styles from './Sidebar.module.css';
 
@@ -15,13 +12,15 @@ interface NavItem {
     href: string;
     icon: React.ReactNode;
     permission?: string;
+    subItems?: { label: string; href: string }[];
 }
 
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
+    const [expandedMenu, setExpandedMenu] = useState<string | null>(null);
     const pathname = usePathname();
     const { user, logout, can } = useAuth();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
 
     const navItems: NavItem[] = [
         {
@@ -58,9 +57,31 @@ export function Sidebar() {
         },
         {
             label: t.sidebar.settings,
-            href: '/settings/company',
+            href: '/settings',
             icon: <SettingsIcon />,
             permission: 'settings.edit',
+            subItems: [
+                {
+                    label: language === 'lo' ? 'ຂໍ້ມູນບໍລິສັດ' : 'Company Info',
+                    href: '/settings/company'
+                },
+                {
+                    label: language === 'lo' ? 'ຕາຕະລາງເຮັດວຽກ' : 'Work Schedule',
+                    href: '/settings/work-schedule'
+                },
+                {
+                    label: language === 'lo' ? 'ວັນພັກ' : 'Holidays',
+                    href: '/settings/holidays'
+                },
+                {
+                    label: language === 'lo' ? 'ນະໂຍບາຍລາພັກ' : 'Leave Policies',
+                    href: '/settings/leave'
+                },
+                {
+                    label: language === 'lo' ? 'ອັດຕາແລກປ່ຽນ' : 'Currency Rates',
+                    href: '/settings/currency-rates'
+                },
+            ],
         },
     ];
 
@@ -68,6 +89,12 @@ export function Sidebar() {
         if (!item.permission) return true;
         return can(item.permission as Parameters<typeof can>[0]);
     });
+
+    const toggleSubmenu = (href: string) => {
+        setExpandedMenu(expandedMenu === href ? null : href);
+    };
+
+    const isSettingsActive = pathname.startsWith('/settings');
 
     return (
         <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
@@ -107,6 +134,48 @@ export function Sidebar() {
                     {filteredNavItems.map((item) => {
                         const isActive = pathname === item.href ||
                             (item.href !== '/' && pathname.startsWith(item.href));
+                        const hasSubItems = item.subItems && item.subItems.length > 0;
+                        const isExpanded = expandedMenu === item.href || (hasSubItems && isActive);
+
+                        if (hasSubItems) {
+                            return (
+                                <li key={item.href} className={styles.navItemWithSub}>
+                                    <button
+                                        className={`${styles.navItem} ${isActive ? styles.active : ''}`}
+                                        onClick={() => toggleSubmenu(item.href)}
+                                        title={collapsed ? item.label : undefined}
+                                    >
+                                        <span className={styles.navIcon}>{item.icon}</span>
+                                        {!collapsed && (
+                                            <>
+                                                <span className={styles.navLabel}>{item.label}</span>
+                                                <span className={`${styles.submenuArrow} ${isExpanded ? styles.expanded : ''}`}>
+                                                    <ChevronDownIcon />
+                                                </span>
+                                            </>
+                                        )}
+                                    </button>
+
+                                    {!collapsed && isExpanded && (
+                                        <ul className={styles.submenu}>
+                                            {item.subItems?.map((subItem) => {
+                                                const subActive = pathname === subItem.href;
+                                                return (
+                                                    <li key={subItem.href}>
+                                                        <Link
+                                                            href={subItem.href}
+                                                            className={`${styles.submenuItem} ${subActive ? styles.active : ''}`}
+                                                        >
+                                                            {subItem.label}
+                                                        </Link>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </li>
+                            );
+                        }
 
                         return (
                             <li key={item.href}>
@@ -235,6 +304,14 @@ function ChevronIcon({ direction }: { direction: 'left' | 'right' }) {
             style={{ transform: direction === 'right' ? 'rotate(180deg)' : undefined }}
         >
             <polyline points="15 18 9 12 15 6" />
+        </svg>
+    );
+}
+
+function ChevronDownIcon() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="6 9 12 15 18 9" />
         </svg>
     );
 }

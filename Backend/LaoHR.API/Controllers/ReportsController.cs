@@ -30,4 +30,39 @@ public class ReportsController : ControllerBase
             return BadRequest(ex.Message);
         }
     }
+
+    [HttpGet("nssf/zip/{periodId}")]
+    public async Task<IActionResult> DownloadNssfPackage(int periodId)
+    {
+        try
+        {
+            var pdfFormBytes = await _pdfFormService.FillNssfForm(periodId);
+            var nssfReportBytes = await _nssfService.GenerateNssfReport(periodId);
+
+            using var memoryStream = new MemoryStream();
+            using (var archive = new System.IO.Compression.ZipArchive(memoryStream, System.IO.Compression.ZipArchiveMode.Create, true))
+            {
+                // Add NSSF Payment Form
+                var formEntry = archive.CreateEntry($"NSSF_Payment_Form_{periodId}.pdf");
+                using (var entryStream = formEntry.Open())
+                {
+                    await entryStream.WriteAsync(pdfFormBytes, 0, pdfFormBytes.Length);
+                }
+
+                // Add NSSF Report
+                var reportEntry = archive.CreateEntry($"NSSF_Report_{periodId}.pdf");
+                using (var entryStream = reportEntry.Open())
+                {
+                    await entryStream.WriteAsync(nssfReportBytes, 0, nssfReportBytes.Length);
+                }
+            }
+
+            memoryStream.Position = 0;
+            return File(memoryStream.ToArray(), "application/zip", $"NSSF_Package_{periodId}.zip");
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

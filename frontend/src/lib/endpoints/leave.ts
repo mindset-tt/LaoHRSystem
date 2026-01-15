@@ -121,12 +121,7 @@ export const leaveApi = {
         if (employeeId) params.set('employeeId', employeeId.toString());
 
         const query = params.toString();
-        const response = await fetch(`/api/leave/export${query ? `?${query}` : ''}`, {
-            method: 'GET',
-        });
-
-        if (!response.ok) throw new Error('Export failed');
-        return response.blob();
+        return apiClient.getBlob(`/api/leave/export${query ? `?${query}` : ''}`);
     },
 };
 

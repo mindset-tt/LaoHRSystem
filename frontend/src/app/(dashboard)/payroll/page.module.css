@@ -262,6 +262,22 @@
     color: rgb(var(--color-text-muted));
 }
 
+.netSalaryCell {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.subText {
+    font-size: var(--font-size-xs);
+    color: rgb(var(--color-text-secondary));
+}
+
+.textMuted {
+    color: rgb(var(--color-text-muted));
+    font-size: var(--font-size-sm);
+}
+
 .status {
     display: inline-flex;
     padding: var(--space-1) var(--space-2);
@@ -341,4 +357,23 @@
         flex-direction: column;
         text-align: center;
     }
+}
+
+.headerActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.emptyStateActions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+}
+
+.emptyStateActions p {
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
 }

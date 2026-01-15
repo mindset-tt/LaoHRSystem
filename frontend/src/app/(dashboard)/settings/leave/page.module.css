@@ -1,0 +1,199 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 1.5rem);
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.title {
+    font-size: var(--font-size-2xl, 1.5rem);
+    font-weight: var(--font-weight-bold, 700);
+    color: rgb(var(--color-text, 17 24 39));
+    margin: 0;
+}
+
+.subtitle {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: rgb(var(--color-text-secondary, 107 114 128));
+    margin: 0;
+}
+
+/* Alerts */
+.errorAlert,
+.successAlert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border-radius: var(--radius-lg, 0.75rem);
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+.errorAlert {
+    background: rgb(var(--color-error-100, 254 226 226));
+    border: 1px solid rgb(var(--color-error-200, 254 202 202));
+    color: rgb(var(--color-error-700, 185 28 28));
+}
+
+.successAlert {
+    background: rgb(var(--color-success-100, 220 252 231));
+    border: 1px solid rgb(var(--color-success-200, 187 247 208));
+    color: rgb(var(--color-success-700, 21 128 61));
+}
+
+.errorAlert button,
+.successAlert button {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    color: inherit;
+    padding: 0;
+    line-height: 1;
+}
+
+/* Loading */
+.loading {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+/* No Access */
+.noAccess {
+    text-align: center;
+    padding: var(--space-12, 3rem);
+    color: rgb(var(--color-text-secondary, 107 114 128));
+}
+
+/* Policies Grid */
+.policiesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-4, 1rem);
+}
+
+/* Policy Card */
+.policyCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.policyHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: var(--space-3, 0.75rem);
+    border-bottom: 1px solid rgb(var(--color-border-light, 229 231 235));
+}
+
+.policyName {
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: rgb(var(--color-text, 17 24 39));
+    margin: 0;
+    text-transform: capitalize;
+}
+
+.statusBadge {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: var(--font-weight-medium, 500);
+    padding: var(--space-1, 0.25rem) var(--space-2, 0.5rem);
+    border-radius: var(--radius-full, 9999px);
+}
+
+.statusBadge.active {
+    background: rgb(var(--color-success-100, 220 252 231));
+    color: rgb(var(--color-success-700, 21 128 61));
+}
+
+.statusBadge.inactive {
+    background: rgb(var(--color-neutral-200, 229 231 235));
+    color: rgb(var(--color-neutral-600, 75 85 99));
+}
+
+.policyFields {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3, 0.75rem);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.label {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: var(--font-weight-medium, 500);
+    color: rgb(var(--color-text-secondary, 107 114 128));
+}
+
+.input {
+    width: 100%;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid rgb(var(--color-border-light, 229 231 235));
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: var(--font-size-sm, 0.875rem);
+    color: rgb(var(--color-text, 17 24 39));
+    background: rgb(var(--color-bg-card, 255 255 255));
+    transition: all 0.15s ease;
+}
+
+.input:focus {
+    outline: none;
+    border-color: rgb(var(--color-primary-500, 99 102 241));
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Checkboxes */
+.checkboxGroup {
+    grid-column: span 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4, 1rem);
+    padding-top: var(--space-2, 0.5rem);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-sm, 0.875rem);
+    color: rgb(var(--color-text, 17 24 39));
+    cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: rgb(var(--color-primary-500, 99 102 241));
+    cursor: pointer;
+}
+
+/* Actions */
+.policyActions {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-3, 0.75rem);
+    border-top: 1px solid rgb(var(--color-border-light, 229 231 235));
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .policyFields {
+        grid-template-columns: 1fr;
+    }
+
+    .checkboxGroup {
+        grid-column: span 1;
+        flex-direction: column;
+    }
+}

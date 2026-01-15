@@ -8,8 +8,12 @@ using LaoHR.Shared.Models;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using LaoHR.API.Services;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// QuestPDF License
+QuestPDF.Settings.License = LicenseType.Community;
 
 // JWT Configuration
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "LaoHRSystemSecretKey2024VeryLongKeyForSecurity!";
@@ -95,6 +99,10 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<ICompanySettingsService, CompanySettingsService>();
 builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IWorkDayService, WorkDayService>();
+
+// Background Jobs
+builder.Services.AddHostedService<LaoHR.API.Jobs.LeaveScheduledJobsService>();
 
 
 // CORS for frontend - allow all origins for development

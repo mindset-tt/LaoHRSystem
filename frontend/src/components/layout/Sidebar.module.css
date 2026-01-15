@@ -143,6 +143,77 @@
     display: none;
 }
 
+/* Submenu */
+.navItemWithSub {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Button styled as navItem */
+button.navItem {
+    width: 100%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+}
+
+button.navItem:focus {
+    outline: none;
+}
+
+.submenuArrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    transition: transform var(--transition-fast);
+    opacity: 0.5;
+}
+
+.submenuArrow.expanded {
+    transform: rotate(180deg);
+}
+
+.submenu {
+    list-style: none;
+    padding: var(--space-1) 0 var(--space-2) 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.submenuItem {
+    display: flex;
+    align-items: center;
+    padding: var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3) + 32px);
+    border-radius: var(--radius-md);
+    color: rgb(var(--color-text-secondary));
+    font-size: var(--font-size-sm);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.submenuItem:hover {
+    background: rgb(var(--color-neutral-100));
+    color: rgb(var(--color-text));
+}
+
+.submenuItem.active {
+    background: rgb(var(--color-primary-50));
+    color: rgb(var(--color-primary-700));
+}
+
+.collapsed .submenu {
+    display: none;
+}
+
+.collapsed .submenuArrow {
+    display: none;
+}
+
 /* User Section */
 .userSection {
     display: flex;

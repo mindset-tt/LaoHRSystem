@@ -408,6 +408,61 @@ public class LeaveController : ControllerBase
     }
     
     #endregion
+    
+    #region Admin Jobs
+    
+    /// <summary>
+    /// Manually trigger monthly accrual (Admin only)
+    /// </summary>
+    [HttpPost("admin/run-accrual")]
+    public async Task<IActionResult> RunMonthlyAccrual(
+        [FromQuery] int? year = null,
+        [FromQuery] int? month = null,
+        [FromServices] ILeaveService leaveService = null!)
+    {
+        var targetYear = year ?? DateTime.UtcNow.Year;
+        var targetMonth = month ?? DateTime.UtcNow.Month;
+        
+        await leaveService.InitializeYearlyBalancesAsync(targetYear);
+        await leaveService.ProcessMonthlyAccrualAsync(targetYear, targetMonth);
+        
+        return Ok(new { message = $"Monthly accrual processed for {targetYear}-{targetMonth}" });
+    }
+    
+    /// <summary>
+    /// Manually trigger year-end carry-over (Admin only)
+    /// </summary>
+    [HttpPost("admin/run-carryover")]
+    public async Task<IActionResult> RunYearEndCarryOver(
+        [FromQuery] int? fromYear = null,
+        [FromQuery] int? toYear = null,
+        [FromServices] ILeaveService leaveService = null!)
+    {
+        var from = fromYear ?? DateTime.UtcNow.Year - 1;
+        var to = toYear ?? DateTime.UtcNow.Year;
+        
+        await leaveService.ProcessYearEndCarryOverAsync(from, to);
+        await leaveService.InitializeYearlyBalancesAsync(to);
+        
+        return Ok(new { message = $"Carry-over processed from {from} to {to}" });
+    }
+    
+    /// <summary>
+    /// Initialize leave balances for a year (Admin only)
+    /// </summary>
+    [HttpPost("admin/initialize-balances")]
+    public async Task<IActionResult> InitializeBalances(
+        [FromQuery] int? year = null,
+        [FromServices] ILeaveService leaveService = null!)
+    {
+        var targetYear = year ?? DateTime.UtcNow.Year;
+        
+        await leaveService.InitializeYearlyBalancesAsync(targetYear);
+        
+        return Ok(new { message = $"Leave balances initialized for {targetYear}" });
+    }
+    
+    #endregion
 }
 
 #region DTOs

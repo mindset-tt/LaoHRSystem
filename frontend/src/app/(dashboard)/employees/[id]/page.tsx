@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { formatDate } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
 import type { Employee } from '@/lib/types';
+import { employeesApi } from '@/lib/endpoints/employees';
 import styles from './page.module.css';
 
 /**
@@ -31,35 +32,17 @@ export default function EmployeeDetailPage() {
 
     useEffect(() => {
         const loadEmployee = async () => {
-            // Simulated data - will connect to API
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            try {
+                if (!employeeId) return;
 
-            setEmployee({
-                employeeId: parseInt(employeeId),
-                employeeCode: 'EMP0001',
-                laoName: 'ສົມສັກ ສີສະຫວັດ',
-                englishName: 'Somsak Sisavad',
-                email: 'somsak@laohr.com',
-                phone: '+856 20 5555 1234',
-                dateOfBirth: '1990-05-15',
-                gender: 'Male',
-                departmentId: 1,
-                department: { departmentId: 1, departmentName: 'Engineering', isActive: true, createdAt: '' },
-                jobTitle: 'Senior Developer',
-                hireDate: '2020-03-01',
-                baseSalary: 15000000,
-                salaryCurrency: 'LAK',
-                bankName: 'BCEL',
-                bankAccount: '0102030405060708',
-                nssfId: 'NSSF-12345678',
-                taxId: 'TAX-87654321',
-                dependentCount: 2,
-                isActive: true,
-                createdAt: '2020-03-01T00:00:00Z',
-                updatedAt: '2024-01-10T08:30:00Z',
-            });
-
-            setLoading(false);
+                const data = await employeesApi.getById(parseInt(employeeId));
+                setEmployee(data);
+            } catch (err) {
+                console.error('Failed to load employee:', err);
+                setEmployee(null);
+            } finally {
+                setLoading(false);
+            }
         };
 
         loadEmployee();

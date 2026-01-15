@@ -115,6 +115,14 @@ export interface SalarySlip {
     taxDeduction: number;
     otherDeductions: number;
     netSalary: number;
+
+    // Currency fields
+    contractCurrency: string;
+    exchangeRateUsed: number;
+    baseSalaryOriginal: number;
+    netSalaryOriginal: number;
+    paymentCurrency: string;
+
     status: 'CALCULATED' | 'APPROVED' | 'PAID';
     createdAt: string;
     employee?: Employee;
@@ -335,3 +343,129 @@ export interface PaginatedResponse<T> {
     pageSize: number;
     totalPages: number;
 }
+
+// -----------------------------------------------------------------------------
+// Work Schedule
+// -----------------------------------------------------------------------------
+export interface WorkSchedule {
+    workScheduleId: number;
+    monday: boolean;
+    tuesday: boolean;
+    wednesday: boolean;
+    thursday: boolean;
+    friday: boolean;
+    saturday: boolean;
+    sunday: boolean;
+    workStartTime: string;
+    workEndTime: string;
+    breakStartTime: string;
+    breakEndTime: string;
+    lateThresholdMinutes: number;
+    // Saturday configuration
+    saturdayWorkType: 'NONE' | 'FULL' | 'HALF';
+    saturdayHours: number;
+    saturdayWeeks: string; // "1,2,3,4" or "ALL"
+    saturdayStartTime?: string;
+    saturdayEndTime?: string;
+    // Laos law standard
+    standardMonthlyHours: number;
+    dailyWorkHours: number;
+    updatedAt: string;
+}
+
+export type SaturdayWorkType = 'NONE' | 'FULL' | 'HALF';
+
+export interface UpdateWorkSchedule {
+    monday: boolean;
+    tuesday: boolean;
+    wednesday: boolean;
+    thursday: boolean;
+    friday: boolean;
+    saturday: boolean;
+    sunday: boolean;
+    workStartTime: string;
+    workEndTime: string;
+    breakStartTime: string;
+    breakEndTime: string;
+    lateThresholdMinutes: number;
+    // Saturday configuration
+    saturdayWorkType: SaturdayWorkType;
+    saturdayHours: number;
+    saturdayWeeks: string;
+    saturdayStartTime?: string;
+    saturdayEndTime?: string;
+    // Laos law standard
+    standardMonthlyHours: number;
+    dailyWorkHours: number;
+}
+
+// -----------------------------------------------------------------------------
+// Holiday
+// -----------------------------------------------------------------------------
+export interface Holiday {
+    holidayId: number;
+    date: string;
+    name: string;
+    nameLao?: string;
+    description?: string;
+    year: number;
+    isRecurring: boolean;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+export interface CreateHoliday {
+    date: string;
+    name: string;
+    nameLao?: string;
+    description?: string;
+    isRecurring: boolean;
+}
+
+export interface UpdateHoliday extends CreateHoliday {
+    isActive: boolean;
+}
+
+// -----------------------------------------------------------------------------
+// Work Day Calculation
+// -----------------------------------------------------------------------------
+export interface WorkDayBreakdown {
+    totalCalendarDays: number;
+    workDays: number;
+    nonWorkDays: number;
+    holidays: number;
+    holidayDates: string[];
+    weekendDates: string[];
+}
+
+// -----------------------------------------------------------------------------
+// Currency Conversion Rates
+// -----------------------------------------------------------------------------
+export type CurrencyCode = 'LAK' | 'USD' | 'THB' | 'CNY';
+
+export interface ConversionRate {
+    conversionRateId: number;
+    fromCurrency: CurrencyCode;
+    toCurrency: CurrencyCode;
+    rate: number;
+    effectiveDate: string;
+    expiryDate?: string;
+    isActive: boolean;
+    createdAt: string;
+    updatedAt: string;
+    notes?: string;
+}
+
+export interface CreateConversionRate {
+    fromCurrency: CurrencyCode;
+    toCurrency: CurrencyCode;
+    rate: number;
+    effectiveDate: string;
+    notes?: string;
+}
+
+export interface UpdateConversionRate extends CreateConversionRate {
+    isActive: boolean;
+}
+

@@ -41,6 +41,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
         jobTitle: employee?.jobTitle || '',
         hireDate: employee?.hireDate || '',
         baseSalary: employee?.baseSalary?.toString() || '',
+        salaryCurrency: employee?.salaryCurrency || 'LAK',
         bankName: employee?.bankName || '',
         bankAccount: employee?.bankAccount || '',
         dependentCount: employee?.dependentCount?.toString() || '0',
@@ -118,7 +119,7 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                 jobTitle: formData.jobTitle || undefined,
                 hireDate: formData.hireDate || undefined,
                 baseSalary: parseFloat(formData.baseSalary),
-                salaryCurrency: 'LAK',
+                salaryCurrency: formData.salaryCurrency,
                 bankName: formData.bankName || undefined,
                 bankAccount: formData.bankAccount || undefined,
                 dependentCount: parseInt(formData.dependentCount) || 0,
@@ -268,16 +269,57 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                             value={formData.hireDate}
                             onChange={(e) => handleChange('hireDate', e.target.value)}
                         />
-                        <Input
-                            label={`${t.employeeForm.fields.baseSalary} *`}
-                            type="number"
-                            min="0"
-                            value={formData.baseSalary}
-                            onChange={(e) => handleChange('baseSalary', e.target.value)}
-                            error={errors.baseSalary}
-                            placeholder="e.g. 10000000"
-                        />
+                        <div className={styles.salaryGroup}>
+                            <div className={styles.currencyField}>
+                                <label className={styles.label}>Currency</label>
+                                <select
+                                    className={styles.currencySelect}
+                                    value={formData.salaryCurrency}
+                                    onChange={(e) => handleChange('salaryCurrency', e.target.value)}
+                                >
+                                    <option value="LAK">LAK (ກີບ)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="THB">THB (฿)</option>
+                                    <option value="CNY">CNY (¥)</option>
+                                </select>
+                            </div>
+                            <Input
+                                label={`${t.employeeForm.fields.baseSalary} *`}
+                                type="number"
+                                min="0"
+                                value={formData.baseSalary}
+                                onChange={(e) => handleChange('baseSalary', e.target.value)}
+                                error={errors.baseSalary}
+                                placeholder={formData.salaryCurrency === 'LAK' ? 'e.g. 10,000,000' : 'e.g. 500'}
+                            />
+                        </div>
                     </div>
+                    {/* <div className={styles.row}>
+                        <div className={styles.salaryGroup}>
+                            <div className={styles.currencyField}>
+                                <label className={styles.label}>Currency</label>
+                                <select
+                                    className={styles.currencySelect}
+                                    value={formData.salaryCurrency}
+                                    onChange={(e) => handleChange('salaryCurrency', e.target.value)}
+                                >
+                                    <option value="LAK">LAK (ກີບ)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="THB">THB (฿)</option>
+                                    <option value="CNY">CNY (¥)</option>
+                                </select>
+                            </div>
+                            <Input
+                                label={`${t.employeeForm.fields.baseSalary} *`}
+                                type="number"
+                                min="0"
+                                value={formData.baseSalary}
+                                onChange={(e) => handleChange('baseSalary', e.target.value)}
+                                error={errors.baseSalary}
+                                placeholder={formData.salaryCurrency === 'LAK' ? 'e.g. 10,000,000' : 'e.g. 500'}
+                            />
+                        </div>
+                    </div> */}
                 </div>
             </Card>
 

@@ -38,11 +38,11 @@ export default function ReportsPage() {
 
         setDownloading(true);
         try {
-            const blob = await reportsApi.downloadNssfReport(parseInt(nssfPeriod));
+            const blob = await reportsApi.downloadNssfPackage(parseInt(nssfPeriod));
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `nssf-report-${nssfPeriod}.pdf`;
+            a.download = `nssf-package-${nssfPeriod}.zip`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);

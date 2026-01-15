@@ -83,10 +83,16 @@
     margin-top: 0.25rem;
 }
 
-.totalDays {
+.daysBreakdown {
     padding: 1rem;
     background: var(--bg-accent, #f0f9ff);
     border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.totalDays {
     text-align: center;
 }
 
@@ -102,6 +108,26 @@
     font-weight: 700;
     color: var(--primary, #6366f1);
     margin-top: 0.25rem;
+}
+
+.breakdownInfo {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.breakdownItem {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+    display: flex;
+    gap: 0.25rem;
+}
+
+.breakdownItem strong {
+    color: var(--text-primary, #111827);
 }
 
 .checkboxLabel {

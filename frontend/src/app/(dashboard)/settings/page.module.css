@@ -81,3 +81,48 @@
     margin-top: 1.5rem;
     gap: 0.5rem;
 }
+
+/* Settings Cards Grid */
+.settingsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.settingsCard {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--background);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.15s ease;
+}
+
+.settingsCard:hover {
+    border-color: var(--ring);
+    background: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.settingsIcon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.settingsInfo h3 {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--foreground);
+}
+
+.settingsInfo p {
+    margin: 0.25rem 0 0;
+    font-size: 0.75rem;
+    color: var(--muted-foreground);
+}

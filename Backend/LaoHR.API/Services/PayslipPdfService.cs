@@ -58,6 +58,10 @@ public class PayslipPdfService
     
     private void ComposeContent(IContainer container, SalarySlip slip, Employee employee, PayrollPeriod period)
     {
+        // Determine currency symbols
+        var contractSymbol = GetCurrencySymbol(slip.ContractCurrency);
+        var showDualCurrency = slip.ContractCurrency != "LAK" && slip.ExchangeRateUsed != 1;
+        
         container.Column(column =>
         {
             // Employee Info
@@ -88,28 +92,71 @@ public class PayslipPdfService
                         
                         table.Cell().Text("NSSF ID / ປະກັນສັງຄົມ:").FontColor(Colors.Grey.Darken1);
                         table.Cell().Text(employee.NssfId ?? "-");
+                        
+                        // Show contract currency and exchange rate
+                        if (showDualCurrency)
+                        {
+                            table.Cell().Text("Contract Currency:").FontColor(Colors.Grey.Darken1);
+                            table.Cell().Text($"{slip.ContractCurrency} (Rate: 1 {slip.ContractCurrency} = {slip.ExchangeRateUsed:N0} LAK)");
+                        }
                     });
                 });
             });
             
             // Earnings
-            column.Item().PaddingBottom(10).Element(c => ComposeEarningsTable(c, slip));
+            column.Item().PaddingBottom(10).Element(c => ComposeEarningsTable(c, slip, showDualCurrency, contractSymbol));
             
             // Deductions
             column.Item().PaddingBottom(10).Element(c => ComposeDeductionsTable(c, slip));
             
-            // Net Pay
-            column.Item().Background(Colors.Blue.Lighten5).Padding(15).Row(row =>
+            // Net Pay - Show in payment currency
+            column.Item().Background(Colors.Blue.Lighten5).Padding(15).Column(netCol =>
             {
-                row.RelativeItem().Text("NET SALARY / ເງິນເດືອນສຸດທິ").Bold().FontSize(14);
-                row.ConstantItem(150).AlignRight().Text($"₭ {slip.NetSalary:N0}").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                netCol.Item().Row(row =>
+                {
+                    row.RelativeItem().Text("NET SALARY / ເງິນເດືອນສຸດທິ").Bold().FontSize(14);
+                    
+                    // Show in payment currency
+                    if (slip.PaymentCurrency == "LAK" || slip.ContractCurrency == "LAK")
+                    {
+                        row.ConstantItem(150).AlignRight().Text($"₭ {slip.NetSalary:N0}").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                    }
+                    else
+                    {
+                        row.ConstantItem(150).AlignRight().Text($"{contractSymbol} {slip.NetSalaryOriginal:N2}").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                    }
+                });
+                
+                // Show converted amount if dual currency
+                if (showDualCurrency)
+                {
+                    netCol.Item().PaddingTop(5).Row(row =>
+                    {
+                        row.RelativeItem().Text("");
+                        if (slip.PaymentCurrency == "LAK")
+                        {
+                            row.ConstantItem(150).AlignRight().Text($"({contractSymbol} {slip.NetSalaryOriginal:N2})").FontSize(11).FontColor(Colors.Grey.Darken1);
+                        }
+                        else
+                        {
+                            row.ConstantItem(150).AlignRight().Text($"(₭ {slip.NetSalary:N0})").FontSize(11).FontColor(Colors.Grey.Darken1);
+                        }
+                    });
+                }
             });
             
-            // Text Amount
+            // Text Amount - in payment currency
             column.Item().PaddingTop(5).Text(text =>
             {
                 text.Span("Amount in words: ").FontSize(9).FontColor(Colors.Grey.Darken1);
-                text.Span(LaoNumberUtils.NumberToKipWords(slip.NetSalary)).FontSize(10).Bold();
+                if (slip.PaymentCurrency == "LAK" || slip.ContractCurrency == "LAK")
+                {
+                    text.Span(LaoNumberUtils.NumberToKipWords(slip.NetSalary)).FontSize(10).Bold();
+                }
+                else
+                {
+                    text.Span($"{slip.NetSalaryOriginal:N2} {slip.ContractCurrency}").FontSize(10).Bold();
+                }
             });
             
             // Bank Info
@@ -124,7 +171,18 @@ public class PayslipPdfService
         });
     }
     
-    private void ComposeEarningsTable(IContainer container, SalarySlip slip)
+    private string GetCurrencySymbol(string currency)
+    {
+        return currency switch
+        {
+            "USD" => "$",
+            "THB" => "฿",
+            "CNY" => "¥",
+            _ => "₭"
+        };
+    }
+    
+    private void ComposeEarningsTable(IContainer container, SalarySlip slip, bool showDualCurrency = false, string contractSymbol = "₭")
     {
         container.Column(column =>
         {
@@ -135,18 +193,30 @@ public class PayslipPdfService
                 {
                     c.RelativeColumn(3);
                     c.RelativeColumn(1);
+                    if (showDualCurrency) c.RelativeColumn(1);
                 });
                 
-                AddTableRow(table, "Base Salary / ເງິນເດືອນພື້ນຖານ", slip.BaseSalary);
-                AddTableRow(table, "Overtime Pay / ຄ່າລ່ວງເວລາ", slip.OvertimePay);
-                AddTableRow(table, "Allowances / ເງິນອຸດໜູນ", slip.Allowances);
+                AddTableRow(table, "Base Salary / ເງິນເດືອນພື້ນຖານ", slip.BaseSalary, showDualCurrency, slip.BaseSalaryOriginal, contractSymbol);
+                AddTableRow(table, "Overtime Pay / ຄ່າລ່ວງເວລາ", slip.OvertimePay, false, 0, contractSymbol);
+                AddTableRow(table, "Allowances / ເງິນອຸດໜູນ", slip.Allowances, false, 0, contractSymbol);
                 
                 // Total
-                table.Cell().ColumnSpan(2).Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
+                if (showDualCurrency)
                 {
-                    row.RelativeItem().Text("GROSS INCOME / ລາຍຮັບລວມ").Bold();
-                    row.ConstantItem(100).AlignRight().Text($"₭ {slip.GrossIncome:N0}").Bold();
-                });
+                    table.Cell().ColumnSpan(3).Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
+                    {
+                        row.RelativeItem().Text("GROSS INCOME / ເງິນເດືອນລວມ").Bold();
+                        row.ConstantItem(100).AlignRight().Text($"₭ {slip.GrossIncome:N0}").Bold();
+                    });
+                }
+                else
+                {
+                    table.Cell().ColumnSpan(2).Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
+                    {
+                        row.RelativeItem().Text("GROSS INCOME / ເງິນເດືອນລວມ").Bold();
+                        row.ConstantItem(100).AlignRight().Text($"₭ {slip.GrossIncome:N0}").Bold();
+                    });
+                }
             });
         });
     }
@@ -164,9 +234,9 @@ public class PayslipPdfService
                     c.RelativeColumn(1);
                 });
                 
-                AddTableRow(table, $"NSSF Employee (5.5%) / ປະກັນສັງຄົມ (Base: ₭{slip.NssfBase:N0})", slip.NssfEmployeeDeduction, true);
-                AddTableRow(table, "Income Tax (PIT) / ອາກອນລາຍໄດ້", slip.TaxDeduction, true);
-                AddTableRow(table, "Other Deductions / ຫັກອື່ນໆ", slip.OtherDeductions, true);
+                AddTableRow(table, $"NSSF Employee (5.5%) / ປະກັນສັງຄົມ (Base: ₭{slip.NssfBase:N0})", slip.NssfEmployeeDeduction, isDeduction: true);
+                AddTableRow(table, "Income Tax (PIT) / ອາກອນລາຍໄດ້", slip.TaxDeduction, isDeduction: true);
+                AddTableRow(table, "Other Deductions / ຫັກອື່ນໆ", slip.OtherDeductions, isDeduction: true);
                 
                 // Total
                 table.Cell().ColumnSpan(2).Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
@@ -179,14 +249,24 @@ public class PayslipPdfService
         });
     }
     
-    private void AddTableRow(TableDescriptor table, string label, decimal amount, bool isDeduction = false)
+    private void AddTableRow(TableDescriptor table, string label, decimal amount, bool showDual = false, decimal originalAmount = 0, string contractSymbol = "₭", bool isDeduction = false)
     {
-        if (amount == 0) return;
+        if (amount == 0 && originalAmount == 0) return;
         
         table.Cell().Padding(8).Text(label);
         var text = isDeduction ? $"- ₭ {amount:N0}" : $"₭ {amount:N0}";
         var color = isDeduction ? Colors.Red.Darken1 : Colors.Black;
         table.Cell().Padding(8).AlignRight().Text(text).FontColor(color);
+        
+        // Add original currency column if showing dual
+        if (showDual && originalAmount > 0)
+        {
+            table.Cell().Padding(8).AlignRight().Text($"{contractSymbol} {originalAmount:N2}").FontColor(Colors.Grey.Darken1);
+        }
+        else if (showDual)
+        {
+            table.Cell().Padding(8).Text(""); // Empty cell for alignment
+        }
     }
     
     private void ComposeFooter(IContainer container)
