@@ -198,6 +198,7 @@ public class SalarySlip
     [Required]
     public int PeriodId { get; set; }
     
+    // All amounts below are stored in LAK (converted if employee has foreign currency)
     [Column(TypeName = "decimal(18,2)")]
     public decimal BaseSalary { get; set; }
     
@@ -230,6 +231,37 @@ public class SalarySlip
     
     [Column(TypeName = "decimal(18,2)")]
     public decimal NetSalary { get; set; }
+    
+    // ========== Original Currency (Contract) ==========
+    /// <summary>
+    /// Employee's contract currency (LAK, USD, THB, CNY)
+    /// </summary>
+    [MaxLength(3)]
+    public string ContractCurrency { get; set; } = "LAK";
+    
+    /// <summary>
+    /// Exchange rate used (1 ContractCurrency = X LAK)
+    /// </summary>
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal ExchangeRateUsed { get; set; } = 1;
+    
+    /// <summary>
+    /// Base salary in original contract currency
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal BaseSalaryOriginal { get; set; }
+    
+    /// <summary>
+    /// Net salary in original contract currency
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal NetSalaryOriginal { get; set; }
+    
+    /// <summary>
+    /// Payment currency: ORIGINAL = pay in contract currency, LAK = pay in Kip
+    /// </summary>
+    [MaxLength(10)]
+    public string PaymentCurrency { get; set; } = "LAK";
     
     [MaxLength(20)]
     public string Status { get; set; } = "CALCULATED";
@@ -445,7 +477,7 @@ public class SystemSetting
 }
 
 /// <summary>
-/// Public Holiday
+/// Holiday - Days when the company is closed
 /// </summary>
 public class Holiday
 {
@@ -459,11 +491,22 @@ public class Holiday
     public string Name { get; set; } = string.Empty;
     
     [MaxLength(100)]
-    public string? NameEn { get; set; }
+    public string? NameLao { get; set; }
+    
+    [MaxLength(500)]
+    public string? Description { get; set; }
     
     public int Year { get; set; }
     
-    public bool IsRecurring { get; set; }
+    /// <summary>
+    /// If true, this holiday repeats every year on the same month/day
+    /// </summary>
+    public bool IsRecurring { get; set; } = true;
+    
+    public bool IsActive { get; set; } = true;
+    
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -610,3 +653,164 @@ public class CompanySetting
     [ForeignKey("ProvinceId")]
     public virtual Province? Province { get; set; }
 }
+
+/// <summary>
+/// Work Schedule - Defines which days are working days
+/// Single row per company (singleton pattern)
+/// </summary>
+public class WorkSchedule
+{
+    [Key]
+    public int WorkScheduleId { get; set; }
+    
+    // Which days are work days (Mon-Fri standard)
+    public bool Monday { get; set; } = true;
+    public bool Tuesday { get; set; } = true;
+    public bool Wednesday { get; set; } = true;
+    public bool Thursday { get; set; } = true;
+    public bool Friday { get; set; } = true;
+    public bool Saturday { get; set; } = false;
+    public bool Sunday { get; set; } = false;
+    
+    // Saturday Configuration
+    /// <summary>
+    /// NONE = No Saturday work
+    /// FULL = Full day (8 hours)
+    /// HALF = Half day (4 hours)
+    /// </summary>
+    [MaxLength(10)]
+    public string SaturdayWorkType { get; set; } = "NONE";
+    
+    /// <summary>
+    /// Hours for Saturday (4 for half day, 8 for full day)
+    /// </summary>
+    public decimal SaturdayHours { get; set; } = 0;
+    
+    /// <summary>
+    /// Which Saturdays of the month are work days (comma separated: 1,2,3,4 or ALL)
+    /// e.g., "1,3" = 1st and 3rd Saturday of month
+    /// "ALL" = All Saturdays
+    /// </summary>
+    [MaxLength(20)]
+    public string SaturdayWeeks { get; set; } = "";
+    
+    // Work hours (Mon-Fri standard)
+    public TimeSpan WorkStartTime { get; set; } = new TimeSpan(8, 0, 0);
+    public TimeSpan WorkEndTime { get; set; } = new TimeSpan(17, 0, 0);
+    public TimeSpan BreakStartTime { get; set; } = new TimeSpan(12, 0, 0);
+    public TimeSpan BreakEndTime { get; set; } = new TimeSpan(13, 0, 0);
+    
+    // Saturday work hours (if different from regular)
+    public TimeSpan? SaturdayStartTime { get; set; }
+    public TimeSpan? SaturdayEndTime { get; set; }
+    
+    // Late threshold in minutes
+    public int LateThresholdMinutes { get; set; } = 15;
+    
+    // Laos Law: Standard monthly hours (160 hours = 20 days × 8 hours)
+    public decimal StandardMonthlyHours { get; set; } = 160;
+    
+    // Daily work hours (excluding break)
+    public decimal DailyWorkHours { get; set; } = 8;
+    
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Check if a given day of week is a work day
+    /// </summary>
+    public bool IsWorkDay(DayOfWeek day)
+    {
+        return day switch
+        {
+            DayOfWeek.Monday => Monday,
+            DayOfWeek.Tuesday => Tuesday,
+            DayOfWeek.Wednesday => Wednesday,
+            DayOfWeek.Thursday => Thursday,
+            DayOfWeek.Friday => Friday,
+            DayOfWeek.Saturday => Saturday,
+            DayOfWeek.Sunday => Sunday,
+            _ => false
+        };
+    }
+    
+    /// <summary>
+    /// Check if a specific Saturday of the month is a work day
+    /// </summary>
+    /// <param name="weekOfMonth">Which week (1-5)</param>
+    public bool IsSaturdayWorkDay(int weekOfMonth)
+    {
+        if (!Saturday || SaturdayWorkType == "NONE") return false;
+        if (SaturdayWeeks == "ALL") return true;
+        
+        var weeks = SaturdayWeeks?.Split(',') ?? Array.Empty<string>();
+        return weeks.Contains(weekOfMonth.ToString());
+    }
+    
+    /// <summary>
+    /// Get work hours for Saturday
+    /// </summary>
+    public decimal GetSaturdayHours()
+    {
+        return SaturdayWorkType switch
+        {
+            "FULL" => 8,
+            "HALF" => 4,
+            _ => SaturdayHours
+        };
+    }
+    
+    /// <summary>
+    /// Get work days per month based on schedule
+    /// Mon-Fri = 20 days, Mon-Sat(half) = 23 days, Mon-Sat(full) = 26 days
+    /// </summary>
+    public decimal GetWorkDaysPerMonth()
+    {
+        return SaturdayWorkType switch
+        {
+            "HALF" => 23m, // 20 + (4 saturdays × 0.5)
+            "FULL" => 26m,   // ~26 work days 
+            _ => 20m         // Mon-Fri standard
+        };
+    }
+}
+
+/// <summary>
+/// Currency conversion rate - stores historical rates
+/// </summary>
+public class ConversionRate
+{
+    [Key]
+    public int ConversionRateId { get; set; }
+    
+    [Required, MaxLength(3)]
+    public string FromCurrency { get; set; } = "USD";
+    
+    [Required, MaxLength(3)]
+    public string ToCurrency { get; set; } = "LAK";
+    
+    /// <summary>
+    /// Exchange rate: 1 FromCurrency = Rate ToCurrency
+    /// e.g., USD to LAK = 22000 means 1 USD = 22,000 LAK
+    /// </summary>
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal Rate { get; set; }
+    
+    /// <summary>
+    /// Date this rate becomes effective
+    /// </summary>
+    public DateTime EffectiveDate { get; set; }
+    
+    /// <summary>
+    /// Date this rate expires (null = current rate)
+    /// </summary>
+    public DateTime? ExpiryDate { get; set; }
+    
+    public bool IsActive { get; set; } = true;
+    
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    
+    [MaxLength(200)]
+    public string? Notes { get; set; }
+}
+

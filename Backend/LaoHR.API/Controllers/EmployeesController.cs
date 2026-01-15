@@ -66,33 +66,106 @@ public class EmployeesController : ControllerBase
     /// </summary>
     [Authorize(Roles = "Admin,HR")]
     [HttpPost]
-    public async Task<ActionResult<Employee>> CreateEmployee(Employee employee)
+    public async Task<ActionResult<Employee>> CreateEmployee([FromBody] CreateEmployeeDto request)
     {
         // Generate employee code if not provided
-        if (string.IsNullOrWhiteSpace(employee.EmployeeCode))
+        var code = request.EmployeeCode;
+        if (string.IsNullOrWhiteSpace(code))
         {
             var count = await _context.Employees.CountAsync() + 1;
-            employee.EmployeeCode = $"EMP{count:D4}";
+            code = $"EMP{count:D4}";
         }
         
-        employee.CreatedAt = DateTime.UtcNow;
+        var employee = new Employee
+        {
+            EmployeeCode = code,
+            LaoName = request.LaoName,
+            EnglishName = request.EnglishName,
+            NssfId = request.NssfId,
+            TaxId = request.TaxId,
+            DateOfBirth = request.DateOfBirth,
+            Gender = request.Gender,
+            Phone = request.Phone,
+            Email = request.Email,
+            DependentCount = request.DependentCount,
+            SalaryCurrency = request.SalaryCurrency ?? "LAK",
+            DepartmentId = request.DepartmentId,
+            JobTitle = request.JobTitle,
+            HireDate = request.HireDate,
+            BaseSalary = request.BaseSalary,
+            BankName = request.BankName,
+            BankAccount = request.BankAccount,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
+        };
+        
         _context.Employees.Add(employee);
         await _context.SaveChangesAsync();
         
         return CreatedAtAction(nameof(GetEmployee), new { id = employee.EmployeeId }, employee);
     }
     
+    // ... UpdateEmployee ...
+    
+    // ... existing actions ...
+
+
+
+// DTOs
+public class CreateEmployeeDto
+{
+    public string? EmployeeCode { get; set; }
+    
+    [System.ComponentModel.DataAnnotations.Required]
+    public string LaoName { get; set; } = string.Empty;
+    
+    public string? EnglishName { get; set; }
+    public string? NssfId { get; set; }
+    public string? TaxId { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public string? Phone { get; set; }
+    public string? Email { get; set; }
+    public int DependentCount { get; set; }
+    public string? SalaryCurrency { get; set; }
+    public int? DepartmentId { get; set; }
+    public string? JobTitle { get; set; }
+    public DateTime? HireDate { get; set; }
+    public decimal BaseSalary { get; set; }
+    public string? BankName { get; set; }
+    public string? BankAccount { get; set; }
+}
+    
     /// <summary>
     /// Update employee
     /// </summary>
     [Authorize(Roles = "Admin,HR")]
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateEmployee(int id, Employee employee)
+    public async Task<IActionResult> UpdateEmployee(int id, [FromBody] CreateEmployeeDto request)
     {
-        if (id != employee.EmployeeId) return BadRequest();
+        var employee = await _context.Employees.FindAsync(id);
+        if (employee == null) return NotFound();
+        
+        // Update fields
+        employee.LaoName = request.LaoName;
+        employee.EnglishName = request.EnglishName;
+        employee.NssfId = request.NssfId;
+        employee.TaxId = request.TaxId;
+        employee.DateOfBirth = request.DateOfBirth;
+        employee.Gender = request.Gender;
+        employee.Phone = request.Phone;
+        employee.Email = request.Email;
+        employee.DependentCount = request.DependentCount;
+        employee.SalaryCurrency = request.SalaryCurrency ?? "LAK";
+        employee.DepartmentId = request.DepartmentId;
+        employee.JobTitle = request.JobTitle;
+        employee.HireDate = request.HireDate;
+        employee.BaseSalary = request.BaseSalary;
+        employee.BankName = request.BankName;
+        employee.BankAccount = request.BankAccount;
         
         employee.UpdatedAt = DateTime.UtcNow;
-        _context.Entry(employee).State = EntityState.Modified;
+        // EmployeeCode is generally not updated, but could be if needed. keeping it as is for now.
         
         try
         {

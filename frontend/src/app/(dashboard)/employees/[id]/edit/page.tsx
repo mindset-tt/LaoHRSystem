@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { useLanguage } from '@/components/providers/LanguageProvider';
 import { EmployeeForm } from '@/components/forms/EmployeeForm';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { employeesApi } from '@/lib/endpoints';
@@ -18,6 +19,7 @@ import styles from './page.module.css';
 export default function EditEmployeePage() {
     const params = useParams();
     const { role, loading: authLoading } = useAuth();
+    const { t } = useLanguage();
     const [employee, setEmployee] = useState<Employee | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -100,20 +102,20 @@ export default function EditEmployeePage() {
             <div className={styles.header}>
                 <div className={styles.breadcrumbs}>
                     <Link href="/employees" className={styles.breadcrumbLink}>
-                        Employees
+                        {t.employees.title}
                     </Link>
                     <span className={styles.breadcrumbSeparator}>/</span>
                     <Link href={`/employees/${employeeId}`} className={styles.breadcrumbLink}>
                         {employee?.englishName || employee?.laoName}
                     </Link>
                     <span className={styles.breadcrumbSeparator}>/</span>
-                    <span className={styles.breadcrumbCurrent}>Edit</span>
+                    <span className={styles.breadcrumbCurrent}>{t.employeeDetail.edit}</span>
                 </div>
             </div>
 
-            <h1 className={styles.title}>Edit Employee</h1>
+            <h1 className={styles.title}>{t.employeeForm.editTitle}</h1>
             <p className={styles.subtitle}>
-                Update employee information
+                {t.employeeForm.editSubtitle || 'Update employee information'}
             </p>
 
             {employee && <EmployeeForm employee={employee} />}

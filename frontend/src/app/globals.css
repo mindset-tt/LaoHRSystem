@@ -14,7 +14,7 @@
   /* ---------------------------------------------------------------------
      Color System - Premium Palette
      --------------------------------------------------------------------- */
-  
+
   /* Primary - Deep Indigo (Professional, Trustworthy) */
   --color-primary-50: 238 242 255;
   --color-primary-100: 224 231 255;
@@ -26,7 +26,7 @@
   --color-primary-700: 67 56 202;
   --color-primary-800: 55 48 163;
   --color-primary-900: 49 46 129;
-  
+
   /* Accent - Warm Amber (Approachable, Action) */
   --color-accent-50: 255 251 235;
   --color-accent-100: 254 243 199;
@@ -36,25 +36,25 @@
   --color-accent-500: 245 158 11;
   --color-accent-600: 217 119 6;
   --color-accent-700: 180 83 9;
-  
+
   /* Semantic Colors */
   --color-success-50: 240 253 244;
   --color-success-100: 220 252 231;
   --color-success-500: 34 197 94;
   --color-success-600: 22 163 74;
   --color-success-700: 21 128 61;
-  
+
   --color-warning-50: 254 252 232;
   --color-warning-100: 254 249 195;
   --color-warning-500: 234 179 8;
   --color-warning-600: 202 138 4;
-  
+
   --color-error-50: 254 242 242;
   --color-error-100: 254 226 226;
   --color-error-500: 239 68 68;
   --color-error-600: 220 38 38;
   --color-error-700: 185 28 28;
-  
+
   /* Neutral - Warm Grays */
   --color-neutral-50: 250 250 250;
   --color-neutral-100: 245 245 245;
@@ -66,7 +66,7 @@
   --color-neutral-700: 64 64 64;
   --color-neutral-800: 38 38 38;
   --color-neutral-900: 23 23 23;
-  
+
   /* Surface Colors */
   --color-surface: 255 255 255;
   --color-surface-elevated: 255 255 255;
@@ -74,73 +74,98 @@
   --color-background: 249 250 251;
   --color-border: 229 231 235;
   --color-border-light: 243 244 246;
-  
+
   /* Text Colors */
   --color-text: 17 24 39;
   --color-text-secondary: 75 85 99;
   --color-text-muted: 156 163 175;
   --color-text-inverse: 255 255 255;
-  
+
   /* ---------------------------------------------------------------------
      Typography
      --------------------------------------------------------------------- */
   --font-family-sans: 'Inter', 'Noto Sans Lao', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  
+
   /* Font Sizes - Fluid Scale */
-  --font-size-xs: 0.75rem;     /* 12px */
-  --font-size-sm: 0.875rem;    /* 14px */
-  --font-size-base: 1rem;      /* 16px */
-  --font-size-lg: 1.125rem;    /* 18px */
-  --font-size-xl: 1.25rem;     /* 20px */
-  --font-size-2xl: 1.5rem;     /* 24px */
-  --font-size-3xl: 1.875rem;   /* 30px */
-  --font-size-4xl: 2.25rem;    /* 36px */
-  
+  --font-size-xs: 0.75rem;
+  /* 12px */
+  --font-size-sm: 0.875rem;
+  /* 14px */
+  --font-size-base: 1rem;
+  /* 16px */
+  --font-size-lg: 1.125rem;
+  /* 18px */
+  --font-size-xl: 1.25rem;
+  /* 20px */
+  --font-size-2xl: 1.5rem;
+  /* 24px */
+  --font-size-3xl: 1.875rem;
+  /* 30px */
+  --font-size-4xl: 2.25rem;
+  /* 36px */
+
   /* Font Weights */
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  
+
   /* Line Heights */
   --line-height-tight: 1.25;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.625;
-  
+
   /* Letter Spacing */
   --letter-spacing-tight: -0.025em;
   --letter-spacing-normal: 0;
   --letter-spacing-wide: 0.025em;
-  
+
   /* ---------------------------------------------------------------------
      Spacing Scale
      --------------------------------------------------------------------- */
   --space-0: 0;
-  --space-1: 0.25rem;   /* 4px */
-  --space-2: 0.5rem;    /* 8px */
-  --space-3: 0.75rem;   /* 12px */
-  --space-4: 1rem;      /* 16px */
-  --space-5: 1.25rem;   /* 20px */
-  --space-6: 1.5rem;    /* 24px */
-  --space-8: 2rem;      /* 32px */
-  --space-10: 2.5rem;   /* 40px */
-  --space-12: 3rem;     /* 48px */
-  --space-16: 4rem;     /* 64px */
-  --space-20: 5rem;     /* 80px */
-  --space-24: 6rem;     /* 96px */
-  
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-5: 1.25rem;
+  /* 20px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-10: 2.5rem;
+  /* 40px */
+  --space-12: 3rem;
+  /* 48px */
+  --space-16: 4rem;
+  /* 64px */
+  --space-20: 5rem;
+  /* 80px */
+  --space-24: 6rem;
+  /* 96px */
+
   /* ---------------------------------------------------------------------
      Border Radius
      --------------------------------------------------------------------- */
   --radius-none: 0;
-  --radius-sm: 0.25rem;    /* 4px */
-  --radius-md: 0.375rem;   /* 6px */
-  --radius-lg: 0.5rem;     /* 8px */
-  --radius-xl: 0.75rem;    /* 12px */
-  --radius-2xl: 1rem;      /* 16px */
+  --radius-sm: 0.25rem;
+  /* 4px */
+  --radius-md: 0.375rem;
+  /* 6px */
+  --radius-lg: 0.5rem;
+  /* 8px */
+  --radius-xl: 0.75rem;
+  /* 12px */
+  --radius-2xl: 1rem;
+  /* 16px */
   --radius-full: 9999px;
-  
+
   /* ---------------------------------------------------------------------
      Shadows - Subtle, Premium Feel
      --------------------------------------------------------------------- */
@@ -149,19 +174,19 @@
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
   --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  
+
   /* Focus Ring */
   --ring-width: 2px;
   --ring-offset: 2px;
   --ring-color: rgb(var(--color-primary-500) / 0.5);
-  
+
   /* ---------------------------------------------------------------------
      Transitions
      --------------------------------------------------------------------- */
   --transition-fast: 150ms ease;
   --transition-normal: 200ms ease;
   --transition-slow: 300ms ease;
-  
+
   /* ---------------------------------------------------------------------
      Z-Index Scale
      --------------------------------------------------------------------- */
@@ -182,7 +207,7 @@
     --color-background: 9 9 11;
     --color-border: 63 63 70;
     --color-border-light: 39 39 42;
-    
+
     --color-text: 250 250 250;
     --color-text-secondary: 161 161 170;
     --color-text-muted: 113 113 122;
@@ -218,6 +243,16 @@ body {
   min-height: 100vh;
 }
 
+/* Form Elements - Inherit font for Lao support */
+input,
+button,
+textarea,
+select,
+optgroup,
+option {
+  font-family: var(--font-family-sans);
+}
+
 /* Focus Styles - Accessibility */
 :focus-visible {
   outline: var(--ring-width) solid var(--ring-color);
@@ -234,47 +269,99 @@ body {
    Typography Utilities
    ========================================================================== */
 
-.text-xs { font-size: var(--font-size-xs); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-base { font-size: var(--font-size-base); }
-.text-lg { font-size: var(--font-size-lg); }
-.text-xl { font-size: var(--font-size-xl); }
-.text-2xl { font-size: var(--font-size-2xl); }
-.text-3xl { font-size: var(--font-size-3xl); }
-.text-4xl { font-size: var(--font-size-4xl); }
+.text-xs {
+  font-size: var(--font-size-xs);
+}
 
-.font-normal { font-weight: var(--font-weight-normal); }
-.font-medium { font-weight: var(--font-weight-medium); }
-.font-semibold { font-weight: var(--font-weight-semibold); }
-.font-bold { font-weight: var(--font-weight-bold); }
+.text-sm {
+  font-size: var(--font-size-sm);
+}
 
-.text-primary { color: rgb(var(--color-primary-600)); }
-.text-secondary { color: rgb(var(--color-text-secondary)); }
-.text-muted { color: rgb(var(--color-text-muted)); }
-.text-success { color: rgb(var(--color-success-600)); }
-.text-warning { color: rgb(var(--color-warning-600)); }
-.text-error { color: rgb(var(--color-error-600)); }
+.text-base {
+  font-size: var(--font-size-base);
+}
+
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+
+.text-xl {
+  font-size: var(--font-size-xl);
+}
+
+.text-2xl {
+  font-size: var(--font-size-2xl);
+}
+
+.text-3xl {
+  font-size: var(--font-size-3xl);
+}
+
+.text-4xl {
+  font-size: var(--font-size-4xl);
+}
+
+.font-normal {
+  font-weight: var(--font-weight-normal);
+}
+
+.font-medium {
+  font-weight: var(--font-weight-medium);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.text-primary {
+  color: rgb(var(--color-primary-600));
+}
+
+.text-secondary {
+  color: rgb(var(--color-text-secondary));
+}
+
+.text-muted {
+  color: rgb(var(--color-text-muted));
+}
+
+.text-success {
+  color: rgb(var(--color-success-600));
+}
+
+.text-warning {
+  color: rgb(var(--color-warning-600));
+}
+
+.text-error {
+  color: rgb(var(--color-error-600));
+}
 
 /* ==========================================================================
    Skeleton Loading Animations
    ========================================================================== */
 
 @keyframes skeleton-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.5;
   }
 }
 
 .skeleton {
-  background: linear-gradient(
-    90deg,
-    rgb(var(--color-neutral-200)) 0%,
-    rgb(var(--color-neutral-100)) 50%,
-    rgb(var(--color-neutral-200)) 100%
-  );
+  background: linear-gradient(90deg,
+      rgb(var(--color-neutral-200)) 0%,
+      rgb(var(--color-neutral-100)) 50%,
+      rgb(var(--color-neutral-200)) 100%);
   background-size: 200% 100%;
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   border-radius: var(--radius-md);

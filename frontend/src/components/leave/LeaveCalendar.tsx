@@ -2,36 +2,30 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
+import { Card } from '@/components/ui/Card';
+import { Skeleton } from '@/components/ui/Skeleton';
 import { leaveApi } from '@/lib/endpoints';
 import type { LeaveCalendarItem } from '@/lib/types';
 import styles from './LeaveCalendar.module.css';
 
-interface LeaveCalendarProps {
-    onClose?: () => void;
-}
-
-const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const WEEKDAYS_LAO = ['ອາທິດ', 'ຈັນ', 'ອັງຄານ', 'ພຸດ', 'ພະຫັດ', 'ສຸກ', 'ເສົາ'];
-
-const LEAVE_COLORS: Record<string, string> = {
-    ANNUAL: '#6366f1',
-    SICK: '#ef4444',
-    PERSONAL: '#f59e0b',
-    MATERNITY: '#ec4899',
-    PATERNITY: '#8b5cf6',
-    UNPAID: '#6b7280',
+const LEAVE_COLORS: Record<string, { dot: string; text: string }> = {
+    ANNUAL: { dot: '#6366f1', text: 'ພັກປະຈຳປີ' },
+    SICK: { dot: '#ef4444', text: 'ພັກປ່ວຍ' },
+    PERSONAL: { dot: '#f59e0b', text: 'ກິດສ່ວນຕົວ' },
+    MATERNITY: { dot: '#ec4899', text: 'ລາຄອດ' },
+    PATERNITY: { dot: '#8b5cf6', text: 'ລາເມຍຄອດ' },
+    UNPAID: { dot: '#6b7280', text: 'ບໍ່ມີເງິນ' },
 };
 
 /**
  * Leave Calendar Component
- * Shows a monthly calendar view with leave requests marked
+ * Shows a monthly calendar view with leave requests marked (same style as attendance calendar)
  */
-export function LeaveCalendar({ onClose }: LeaveCalendarProps) {
+export function LeaveCalendar() {
     const { language } = useLanguage();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [leaves, setLeaves] = useState<LeaveCalendarItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -52,161 +46,159 @@ export function LeaveCalendar({ onClose }: LeaveCalendarProps) {
         loadLeaves();
     }, [loadLeaves]);
 
-    // Calculate calendar grid
+    // Calendar days logic (same as attendance page)
     const calendarDays = useMemo(() => {
         const firstDay = new Date(year, month, 1);
         const lastDay = new Date(year, month + 1, 0);
-        const startPadding = firstDay.getDay();
-        const totalDays = lastDay.getDate();
+        const daysInMonth = lastDay.getDate();
+        const startDayOfWeek = firstDay.getDay();
 
-        const days: (number | null)[] = [];
+        const days: { date: Date; isCurrentMonth: boolean; leaves: LeaveCalendarItem[] }[] = [];
 
-        // Add padding for days before the 1st
-        for (let i = 0; i < startPadding; i++) {
-            days.push(null);
+        // Previous month days
+        for (let i = startDayOfWeek - 1; i >= 0; i--) {
+            const date = new Date(year, month, -i);
+            days.push({ date, isCurrentMonth: false, leaves: [] });
         }
 
-        // Add all days of the month
-        for (let i = 1; i <= totalDays; i++) {
-            days.push(i);
+        // Current month days
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            // Normalize to date string (YYYY-MM-DD) to avoid timezone issues
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+            const dayLeaves = leaves.filter(leave => {
+                // Extract date parts only (ignore time/timezone)
+                const startStr = leave.startDate.split('T')[0];
+                const endStr = leave.endDate.split('T')[0];
+                return dateStr >= startStr && dateStr <= endStr;
+            });
+            days.push({ date, isCurrentMonth: true, leaves: dayLeaves });
+        }
+
+        // Next month days to fill the grid
+        const remaining = 42 - days.length;
+        for (let i = 1; i <= remaining; i++) {
+            const date = new Date(year, month + 1, i);
+            days.push({ date, isCurrentMonth: false, leaves: [] });
         }
 
         return days;
-    }, [year, month]);
+    }, [year, month, leaves]);
 
-    // Get leaves for a specific day
-    const getLeavesForDay = useCallback((day: number) => {
-        const date = new Date(year, month, day);
-        return leaves.filter(leave => {
-            const start = new Date(leave.startDate);
-            const end = new Date(leave.endDate);
-            return date >= start && date <= end;
-        });
-    }, [leaves, year, month]);
-
-    const goToPrevMonth = () => {
-        setCurrentDate(new Date(year, month - 1, 1));
-        setSelectedDay(null);
+    const navigateMonth = (direction: -1 | 1) => {
+        setCurrentDate(new Date(year, month + direction, 1));
     };
 
-    const goToNextMonth = () => {
-        setCurrentDate(new Date(year, month + 1, 1));
-        setSelectedDay(null);
-    };
-
-    const goToToday = () => {
-        setCurrentDate(new Date());
-        setSelectedDay(null);
-    };
-
-    const monthName = currentDate.toLocaleString(language === 'lo' ? 'lo-LA' : 'en-US', { month: 'long', year: 'numeric' });
-    const weekdays = language === 'lo' ? WEEKDAYS_LAO : WEEKDAYS;
-
-    const selectedDayLeaves = selectedDay ? getLeavesForDay(selectedDay) : [];
+    const isToday = (date: Date) => date.toDateString() === new Date().toDateString();
 
     return (
         <div className={styles.container}>
-            <div className={styles.header}>
-                <div className={styles.navigation}>
-                    <button className={styles.navButton} onClick={goToPrevMonth}>
-                        ←
+            {/* Calendar Navigation */}
+            <Card>
+                <div className={styles.calendarHeader}>
+                    <button className={styles.navBtn} onClick={() => navigateMonth(-1)}>
+                        <ChevronLeftIcon />
                     </button>
-                    <h2 className={styles.monthTitle}>{monthName}</h2>
-                    <button className={styles.navButton} onClick={goToNextMonth}>
-                        →
+                    <h2 className={styles.monthTitle}>
+                        {new Intl.DateTimeFormat(language === 'lo' ? 'lo-LA' : 'en-US', { month: 'long', year: 'numeric' }).format(currentDate)}
+                    </h2>
+                    <button className={styles.navBtn} onClick={() => navigateMonth(1)}>
+                        <ChevronRightIcon />
                     </button>
                 </div>
-                <button className={styles.todayButton} onClick={goToToday}>
-                    {language === 'lo' ? 'ມື້ນີ້' : 'Today'}
-                </button>
-            </div>
+            </Card>
 
-            <div className={styles.calendar}>
-                <div className={styles.weekdays}>
-                    {weekdays.map((day) => (
-                        <div key={day} className={styles.weekday}>{day}</div>
-                    ))}
-                </div>
+            {/* Calendar Grid */}
+            <Card noPadding>
+                {loading ? (
+                    <div className={styles.loadingCalendar}>
+                        <Skeleton height={400} />
+                    </div>
+                ) : (
+                    <div className={styles.calendar}>
+                        {/* Weekday headers */}
+                        <div className={styles.weekdays}>
+                            {Array.from({ length: 7 }).map((_, i) => {
+                                const d = new Date(2024, 0, 7 + i); // Sunday start
+                                return (
+                                    <div key={i} className={styles.weekday}>
+                                        {new Intl.DateTimeFormat(language === 'lo' ? 'lo-LA' : 'en-US', { weekday: 'short' }).format(d)}
+                                    </div>
+                                );
+                            })}
+                        </div>
 
-                <div className={styles.days}>
-                    {calendarDays.map((day, index) => {
-                        if (day === null) {
-                            return <div key={`empty-${index}`} className={styles.emptyDay} />;
-                        }
+                        {/* Days grid */}
+                        <div className={styles.daysGrid}>
+                            {calendarDays.map((day, index) => {
+                                const dayIsToday = isToday(day.date);
+                                const isWeekend = day.date.getDay() === 0 || day.date.getDay() === 6;
 
-                        const dayLeaves = getLeavesForDay(day);
-                        const isToday =
-                            day === new Date().getDate() &&
-                            month === new Date().getMonth() &&
-                            year === new Date().getFullYear();
-                        const isSelected = day === selectedDay;
-
-                        return (
-                            <div
-                                key={day}
-                                className={`${styles.day} ${isToday ? styles.today : ''} ${isSelected ? styles.selected : ''}`}
-                                onClick={() => setSelectedDay(day)}
-                            >
-                                <span className={styles.dayNumber}>{day}</span>
-                                {dayLeaves.length > 0 && (
-                                    <div className={styles.leaveIndicators}>
-                                        {dayLeaves.slice(0, 3).map((leave, i) => (
-                                            <div
-                                                key={i}
-                                                className={styles.leaveIndicator}
-                                                style={{ backgroundColor: LEAVE_COLORS[leave.leaveType] || '#6b7280' }}
-                                                title={`${leave.employeeName} - ${leave.leaveType}`}
-                                            />
-                                        ))}
-                                        {dayLeaves.length > 3 && (
-                                            <span className={styles.moreCount}>+{dayLeaves.length - 3}</span>
+                                return (
+                                    <div
+                                        key={index}
+                                        className={`
+                                            ${styles.dayCell}
+                                            ${!day.isCurrentMonth ? styles.otherMonth : ''}
+                                            ${dayIsToday ? styles.today : ''}
+                                            ${isWeekend ? styles.weekend : ''}
+                                        `}
+                                    >
+                                        <span className={styles.dayNumber}>{day.date.getDate()}</span>
+                                        {day.leaves.length > 0 && (
+                                            <div className={styles.leaveIndicators}>
+                                                {day.leaves.slice(0, 3).map((leave, i) => (
+                                                    <div key={i} className={styles.leaveIndicator}>
+                                                        <span
+                                                            className={styles.statusDot}
+                                                            style={{ backgroundColor: LEAVE_COLORS[leave.leaveType]?.dot || '#6b7280' }}
+                                                        />
+                                                        <span className={styles.leaveName}>
+                                                            {leave.employeeName?.split(' ')[0]}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                                {day.leaves.length > 3 && (
+                                                    <span className={styles.moreCount}>+{day.leaves.length - 3}</span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
-                                )}
-                            </div>
-                        );
-                    })}
-                </div>
-            </div>
-
-            {selectedDay && selectedDayLeaves.length > 0 && (
-                <div className={styles.dayDetails}>
-                    <h3 className={styles.detailsTitle}>
-                        {language === 'lo' ? 'ວັນທີ' : 'Date'}: {selectedDay}/{month + 1}/{year}
-                    </h3>
-                    <div className={styles.leaveList}>
-                        {selectedDayLeaves.map((leave) => (
-                            <div key={leave.leaveId} className={styles.leaveItem}>
-                                <div
-                                    className={styles.leaveColor}
-                                    style={{ backgroundColor: LEAVE_COLORS[leave.leaveType] }}
-                                />
-                                <div className={styles.leaveInfo}>
-                                    <div className={styles.employeeName}>{leave.employeeName}</div>
-                                    <div className={styles.leaveType}>
-                                        {leave.leaveType}
-                                        {leave.isHalfDay && ` (${leave.halfDayType})`}
-                                    </div>
-                                </div>
-                                <div className={`${styles.status} ${styles[leave.status.toLowerCase()]}`}>
-                                    {leave.status}
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
+            </Card>
 
             {/* Legend */}
             <div className={styles.legend}>
-                {Object.entries(LEAVE_COLORS).map(([type, color]) => (
+                {Object.entries(LEAVE_COLORS).map(([type, { dot, text }]) => (
                     <div key={type} className={styles.legendItem}>
-                        <div className={styles.legendColor} style={{ backgroundColor: color }} />
-                        <span>{type}</span>
+                        <span className={styles.statusDot} style={{ backgroundColor: dot }} />
+                        <span>{language === 'lo' ? text : type.charAt(0) + type.slice(1).toLowerCase()}</span>
                     </div>
                 ))}
             </div>
         </div>
+    );
+}
+
+// Icons
+function ChevronLeftIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="15 18 9 12 15 6" />
+        </svg>
+    );
+}
+
+function ChevronRightIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="9 18 15 12 9 6" />
+        </svg>
     );
 }
 

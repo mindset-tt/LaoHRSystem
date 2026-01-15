@@ -4,6 +4,7 @@ using LaoHR.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace LaoHR.API.Migrations
 {
     [DbContext(typeof(LaoHRDbContext))]
-    partial class LaoHRDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260115082012_SaturdayWorkConfig")]
+    partial class SaturdayWorkConfig
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -196,51 +199,6 @@ namespace LaoHR.API.Migrations
                     b.ToTable("CompanySettings");
                 });
 
-            modelBuilder.Entity("LaoHR.Shared.Models.ConversionRate", b =>
-                {
-                    b.Property<int>("ConversionRateId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConversionRateId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EffectiveDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("FromCurrency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Notes")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<decimal>("Rate")
-                        .HasColumnType("decimal(18,4)");
-
-                    b.Property<string>("ToCurrency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("ConversionRateId");
-
-                    b.ToTable("ConversionRates");
-                });
-
             modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
                 {
                     b.Property<int>("DepartmentId")
@@ -276,7 +234,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 1,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(5507),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5544),
                             DepartmentCode = "ADMIN",
                             DepartmentName = "ບໍລິຫານ",
                             DepartmentNameEn = "Administration",
@@ -285,7 +243,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 2,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(6137),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5998),
                             DepartmentCode = "FIN",
                             DepartmentName = "ການເງິນ",
                             DepartmentNameEn = "Finance & Accounting",
@@ -294,7 +252,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 3,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(6140),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6000),
                             DepartmentCode = "IT",
                             DepartmentName = "ເຕັກນິກ",
                             DepartmentNameEn = "Information Technology",
@@ -303,7 +261,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 4,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(6141),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6001),
                             DepartmentCode = "SALES",
                             DepartmentName = "ການຂາຍ",
                             DepartmentNameEn = "Sales & Marketing",
@@ -439,7 +397,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 1,
                             BaseSalary = 8000000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(8050),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(7424),
                             DepartmentId = 3,
                             DependentCount = 0,
                             Email = "somphon@laohr.la",
@@ -457,7 +415,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 2,
                             BaseSalary = 12000000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(211),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8973),
                             DepartmentId = 1,
                             DependentCount = 0,
                             Email = "davanh@laohr.la",
@@ -475,7 +433,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 3,
                             BaseSalary = 9500000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(227),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8979),
                             DepartmentId = 2,
                             DependentCount = 0,
                             Email = "manivanh@laohr.la",
@@ -493,7 +451,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 4,
                             BaseSalary = 11000000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(230),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8982),
                             DepartmentId = 4,
                             DependentCount = 0,
                             Email = "phouvong@laohr.la",
@@ -511,7 +469,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 5,
                             BaseSalary = 7500000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(239),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8984),
                             DepartmentId = 4,
                             DependentCount = 0,
                             Email = "bounmi@laohr.la",
@@ -529,7 +487,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 6,
                             BaseSalary = 6500000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(241),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8986),
                             DepartmentId = 1,
                             DependentCount = 0,
                             Email = "souphaphon@laohr.la",
@@ -547,7 +505,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 7,
                             BaseSalary = 15000000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(329),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8988),
                             DepartmentId = 3,
                             DependentCount = 0,
                             Email = "vilayphon@laohr.la",
@@ -565,7 +523,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 8,
                             BaseSalary = 25000000m,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 776, DateTimeKind.Utc).AddTicks(332),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(8990),
                             DepartmentId = 2,
                             DependentCount = 0,
                             Email = "chanthala@laohr.la",
@@ -667,121 +625,121 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             HolidayId = 1,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(6539),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6287),
                             Date = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International New Year",
                             NameLao = "ປີໃໝ່ສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(6539),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6287),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 2,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7308),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6899),
                             Date = new DateTime(2026, 3, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Women's Day",
                             NameLao = "ວັນແມ່ຍິງສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7309),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6900),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 3,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7311),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6901),
                             Date = new DateTime(2026, 4, 14, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 1)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7311),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6902),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 4,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7313),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6903),
                             Date = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 2)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7313),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6903),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 5,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7314),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6904),
                             Date = new DateTime(2026, 4, 16, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 3)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7314),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6904),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 6,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7316),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6905),
                             Date = new DateTime(2026, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Labour Day",
                             NameLao = "ວັນກຳມະກອນສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7317),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6905),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 7,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7318),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6906),
                             Date = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Children's Day",
                             NameLao = "ວັນເດັກນ້ອຍສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7318),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6906),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 8,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7319),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6907),
                             Date = new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "Lao Women's Union Day",
                             NameLao = "ວັນແມ່ຍິງລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7320),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6908),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 9,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7321),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6909),
                             Date = new DateTime(2026, 10, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "National Teacher's Day",
                             NameLao = "ວັນຄູແຫ່ງຊາດ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7321),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6909),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 10,
-                            CreatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7323),
+                            CreatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6920),
                             Date = new DateTime(2026, 12, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "National Day",
                             NameLao = "ວັນຊາດ",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(7323),
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(6920),
                             Year = 2026
                         });
                 });
@@ -883,7 +841,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 5,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(6697)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 754, DateTimeKind.Utc).AddTicks(9384)
                         },
                         new
                         {
@@ -897,7 +855,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 3,
                             RequiresAttachment = true,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(7760)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(307)
                         },
                         new
                         {
@@ -911,7 +869,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(7954)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(489)
                         },
                         new
                         {
@@ -925,7 +883,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(7955)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(490)
                         },
                         new
                         {
@@ -939,7 +897,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(7957)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(491)
                         },
                         new
                         {
@@ -953,7 +911,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 774, DateTimeKind.Utc).AddTicks(7958)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(492)
                         });
                 });
 
@@ -1100,30 +1058,16 @@ namespace LaoHR.API.Migrations
                     b.Property<decimal>("BaseSalary")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<decimal>("BaseSalaryOriginal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("ContractCurrency")
-                        .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("ExchangeRateUsed")
-                        .HasColumnType("decimal(18,4)");
-
                     b.Property<decimal>("GrossIncome")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NetSalary")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("NetSalaryOriginal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NssfBase")
@@ -1140,11 +1084,6 @@ namespace LaoHR.API.Migrations
 
                     b.Property<decimal>("OvertimePay")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("PaymentCurrency")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("PeriodId")
                         .HasColumnType("int");
@@ -1197,56 +1136,56 @@ namespace LaoHR.API.Migrations
                             SettingKey = "NSSF_CEILING_BASE",
                             Description = "Maximum salary for NSSF calculation",
                             SettingValue = "4500000",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4487)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(4806)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYEE_RATE",
                             Description = "Employee NSSF contribution rate (5.5%)",
                             SettingValue = "0.055",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4858)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5123)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYER_RATE",
                             Description = "Employer NSSF contribution rate (6.0%)",
                             SettingValue = "0.060",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4860)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5136)
                         },
                         new
                         {
                             SettingKey = "WORK_START_TIME",
                             Description = "Standard work start time",
                             SettingValue = "08:30",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4861)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5137)
                         },
                         new
                         {
                             SettingKey = "WORK_END_TIME",
                             Description = "Standard work end time",
                             SettingValue = "17:30",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4861)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5138)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_USD",
                             Description = "USD to LAK Exchange Rate",
                             SettingValue = "22000",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4862)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5138)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_THB",
                             Description = "THB to LAK Exchange Rate",
                             SettingValue = "650",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4863)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5139)
                         },
                         new
                         {
                             SettingKey = "ZKTECO_ENABLED",
                             Description = "Global Switch for ZKTeco Integration",
                             SettingValue = "false",
-                            UpdatedAt = new DateTime(2026, 1, 15, 9, 22, 1, 775, DateTimeKind.Utc).AddTicks(4864)
+                            UpdatedAt = new DateTime(2026, 1, 15, 8, 20, 11, 755, DateTimeKind.Utc).AddTicks(5140)
                         });
                 });
 

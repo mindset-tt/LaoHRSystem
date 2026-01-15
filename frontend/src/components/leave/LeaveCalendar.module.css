@@ -1,124 +1,109 @@
+/* Container */
 .container {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    gap: var(--space-4, 1rem);
 }
 
-.header {
+/* Calendar Header - same as attendance */
+.calendarHeader {
     display: flex;
+    align-items: center;
     justify-content: space-between;
-    align-items: center;
+    padding: var(--space-2, 0.5rem) 0;
 }
 
-.navigation {
+.navBtn {
     display: flex;
     align-items: center;
-    gap: 1rem;
-}
-
-.navButton {
+    justify-content: center;
     width: 2.5rem;
     height: 2.5rem;
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 8px;
-    background: var(--bg-card, #ffffff);
-    color: var(--text-secondary, #6b7280);
-    font-size: 1.25rem;
+    background: transparent;
+    border: 1px solid rgb(var(--color-border-light, 229 231 235));
+    border-radius: var(--radius-md, 0.5rem);
     cursor: pointer;
+    color: rgb(var(--color-text-secondary, 107 114 128));
     transition: all 0.15s ease;
 }
 
-.navButton:hover {
-    background: var(--bg-hover, #f3f4f6);
-    border-color: var(--primary, #6366f1);
-    color: var(--primary, #6366f1);
+.navBtn:hover {
+    background: rgb(var(--color-neutral-100, 243 244 246));
+    border-color: rgb(var(--color-primary-500, 99 102 241));
+    color: rgb(var(--color-primary-600, 79 70 229));
 }
 
 .monthTitle {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: var(--text-primary, #111827);
-    min-width: 200px;
-    text-align: center;
+    font-size: var(--font-size-lg, 1.125rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: rgb(var(--color-text, 17 24 39));
+    margin: 0;
     text-transform: capitalize;
 }
 
-.todayButton {
-    padding: 0.5rem 1rem;
-    border: 1px solid var(--primary, #6366f1);
-    border-radius: 8px;
-    background: transparent;
-    color: var(--primary, #6366f1);
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
+/* Loading */
+.loadingCalendar {
+    padding: var(--space-6, 1.5rem);
 }
 
-.todayButton:hover {
-    background: var(--primary, #6366f1);
-    color: white;
-}
-
+/* Calendar Grid - same as attendance */
 .calendar {
-    background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 12px;
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .weekdays {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    background: var(--bg-secondary, #f9fafb);
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: rgb(var(--color-neutral-50, 249 250 251));
+    border-bottom: 1px solid rgb(var(--color-border-light, 229 231 235));
 }
 
 .weekday {
-    padding: 0.75rem;
+    padding: var(--space-3, 0.75rem);
     text-align: center;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-secondary, #6b7280);
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: var(--font-weight-semibold, 600);
+    color: rgb(var(--color-text-secondary, 107 114 128));
     text-transform: uppercase;
 }
 
-.days {
+.daysGrid {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
 }
 
-.day,
-.emptyDay {
+.dayCell {
     min-height: 80px;
-    padding: 0.5rem;
-    border-right: 1px solid var(--border-color, #e5e7eb);
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
-}
-
-.day:nth-child(7n) {
-    border-right: none;
-}
-
-.emptyDay {
-    background: var(--bg-secondary, #f9fafb);
-}
-
-.day {
-    cursor: pointer;
+    padding: var(--space-2, 0.5rem);
+    border-right: 1px solid rgb(var(--color-border-light, 229 231 235));
+    border-bottom: 1px solid rgb(var(--color-border-light, 229 231 235));
+    background: rgb(var(--color-bg-card, 255 255 255));
     transition: background 0.15s ease;
 }
 
-.day:hover {
-    background: var(--bg-hover, #f3f4f6);
+.dayCell:nth-child(7n) {
+    border-right: none;
 }
 
-.day.today {
-    background: rgba(99, 102, 241, 0.1);
+.dayCell:hover {
+    background: rgb(var(--color-neutral-50, 249 250 251));
 }
 
-.day.today .dayNumber {
-    background: var(--primary, #6366f1);
+.dayCell.otherMonth {
+    background: rgb(var(--color-neutral-50, 249 250 251));
+}
+
+.dayCell.otherMonth .dayNumber {
+    color: rgb(var(--color-text-muted, 156 163 175));
+}
+
+.dayCell.today {
+    background: rgba(var(--color-primary-500, 99 102 241), 0.08);
+}
+
+.dayCell.today .dayNumber {
+    background: rgb(var(--color-primary-500, 99 102 241));
     color: white;
     border-radius: 50%;
     width: 1.75rem;
@@ -128,161 +113,89 @@
     justify-content: center;
 }
 
-.day.selected {
-    background: rgba(99, 102, 241, 0.15);
-    outline: 2px solid var(--primary, #6366f1);
-    outline-offset: -2px;
+.dayCell.weekend .dayNumber {
+    color: rgb(var(--color-error-500, 239 68 68));
 }
 
 .dayNumber {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary, #111827);
+    font-size: var(--font-size-sm, 0.875rem);
+    font-weight: var(--font-weight-medium, 500);
+    color: rgb(var(--color-text, 17 24 39));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
 }
 
+/* Leave Indicators */
 .leaveIndicators {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 2px;
-    margin-top: 0.25rem;
+    margin-top: var(--space-1, 0.25rem);
 }
 
 .leaveIndicator {
-    width: 0.5rem;
-    height: 0.5rem;
-    border-radius: 50%;
-}
-
-.moreCount {
-    font-size: 0.625rem;
-    color: var(--text-secondary, #6b7280);
-}
-
-/* Day details panel */
-.dayDetails {
-    background: var(--bg-card, #ffffff);
-    border: 1px solid var(--border-color, #e5e7eb);
-    border-radius: 12px;
-    padding: 1rem;
-}
-
-.detailsTitle {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: var(--text-primary, #111827);
-    margin-bottom: 0.75rem;
-}
-
-.leaveList {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.leaveItem {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background: var(--bg-secondary, #f9fafb);
-    border-radius: 8px;
+    gap: 4px;
 }
 
-.leaveColor {
-    width: 0.75rem;
-    height: 0.75rem;
+.statusDot {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     flex-shrink: 0;
 }
 
-.leaveInfo {
-    flex: 1;
-    min-width: 0;
-}
-
-.employeeName {
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--text-primary, #111827);
+.leaveName {
+    font-size: 10px;
+    color: rgb(var(--color-text-secondary, 107 114 128));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 60px;
 }
 
-.leaveType {
-    font-size: 0.75rem;
-    color: var(--text-secondary, #6b7280);
-}
-
-.status {
-    font-size: 0.75rem;
-    font-weight: 500;
-    padding: 0.25rem 0.5rem;
+.moreCount {
+    font-size: 10px;
+    color: rgb(var(--color-text-muted, 156 163 175));
+    padding: 1px 4px;
+    background: rgb(var(--color-neutral-100, 243 244 246));
     border-radius: 4px;
 }
 
-.status.approved {
-    background: #d1fae5;
-    color: #059669;
-}
-
-.status.pending {
-    background: #fef3c7;
-    color: #d97706;
-}
-
-.status.rejected {
-    background: #fee2e2;
-    color: #dc2626;
-}
-
-/* Legend */
+/* Legend - same as attendance */
 .legend {
     display: flex;
     flex-wrap: wrap;
-    gap: 1rem;
-    padding: 1rem;
-    background: var(--bg-secondary, #f9fafb);
-    border-radius: 8px;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background: rgb(var(--color-neutral-50, 249 250 251));
+    border-radius: var(--radius-lg, 0.75rem);
 }
 
 .legendItem {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    color: var(--text-secondary, #6b7280);
+    gap: var(--space-2, 0.5rem);
+    font-size: var(--font-size-sm, 0.875rem);
+    color: rgb(var(--color-text-secondary, 107 114 128));
 }
 
-.legendColor {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 3px;
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-
-    .navButton,
-    .calendar,
-    .dayDetails {
-        --bg-card: #1f2937;
-        --border-color: #374151;
-        --bg-secondary: #111827;
-        --bg-hover: #374151;
+/* Responsive */
+@media (max-width: 768px) {
+    .dayCell {
+        min-height: 60px;
+        padding: var(--space-1, 0.25rem);
     }
 
-    .monthTitle,
-    .dayNumber,
-    .employeeName,
-    .detailsTitle {
-        --text-primary: #f9fafb;
+    .leaveName {
+        display: none;
     }
 
-    .weekday,
-    .leaveType,
-    .legendItem,
-    .moreCount {
-        --text-secondary: #9ca3af;
+    .legend {
+        gap: var(--space-2, 0.5rem);
     }
 }

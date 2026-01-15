@@ -46,7 +46,7 @@ public class EmailService : IEmailService
 
             var mailMessage = new MailMessage
             {
-                From = new MailAddress(fromEmail, fromName),
+                From = new MailAddress(fromEmail ?? "noreply@laohr.local", fromName ?? "Lao HR System"),
                 Subject = subject,
                 Body = body,
                 IsBodyHtml = true

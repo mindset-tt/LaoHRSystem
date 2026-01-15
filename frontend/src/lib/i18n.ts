@@ -113,6 +113,7 @@ export const dictionary = {
         employeeForm: {
             createTitle: 'Add New Employee',
             editTitle: 'Edit Employee',
+            editSubtitle: 'Update employee information',
             subtitle: 'Fill in the information below to create a new employee record',
             basicInfo: 'Basic Information',
             contactInfo: 'Contact Information',
@@ -134,7 +135,7 @@ export const dictionary = {
                 selectDepartment: 'Select department',
                 jobTitle: 'Job Title',
                 hireDate: 'Hire Date',
-                baseSalary: 'Base Salary (LAK)',
+                baseSalary: 'Base Salary',
                 bankName: 'Bank Name',
                 bankAccount: 'Bank Account Number',
             },
@@ -303,7 +304,7 @@ export const dictionary = {
             runPayrollTitle: 'Run Payroll for {period}',
             runPayrollDesc: 'Calculate salaries for all active employees based on their attendance records.',
             summary: {
-                gross: 'Total Gross',
+                gross: 'Total Salary',
                 deductions: 'Total Deductions',
                 net: 'Total Net',
                 employees: 'Employees',
@@ -436,6 +437,7 @@ export const dictionary = {
         employeeForm: {
             createTitle: 'ເພີ່ມພະນັກງານໃໝ່',
             editTitle: 'ແກ້ໄຂຂໍ້ມູນພະນັກງານ',
+            editSubtitle: 'ແກ້ໄຂຂໍ້ມູນພະນັກງານທີ່ມີຢູ່ໃນລະບົບ',
             subtitle: 'ຕື່ມຂໍ້ມູນລຸ່ມນີ້ເພື່ອສ້າງຂໍ້ມູນພະນັກງານໃໝ່',
             basicInfo: 'ຂໍ້ມູນພື້ນຖານ',
             contactInfo: 'ຂໍ້ມູນຕິດຕໍ່',
@@ -457,7 +459,7 @@ export const dictionary = {
                 selectDepartment: 'ເລືອກພະແນກ',
                 jobTitle: 'ຕຳແໜ່ງ',
                 hireDate: 'ວັນທີເຂົ້າວຽກ',
-                baseSalary: 'ເງິນເດືອນພື້ນຖານ (LAK)',
+                baseSalary: 'ເງິນເດືອນພື້ນຖານ',
                 bankName: 'ຊື່ທະນາຄານ',
                 bankAccount: 'ເລກບັນຊີ',
             },
@@ -626,7 +628,7 @@ export const dictionary = {
             runPayrollTitle: 'ຄິດໄລ່ເງິນເດືອນສຳລັບ {period}',
             runPayrollDesc: 'ຄິດໄລ່ເງິນເດືອນໃຫ້ພະນັກງານທຸກຄົນໂດຍອີງໃສ່ຂໍ້ມູນການມາເຮັດວຽກ.',
             summary: {
-                gross: 'ລາຍຮັບລວມ',
+                gross: 'ເງິນເດືອນລວມ',
                 deductions: 'ຫັກລວມ',
                 net: 'ເງິນເດືອນສຸດທິ',
                 employees: 'ຈຳນວນພະນັກງານ',
@@ -636,7 +638,7 @@ export const dictionary = {
                 exportAll: 'ສົ່ງອອກທັງໝົດ',
                 headers: {
                     employee: 'ພະນັກງານ',
-                    gross: 'ລາຍຮັບລວມ',
+                    gross: 'ເງິນເດືອນລວມ',
                     deductions: 'ລາຍການຫັກ',
                     net: 'ເງິນເດືອນສຸດທິ',
                     status: 'ສະຖານະ',

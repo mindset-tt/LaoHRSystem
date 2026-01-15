@@ -71,6 +71,13 @@ export const payrollApi = {
     },
 
     /**
+     * Export payroll period to Excel
+     */
+    exportPayroll: async (periodId: number): Promise<Blob> => {
+        return apiClient.getBlob(`/api/payroll/periods/${periodId}/export`);
+    },
+
+    /**
      * Calculate salary preview (without saving)
      */
     calculate: async (request: CalculateRequest): Promise<SalaryCalculation> => {

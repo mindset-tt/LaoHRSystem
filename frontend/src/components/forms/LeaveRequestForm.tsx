@@ -1,8 +1,9 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
-import type { CreateLeaveRequest } from '@/lib/types';
+import { workScheduleApi } from '@/lib/endpoints';
+import type { CreateLeaveRequest, WorkDayBreakdown } from '@/lib/types';
 import styles from './LeaveRequestForm.module.css';
 
 interface LeaveRequestFormProps {
@@ -31,7 +32,7 @@ export function LeaveRequestForm({
     onClose,
     onSubmit,
 }: LeaveRequestFormProps) {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [leaveType, setLeaveType] = useState<CreateLeaveRequest['leaveType']>('ANNUAL');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -42,8 +43,33 @@ export function LeaveRequestForm({
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [workDayBreakdown, setWorkDayBreakdown] = useState<WorkDayBreakdown | null>(null);
+    const [calculatingDays, setCalculatingDays] = useState(false);
 
-    // Calculate total days
+    // Fetch work day breakdown when dates change
+    useEffect(() => {
+        const calculateWorkDays = async () => {
+            if (isHalfDay || !startDate || !endDate) {
+                setWorkDayBreakdown(null);
+                return;
+            }
+
+            setCalculatingDays(true);
+            try {
+                const breakdown = await workScheduleApi.calculateWorkDays(startDate, endDate);
+                setWorkDayBreakdown(breakdown);
+            } catch (err) {
+                console.error('Failed to calculate work days:', err);
+                setWorkDayBreakdown(null);
+            } finally {
+                setCalculatingDays(false);
+            }
+        };
+
+        calculateWorkDays();
+    }, [startDate, endDate, isHalfDay]);
+
+    // Calculate total days (calendar days for display)
     const totalDays = useMemo(() => {
         if (isHalfDay) return 0.5;
         if (!startDate || !endDate) return 0;
@@ -53,6 +79,12 @@ export function LeaveRequestForm({
         const diffTime = Math.abs(end.getTime() - start.getTime());
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     }, [startDate, endDate, isHalfDay]);
+
+    // Actual work days to deduct from balance
+    const workDays = useMemo(() => {
+        if (isHalfDay) return 0.5;
+        return workDayBreakdown?.workDays ?? totalDays;
+    }, [isHalfDay, workDayBreakdown, totalDays]);
 
     const handleSubmit = async () => {
         setError('');
@@ -247,9 +279,36 @@ export function LeaveRequestForm({
                 </div>
 
                 {totalDays > 0 && (
-                    <div className={styles.totalDays}>
-                        <div className={styles.totalDaysLabel}>{t.leave.form.totalDays}</div>
-                        <div className={styles.totalDaysValue}>{totalDays}</div>
+                    <div className={styles.daysBreakdown}>
+                        <div className={styles.totalDays}>
+                            <div className={styles.totalDaysLabel}>
+                                {language === 'lo' ? 'ວັນເຮັດວຽກ' : 'Work Days'}
+                            </div>
+                            <div className={styles.totalDaysValue}>
+                                {calculatingDays ? '...' : workDays}
+                            </div>
+                        </div>
+
+                        {workDayBreakdown && workDays !== totalDays && (
+                            <div className={styles.breakdownInfo}>
+                                <span className={styles.breakdownItem}>
+                                    {language === 'lo' ? 'ວັນປະຕິທິນ:' : 'Calendar days:'}
+                                    <strong>{totalDays}</strong>
+                                </span>
+                                {workDayBreakdown.nonWorkDays > 0 && (
+                                    <span className={styles.breakdownItem}>
+                                        {language === 'lo' ? 'ວັນພັກ:' : 'Days off:'}
+                                        <strong>-{workDayBreakdown.nonWorkDays}</strong>
+                                    </span>
+                                )}
+                                {workDayBreakdown.holidays > 0 && (
+                                    <span className={styles.breakdownItem}>
+                                        {language === 'lo' ? 'ວັນພັກຊາດ:' : 'Holidays:'}
+                                        <strong>-{workDayBreakdown.holidays}</strong>
+                                    </span>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
