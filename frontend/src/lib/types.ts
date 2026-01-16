@@ -100,6 +100,19 @@ export interface PayrollPeriod {
     createdAt: string;
 }
 
+export interface PayrollAdjustment {
+    adjustmentId: number;
+    employeeId: number;
+    periodId: number;
+    name: string;
+    type: 'EARNING' | 'DEDUCTION' | 'BONUS';
+    amount: number;
+    isTaxable: boolean;
+    isNssfAssessable: boolean;
+    createdAt?: string;
+    employee?: Employee;
+}
+
 export interface SalarySlip {
     slipId: number;
     employeeId: number;
@@ -107,6 +120,7 @@ export interface SalarySlip {
     baseSalary: number;
     overtimePay: number;
     allowances: number;
+    bonus: number;
     grossIncome: number;
     nssfBase: number;
     nssfEmployeeDeduction: number;
@@ -133,6 +147,7 @@ export interface SalaryCalculation {
     baseSalary: number;
     overtimePay: number;
     allowances: number;
+    bonus: number;
     grossIncome: number;
     nssfBase: number;
     nssfEmployeeDeduction: number;
@@ -141,6 +156,7 @@ export interface SalaryCalculation {
     taxDeduction: number;
     otherDeductions: number;
     netSalary: number;
+    familyDeduction: number;
 }
 
 // -----------------------------------------------------------------------------

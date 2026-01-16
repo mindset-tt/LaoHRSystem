@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
@@ -8,6 +9,7 @@ using ClosedXML.Excel;
 
 namespace LaoHR.API.Controllers;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class LeaveController : ControllerBase
@@ -247,6 +249,14 @@ public class LeaveController : ControllerBase
             
         if (leave == null) return NotFound();
         
+        // Validate state transition: only PENDING leaves can be approved
+        if (leave.Status != "PENDING")
+            return BadRequest($"Cannot approve leave in '{leave.Status}' status. Only PENDING leaves can be approved.");
+        
+        // Prevent self-approval
+        if (request.ApprovedById == leave.EmployeeId)
+            return BadRequest("Employees cannot approve their own leave requests.");
+        
         leave.Status = "APPROVED";
         leave.ApprovedById = request.ApprovedById;
         leave.ApprovedAt = DateTime.UtcNow;
@@ -280,6 +290,10 @@ public class LeaveController : ControllerBase
             .FirstOrDefaultAsync(l => l.LeaveId == id);
             
         if (leave == null) return NotFound();
+        
+        // Validate state transition: only PENDING leaves can be rejected
+        if (leave.Status != "PENDING")
+            return BadRequest($"Cannot reject leave in '{leave.Status}' status. Only PENDING leaves can be rejected.");
         
         leave.Status = "REJECTED";
         leave.ApprovedById = request.ApprovedById;
@@ -414,6 +428,7 @@ public class LeaveController : ControllerBase
     /// <summary>
     /// Manually trigger monthly accrual (Admin only)
     /// </summary>
+    [Authorize(Roles = "Admin,HR")]
     [HttpPost("admin/run-accrual")]
     public async Task<IActionResult> RunMonthlyAccrual(
         [FromQuery] int? year = null,
@@ -432,6 +447,7 @@ public class LeaveController : ControllerBase
     /// <summary>
     /// Manually trigger year-end carry-over (Admin only)
     /// </summary>
+    [Authorize(Roles = "Admin,HR")]
     [HttpPost("admin/run-carryover")]
     public async Task<IActionResult> RunYearEndCarryOver(
         [FromQuery] int? fromYear = null,
@@ -450,6 +466,7 @@ public class LeaveController : ControllerBase
     /// <summary>
     /// Initialize leave balances for a year (Admin only)
     /// </summary>
+    [Authorize(Roles = "Admin,HR")]
     [HttpPost("admin/initialize-balances")]
     public async Task<IActionResult> InitializeBalances(
         [FromQuery] int? year = null,

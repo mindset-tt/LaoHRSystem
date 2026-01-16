@@ -29,6 +29,7 @@ public class LaoHRDbContext : DbContext
     public DbSet<Village> Villages { get; set; }
     public DbSet<WorkSchedule> WorkSchedules { get; set; }
     public DbSet<ConversionRate> ConversionRates { get; set; }
+    public DbSet<PayrollAdjustment> PayrollAdjustments { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

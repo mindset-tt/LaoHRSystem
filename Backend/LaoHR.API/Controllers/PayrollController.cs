@@ -118,6 +118,59 @@ public class PayrollController : ControllerBase
     }
     
     /// <summary>
+    /// Approve a salary slip (CALCULATED -> APPROVED)
+    /// </summary>
+    [HttpPost("slips/{slipId}/approve")]
+    public async Task<ActionResult<SalarySlip>> ApproveSlip(int slipId)
+    {
+        var slip = await _context.SalarySlips
+            .Include(s => s.Employee)
+            .FirstOrDefaultAsync(s => s.SlipId == slipId);
+        
+        if (slip == null) return NotFound();
+        
+        if (slip.Status != "CALCULATED")
+            return BadRequest($"Cannot approve slip in '{slip.Status}' status. Only CALCULATED slips can be approved.");
+        
+        slip.Status = "APPROVED";
+        await _context.SaveChangesAsync();
+        
+        return Ok(slip);
+    }
+    
+    /// <summary>
+    /// Mark a salary slip as paid (APPROVED -> PAID)
+    /// </summary>
+    [HttpPost("slips/{slipId}/paid")]
+    public async Task<ActionResult<SalarySlip>> MarkAsPaid(int slipId)
+    {
+        var slip = await _context.SalarySlips
+            .Include(s => s.Employee)
+            .Include(s => s.PayrollPeriod)
+            .FirstOrDefaultAsync(s => s.SlipId == slipId);
+        
+        if (slip == null) return NotFound();
+        
+        if (slip.Status != "APPROVED")
+            return BadRequest($"Cannot mark slip as paid in '{slip.Status}' status. Only APPROVED slips can be marked as paid.");
+        
+        slip.Status = "PAID";
+        
+        // Check if all slips in this period are now PAID
+        var unpaidSlipsExist = await _context.SalarySlips
+            .AnyAsync(s => s.PeriodId == slip.PeriodId && s.SlipId != slipId && s.Status != "PAID");
+            
+        if (!unpaidSlipsExist)
+        {
+            slip.PayrollPeriod.Status = "COMPLETED";
+        }
+        
+        await _context.SaveChangesAsync();
+        
+        return Ok(slip);
+    }
+    
+    /// <summary>
     /// Download payslip as PDF
     /// </summary>
     [HttpGet("slips/{slipId}/pdf")]
@@ -130,9 +183,18 @@ public class PayrollController : ControllerBase
             .FirstOrDefaultAsync(s => s.SlipId == slipId);
         
         if (slip == null) return NotFound();
+
+        var company = await _context.CompanySettings.FirstOrDefaultAsync();
+        var companyName = company?.CompanyNameEn?.Replace(" ", "_") ?? "Company";
+        var empName = slip.Employee.EnglishName?.Replace(" ", "_") ?? slip.Employee.EmployeeCode;
+
+        // Fetch adjustments to display dynamic rows
+        var adjustments = await _context.PayrollAdjustments
+            .Where(a => a.EmployeeId == slip.EmployeeId && a.PeriodId == slip.PeriodId)
+            .ToListAsync();
         
-        var pdfBytes = _pdfService.GeneratePayslip(slip, slip.Employee, slip.PayrollPeriod);
-        var fileName = $"Payslip_{slip.Employee.EmployeeCode}_{slip.PayrollPeriod.Year}_{slip.PayrollPeriod.Month:D2}.pdf";
+        var pdfBytes = _pdfService.GeneratePayslip(slip, slip.Employee, slip.PayrollPeriod, adjustments);
+        var fileName = $"{companyName}_Payroll_for_{empName}_{slip.PayrollPeriod.Year}_{slip.PayrollPeriod.Month:D2}.pdf";
         
         return File(pdfBytes, "application/pdf", fileName);
     }
@@ -144,11 +206,36 @@ public class PayrollController : ControllerBase
     public async Task<ActionResult<SalaryCalculation>> Calculate(CalculateRequest request)
     {
         await _payrollService.LoadSettingsAsync();
+        
+        // Mock adjustments from legacy request fields
+        var adjustments = new List<PayrollAdjustment>();
+        
+        if (request.Allowances > 0)
+        {
+            adjustments.Add(new PayrollAdjustment 
+            { 
+                Name = "Allowance", 
+                Type = "EARNING", 
+                Amount = request.Allowances, 
+                IsTaxable = true // Assuming legacy allowances were taxable
+            });
+        }
+        
+        if (request.OtherDeductions > 0)
+        {
+             adjustments.Add(new PayrollAdjustment 
+            { 
+                Name = "Other Deduction", 
+                Type = "DEDUCTION", 
+                Amount = request.OtherDeductions
+            });
+        }
+
         var result = _payrollService.CalculateSalary(
             request.BaseSalary, 
             request.OvertimePay, 
-            request.Allowances, 
-            request.OtherDeductions);
+            adjustments);
+            
         return Ok(result);
     }
     
@@ -170,6 +257,9 @@ public class PayrollController : ControllerBase
 
         using var workbook = new ClosedXML.Excel.XLWorkbook();
         var worksheet = workbook.Worksheets.Add("Payroll");
+        
+        // Set default font for the worksheet
+        worksheet.Style.Font.FontName = "Phetsarath OT";
 
         // Headers
         worksheet.Cell(1, 1).Value = "Employee Code";

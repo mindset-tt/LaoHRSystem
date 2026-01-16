@@ -209,6 +209,9 @@ public class SalarySlip
     public decimal Allowances { get; set; }
     
     [Column(TypeName = "decimal(18,2)")]
+    public decimal Bonus { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
     public decimal GrossIncome { get; set; }
     
     [Column(TypeName = "decimal(18,2)")]
@@ -268,6 +271,12 @@ public class SalarySlip
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
+    // ========== Service Record (Not Mapped) ==========
+    [NotMapped] public decimal AnnualLeaveRemaining { get; set; }
+    [NotMapped] public decimal SickLeaveUsed { get; set; }
+    [NotMapped] public decimal WorkDays { get; set; }
+    [NotMapped] public decimal AbsentDays { get; set; }
+
     // Navigation
     [ForeignKey("EmployeeId")]
     public virtual Employee Employee { get; set; } = null!;

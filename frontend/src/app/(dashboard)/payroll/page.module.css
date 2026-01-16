@@ -207,7 +207,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-5) var(--space-5) 0 var(--space-5);
+    padding: var(--space-5) var(--space-5) var(--space-5);
 }
 
 .tableWrapper {
@@ -376,4 +376,55 @@
 .emptyStateActions p {
     font-size: 0.875rem;
     color: var(--text-tertiary);
+}
+
+/* Table Actions */
+.tableActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+/* Slip Row Actions */
+.slipActions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.actionBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-2) var(--space-3);
+    background: transparent;
+    border: 1px solid rgb(var(--color-border));
+    border-radius: var(--radius-md);
+    font-family: var(--font-family-sans);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    color: rgb(var(--color-text-secondary));
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.actionBtn:hover {
+    background: rgb(var(--color-primary-100));
+    border-color: rgb(var(--color-primary-300));
+}
+
+.actionBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actionBtn.paidBtn {
+    background: rgb(var(--color-success-50));
+    border-color: rgb(var(--color-success-200));
+    color: rgb(var(--color-success-700));
+}
+
+.actionBtn.paidBtn:hover {
+    background: rgb(var(--color-success-100));
+    border-color: rgb(var(--color-success-300));
 }

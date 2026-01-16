@@ -198,9 +198,23 @@ public class PayrollService
     /// <summary>
     /// Calculate complete salary breakdown
     /// </summary>
-    public SalaryCalculation CalculateSalary(decimal baseSalary, decimal overtimePay = 0, decimal allowances = 0, decimal otherDeductions = 0, int dependentCount = 0)
+    /// <summary>
+    /// Calculate complete salary breakdown
+    /// </summary>
+    public SalaryCalculation CalculateSalary(decimal baseSalary, decimal overtimePay = 0, List<PayrollAdjustment>? adjustments = null, int dependentCount = 0)
     {
-        decimal grossIncome = baseSalary + overtimePay + allowances;
+        adjustments ??= new List<PayrollAdjustment>();
+        
+        // Earnings
+        decimal taxableAllowances = adjustments.Where(a => a.Type == "EARNING" && a.IsTaxable).Sum(a => a.Amount);
+        decimal nonTaxableAllowances = adjustments.Where(a => a.Type == "EARNING" && !a.IsTaxable).Sum(a => a.Amount);
+        decimal bonuses = adjustments.Where(a => a.Type == "BONUS").Sum(a => a.Amount); // If dynamic bonus uses Type="BONUS"
+
+        // Deductions (Pre-Tax?) - Usually deductions are just Net deductions, unless specific tax-exempt deductions exist.
+        // Assuming Adjustments type DEDUCTION are net deductions (loan repayment etc).
+        decimal otherDeductions = adjustments.Where(a => a.Type == "DEDUCTION").Sum(a => a.Amount);
+
+        decimal grossIncome = baseSalary + overtimePay + taxableAllowances + bonuses;
         
         // Calculate NSSF
         var (nssfBase, nssfEmployee, nssfEmployer) = CalculateNSSF(grossIncome);
@@ -218,14 +232,16 @@ public class PayrollService
         decimal taxDeduction = CalculateProgressiveTax(taxableIncome);
         
         // Net salary
-        decimal netSalary = grossIncome - nssfEmployee - taxDeduction - otherDeductions;
+        // Net = (Gross - NSSF - Tax) + NonTaxableEarnings - Deductions
+        decimal netSalary = (grossIncome - nssfEmployee - taxDeduction) + nonTaxableAllowances - otherDeductions;
         
         return new SalaryCalculation
         {
             BaseSalary = baseSalary,
             OvertimePay = overtimePay,
-            Allowances = allowances,
-            GrossIncome = grossIncome,
+            Allowances = taxableAllowances + nonTaxableAllowances, // Total for display
+            Bonus = bonuses,
+            GrossIncome = grossIncome, // Note: Gross normally includes Taxable only for tax calc purposes
             NssfBase = nssfBase,
             NssfEmployeeDeduction = nssfEmployee,
             NssfEmployerContribution = nssfEmployer,
@@ -236,6 +252,8 @@ public class PayrollService
             FamilyDeduction = familyDeduction
         };
     }
+    
+
     
     /// <summary>
     /// Calculate overtime pay based on attendance records (Articles 114-116)
@@ -406,6 +424,10 @@ public class PayrollService
         var period = await _context.PayrollPeriods.FindAsync(periodId);
         if (period == null) throw new InvalidOperationException("Period not found");
         
+        // Prevent re-processing of locked periods
+        if (period.Status == "APPROVED" || period.Status == "LOCKED")
+            throw new InvalidOperationException($"Cannot re-run payroll for {period.Status} period. Create a new period or unlock first.");
+        
         var activeEmployees = await _context.Employees
             .Where(e => e.IsActive)
             .ToListAsync();
@@ -425,11 +447,16 @@ public class PayrollService
             decimal conversionRate = await GetConversionRateAsync(emp.SalaryCurrency, "LAK", period.EndDate);
             decimal effectiveBaseSalary = Math.Round(emp.BaseSalary * conversionRate, 2);
 
+            // Fetch Adjustments for this employee in this period
+            var adjustments = await _context.PayrollAdjustments
+                .Where(a => a.EmployeeId == emp.EmployeeId && a.PeriodId == periodId)
+                .ToListAsync();
+
             // Auto-calculate Overtime using LAK base salary
             decimal overtimePay = await CalculateOvertimePay(emp.EmployeeId, period.StartDate, period.EndDate, effectiveBaseSalary);
             
             // Calculate final salary components (using LAK values)
-            var calc = CalculateSalary(effectiveBaseSalary, overtimePay: overtimePay, dependentCount: emp.DependentCount);
+            var calc = CalculateSalary(effectiveBaseSalary, overtimePay: overtimePay, adjustments: adjustments, dependentCount: emp.DependentCount);
             
             // Calculate original currency amounts (for non-LAK contracts)
             decimal netSalaryOriginal = emp.SalaryCurrency == "LAK" 
@@ -444,6 +471,7 @@ public class PayrollService
                 BaseSalary = calc.BaseSalary,
                 OvertimePay = calc.OvertimePay,
                 Allowances = calc.Allowances,
+                Bonus = calc.Bonus,
                 GrossIncome = calc.GrossIncome,
                 NssfBase = calc.NssfBase,
                 NssfEmployeeDeduction = calc.NssfEmployeeDeduction,
@@ -481,6 +509,7 @@ public class SalaryCalculation
     public decimal BaseSalary { get; set; }
     public decimal OvertimePay { get; set; }
     public decimal Allowances { get; set; }
+    public decimal Bonus { get; set; }
     public decimal GrossIncome { get; set; }
     public decimal NssfBase { get; set; }
     public decimal NssfEmployeeDeduction { get; set; }
