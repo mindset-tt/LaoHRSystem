@@ -6,6 +6,7 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { LeaveRequestForm } from '@/components/forms/LeaveRequestForm';
 import { LeaveCalendar } from '@/components/leave/LeaveCalendar';
 import { leaveApi } from '@/lib/endpoints';
@@ -28,35 +29,24 @@ export default function LeavePage() {
     const [actionLoading, setActionLoading] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [exporting, setExporting] = useState(false);
+    const [pendingAction, setPendingAction] = useState<{ type: 'approve' | 'reject'; leaveId: number } | null>(null);
+    const [apiBalances, setApiBalances] = useState<{ leaveType: string; total: number; used: number; remaining: number }[]>([]);
 
     const canApprove = isHROrAdmin(role);
 
-    // Leave quotas per person
-    const LEAVE_QUOTAS = {
-        ANNUAL: 15,
-        SICK: 30,
-        PERSONAL: 3,
-    };
-
-    // Calculate leave balances from loaded leave requests (per person)
+    // Calculate leave balances from API data
     const leaveBalances = useMemo(() => {
-        const currentYear = new Date().getFullYear();
-
-        // Filter to approved leaves in current year (used days)
-        const approvedLeaves = leaveRequests.filter(
-            (r) => r.status === 'APPROVED' && new Date(r.startDate).getFullYear() === currentYear
-        );
-
-        const usedAnnual = approvedLeaves.filter(r => r.leaveType === 'ANNUAL').reduce((sum, r) => sum + r.totalDays, 0);
-        const usedSick = approvedLeaves.filter(r => r.leaveType === 'SICK').reduce((sum, r) => sum + r.totalDays, 0);
-        const usedPersonal = approvedLeaves.filter(r => r.leaveType === 'PERSONAL').reduce((sum, r) => sum + r.totalDays, 0);
+        const findBalance = (type: string) => {
+            const bal = apiBalances.find(b => b.leaveType === type);
+            return bal ? { used: bal.used, total: bal.total } : { used: 0, total: 0 };
+        };
 
         return {
-            annual: { used: usedAnnual, total: LEAVE_QUOTAS.ANNUAL },
-            sick: { used: usedSick, total: LEAVE_QUOTAS.SICK },
-            personal: { used: usedPersonal, total: LEAVE_QUOTAS.PERSONAL },
+            annual: findBalance('ANNUAL'),
+            sick: findBalance('SICK'),
+            personal: findBalance('PERSONAL'),
         };
-    }, [leaveRequests]);
+    }, [apiBalances]);
 
     const loadLeaveRequests = useCallback(async () => {
         try {
@@ -71,20 +61,33 @@ export default function LeavePage() {
         }
     }, [t.common.error]);
 
+    const loadBalances = useCallback(async () => {
+        try {
+            const balances = await leaveApi.getBalance();
+            setApiBalances(balances);
+        } catch (err) {
+            console.error('Failed to load leave balances:', err);
+        }
+    }, []);
+
     useEffect(() => {
         loadLeaveRequests();
-    }, [loadLeaveRequests]);
+        loadBalances();
+    }, [loadLeaveRequests, loadBalances]);
 
     const handleCreateRequest = async (request: CreateLeaveRequest) => {
         await leaveApi.create(request);
         await loadLeaveRequests();
+        await loadBalances();
     };
 
     const handleApprove = async (leaveId: number) => {
         setActionLoading(leaveId);
+        setPendingAction(null);
         try {
             await leaveApi.approve(leaveId);
             await loadLeaveRequests();
+            await loadBalances();
         } catch (err) {
             console.error('Failed to approve leave:', err);
             setError(t.common.error);
@@ -95,6 +98,7 @@ export default function LeavePage() {
 
     const handleReject = async (leaveId: number) => {
         setActionLoading(leaveId);
+        setPendingAction(null);
         try {
             await leaveApi.reject(leaveId);
             await loadLeaveRequests();
@@ -103,6 +107,15 @@ export default function LeavePage() {
             setError(t.common.error);
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const confirmAction = () => {
+        if (!pendingAction) return;
+        if (pendingAction.type === 'approve') {
+            handleApprove(pendingAction.leaveId);
+        } else {
+            handleReject(pendingAction.leaveId);
         }
     };
 
@@ -289,7 +302,7 @@ export default function LeavePage() {
                                                 <Button
                                                     size="sm"
                                                     variant="secondary"
-                                                    onClick={() => handleReject(request.leaveId)}
+                                                    onClick={() => setPendingAction({ type: 'reject', leaveId: request.leaveId })}
                                                     loading={actionLoading === request.leaveId}
                                                     disabled={actionLoading !== null}
                                                 >
@@ -297,7 +310,7 @@ export default function LeavePage() {
                                                 </Button>
                                                 <Button
                                                     size="sm"
-                                                    onClick={() => handleApprove(request.leaveId)}
+                                                    onClick={() => setPendingAction({ type: 'approve', leaveId: request.leaveId })}
                                                     loading={actionLoading === request.leaveId}
                                                     disabled={actionLoading !== null}
                                                 >
@@ -318,6 +331,27 @@ export default function LeavePage() {
                 isOpen={showRequestModal}
                 onClose={() => setShowRequestModal(false)}
                 onSubmit={handleCreateRequest}
+            />
+
+            {/* Approve/Reject Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={pendingAction !== null}
+                onClose={() => setPendingAction(null)}
+                onConfirm={confirmAction}
+                title={
+                    pendingAction?.type === 'approve'
+                        ? (t.leave.confirmApprove?.title || 'Approve Leave Request?')
+                        : (t.leave.confirmReject?.title || 'Reject Leave Request?')
+                }
+                message={
+                    pendingAction?.type === 'approve'
+                        ? (t.leave.confirmApprove?.message || 'This will approve the leave request.')
+                        : (t.leave.confirmReject?.message || 'This will reject the leave request.')
+                }
+                confirmText={pendingAction?.type === 'approve' ? t.leave.requests.approve : t.leave.requests.reject}
+                cancelText={t.common.cancel}
+                variant={pendingAction?.type === 'reject' ? 'danger' : 'warning'}
+                loading={actionLoading !== null}
             />
         </div>
     );

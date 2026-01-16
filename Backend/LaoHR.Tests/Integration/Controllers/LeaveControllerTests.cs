@@ -1,47 +1,61 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json; 
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
 using LaoHR.Tests.Helpers;
 using Xunit;
 
 namespace LaoHR.Tests.Integration.Controllers;
 
-public class LeaveControllerTests : TestBase
+public class LeaveControllerTests : IClassFixture<CustomWebApplicationFactory>
 {
-    public LeaveControllerTests(CustomWebApplicationFactory factory) : base(factory) { }
+    private readonly HttpClient _client;
+    private readonly CustomWebApplicationFactory _factory;
+
+    public LeaveControllerTests(CustomWebApplicationFactory factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
 
     [Fact]
     public async Task CreateLeave_ValidRequest_ReturnsCreated()
     {
         // Arrange
+        var client = _factory.CreateClient(); 
+
+        // 1. LOGIN (Get "Badge")
+        var loginResp = await client.PostAsJsonAsync("/api/auth/login", new { Username = "employee", Password = "emp123" });
+        loginResp.EnsureSuccessStatusCode();
+        var token = (await loginResp.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString();
+        
+        // Attach Badge to Header
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+        // 2. Prepare Request
+        // Note: Use a date in the future to avoid validation issues
         var request = new LeaveRequest 
         { 
+            // EmployeeId 1 because 'employee' maps to 1 in your Controller switch statement
             EmployeeId = 1, 
             LeaveType = "ANNUAL", 
-            StartDate = DateTime.Today, 
-            EndDate = DateTime.Today.AddDays(2), 
+            // Use far future dates to avoid conflicts with other tests
+            StartDate = DateTime.UtcNow.AddDays(100), 
+            EndDate = DateTime.UtcNow.AddDays(102), 
             Reason = "Vacation" 
         };
-        
-        using (var scope = _factory.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<LaoHRDbContext>();
-            if (!await db.Employees.AnyAsync(e => e.EmployeeId == 1))
-            {
-                db.Employees.Add(new Employee { EmployeeId = 1, EmployeeCode = "E1", LaoName = "Test", IsActive = true });
-                await db.SaveChangesAsync();
-            }
-        }
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/leave", request);
+        var response = await client.PostAsJsonAsync("/api/leave", request);
 
         // Assert
-        var body = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.Created, body);
+        if (response.StatusCode != HttpStatusCode.Created)
+        {
+             var error = await response.Content.ReadAsStringAsync();
+             // If it fails, print why (likely overlapping dates if you run tests too fast)
+        }
+        
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
     }
 }

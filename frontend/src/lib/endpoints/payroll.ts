@@ -66,15 +66,15 @@ export const payrollApi = {
     /**
      * Download payslip as PDF
      */
-    downloadPdf: async (slipId: number): Promise<Blob> => {
-        return apiClient.getBlob(`/api/payroll/slips/${slipId}/pdf`);
+    downloadPdf: async (slipId: number): Promise<{ blob: Blob, filename: string }> => {
+        return apiClient.getBlobWithFilename(`/api/payroll/slips/${slipId}/pdf`);
     },
 
     /**
      * Export payroll period to Excel
      */
-    exportPayroll: async (periodId: number): Promise<Blob> => {
-        return apiClient.getBlob(`/api/payroll/periods/${periodId}/export`);
+    exportPayroll: async (periodId: number): Promise<{ blob: Blob, filename: string }> => {
+        return apiClient.getBlobWithFilename(`/api/payroll/periods/${periodId}/export`);
     },
 
     /**

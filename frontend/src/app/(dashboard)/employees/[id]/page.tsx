@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { MaskedField } from '@/components/ui/MaskedField';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { formatDate } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
 import type { Employee } from '@/lib/types';
@@ -47,6 +48,41 @@ export default function EmployeeDetailPage() {
 
         loadEmployee();
     }, [employeeId]);
+
+    const [documents, setDocuments] = useState<any[]>([
+        { id: 1, name: 'Employment Connect.pdf', size: '2.4 MB', date: '2024-01-15', type: 'pdf' },
+        { id: 2, name: 'ID Card.jpg', size: '1.8 MB', date: '2024-01-10', type: 'image' },
+    ]);
+    const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+
+    const handleUpload = () => {
+        // Mock upload
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0];
+            if (file) {
+                setDocuments([
+                    ...documents,
+                    {
+                        id: Date.now(),
+                        name: file.name,
+                        size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
+                        date: new Date().toISOString().split('T')[0],
+                        type: file.type.includes('image') ? 'image' : 'pdf'
+                    }
+                ]);
+            }
+        };
+        input.click();
+    };
+
+    const handleDelete = () => {
+        if (pendingDeleteId) {
+            setDocuments(documents.filter(d => d.id !== pendingDeleteId));
+            setPendingDeleteId(null);
+        }
+    };
 
     if (loading) {
         return (
@@ -192,19 +228,63 @@ export default function EmployeeDetailPage() {
 
                     {activeTab === 'documents' && (
                         <div className={styles.documentsTab}>
-                            <p className={styles.emptyDocuments}>
-                                {t.employeeDetail.documents.empty}
-                            </p>
-                            {canEdit && (
-                                <Button variant="secondary" leftIcon={<UploadIcon />}>
-                                    {t.employeeDetail.documents.upload}
-                                </Button>
+                            <div className={styles.documentsHeader}>
+                                {canEdit && (
+                                    <Button variant="secondary" leftIcon={<UploadIcon />} onClick={handleUpload}>
+                                        {t.employeeDetail.documents.upload}
+                                    </Button>
+                                )}
+                            </div>
+
+                            {documents.length === 0 ? (
+                                <p className={styles.emptyDocuments}>
+                                    {t.employeeDetail.documents.empty}
+                                </p>
+                            ) : (
+                                <div className={styles.documentsList}>
+                                    {documents.map(doc => (
+                                        <div key={doc.id} className={styles.documentItem}>
+                                            <div className={styles.documentInfo}>
+                                                <FileIcon />
+                                                <div className={styles.documentMeta}>
+                                                    <span className={styles.documentName}>{doc.name}</span>
+                                                    <span className={styles.documentDetails}>{doc.size} • {doc.date}</span>
+                                                </div>
+                                            </div>
+                                            <div className={styles.documentActions}>
+                                                <Button variant="ghost" size="sm" leftIcon={<DownloadIcon />}>
+                                                    Download
+                                                </Button>
+                                                {canEdit && (
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={styles.deleteBtn}
+                                                        onClick={() => setPendingDeleteId(doc.id)}
+                                                    >
+                                                        <TrashIcon />
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     )}
                 </div>
             </Card>
-        </div >
+
+            <ConfirmationModal
+                isOpen={!!pendingDeleteId}
+                onClose={() => setPendingDeleteId(null)}
+                onConfirm={handleDelete}
+                title="Delete Document?"
+                message="Are you sure you want to delete this document? This action cannot be undone."
+                confirmText="Delete"
+                variant="danger"
+            />
+        </div>
     );
 }
 
@@ -242,6 +322,34 @@ function UploadIcon() {
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="17 8 12 3 7 8" />
             <line x1="12" y1="3" x2="12" y2="15" />
+        </svg>
+    );
+}
+
+function FileIcon() {
+    return (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+            <polyline points="13 2 13 9 20 9"></polyline>
+        </svg>
+    );
+}
+
+function DownloadIcon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+    );
+}
+
+function TrashIcon() {
+    return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
     );
 }

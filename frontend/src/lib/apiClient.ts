@@ -149,7 +149,7 @@ interface RequestOptions extends RequestInit {
     /** Skip authentication for this request */
     noAuth?: boolean;
     /** Expected response type */
-    responseType?: 'json' | 'blob' | 'text';
+    responseType?: 'json' | 'blob' | 'text' | 'blobWithHeaders';
 }
 
 /**
@@ -202,6 +202,18 @@ async function request<T>(
 
         if (responseType === 'blob') return retryResponse.blob() as Promise<T>;
         if (responseType === 'text') return retryResponse.text() as Promise<T>;
+        if (responseType === 'blobWithHeaders') {
+            const blob = await retryResponse.blob();
+            const contentDisposition = retryResponse.headers.get('Content-Disposition');
+            let filename = 'download';
+            if (contentDisposition) {
+                const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            return { blob, filename } as unknown as Promise<T>;
+        }
         return retryResponse.json();
     }
 
@@ -213,6 +225,18 @@ async function request<T>(
 
     if (responseType === 'blob') return response.blob() as Promise<T>;
     if (responseType === 'text') return response.text() as Promise<T>;
+    if (responseType === 'blobWithHeaders') {
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = 'download';
+        if (contentDisposition) {
+            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1].replace(/['"]/g, '');
+            }
+        }
+        return { blob, filename } as unknown as Promise<T>;
+    }
 
     // Handle empty responses
     const text = await response.text();
@@ -274,6 +298,14 @@ export const apiClient = {
 
     getBlob: (endpoint: string, options?: RequestOptions) =>
         request<Blob>(endpoint, { ...options, method: 'GET', responseType: 'blob' }),
+
+    getBlobWithFilename: (endpoint: string, options?: RequestOptions) => {
+        return request<{ blob: Blob, filename: string }>(endpoint, {
+            ...options,
+            method: 'GET',
+            responseType: 'blobWithHeaders'
+        });
+    },
 
     post: <T>(endpoint: string, data?: unknown, options?: RequestOptions) =>
         request<T>(endpoint, {

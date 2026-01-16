@@ -7,7 +7,9 @@ import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
 import { MaskedField } from '@/components/ui/MaskedField';
+import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { NewPeriodModal } from '@/components/forms/NewPeriodModal';
+import { AdjustmentModal } from '@/components/forms/AdjustmentModal';
 import { payrollApi, reportsApi } from '@/lib/endpoints';
 import { formatPayrollPeriod } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
@@ -27,6 +29,8 @@ export default function PayrollPage() {
     const [slips, setSlips] = useState<SalarySlip[]>([]);
     const [actionLoading, setActionLoading] = useState(false);
     const [showNewPeriodModal, setShowNewPeriodModal] = useState(false);
+    const [showRunPayrollConfirm, setShowRunPayrollConfirm] = useState(false);
+    const [showAdjustmentModal, setShowAdjustmentModal] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const canManage = isHROrAdmin(role);
@@ -94,13 +98,85 @@ export default function PayrollPage() {
         }
     };
 
+    const handleApproveSlip = async (slipId: number) => {
+        setActionLoading(true);
+        try {
+            await payrollApi.approveSlip(slipId);
+            if (selectedPeriod) {
+                const data = await payrollApi.getSlips(selectedPeriod.periodId);
+                setSlips(data);
+            }
+        } catch (err) {
+            console.error('Failed to approve slip:', err);
+            setError(err instanceof Error ? err.message : 'Failed to approve slip');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleMarkAsPaid = async (slipId: number) => {
+        setActionLoading(true);
+        try {
+            await payrollApi.markAsPaid(slipId);
+            if (selectedPeriod) {
+                await Promise.all([
+                    payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
+                    loadPeriods()
+                ]);
+            }
+        } catch (err) {
+            console.error('Failed to mark as paid:', err);
+            setError(err instanceof Error ? err.message : 'Failed to mark as paid');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleApproveAll = async () => {
+        if (!selectedPeriod) return;
+        setActionLoading(true);
+        try {
+            const calculatedSlips = slips.filter(s => s.status === 'CALCULATED');
+            for (const slip of calculatedSlips) {
+                await payrollApi.approveSlip(slip.slipId);
+            }
+            const data = await payrollApi.getSlips(selectedPeriod.periodId);
+            setSlips(data);
+        } catch (err) {
+            console.error('Failed to approve all:', err);
+            setError(err instanceof Error ? err.message : 'Failed to approve all');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
+    const handleMarkAllPaid = async () => {
+        if (!selectedPeriod) return;
+        setActionLoading(true);
+        try {
+            const approvedSlips = slips.filter(s => s.status === 'APPROVED');
+            for (const slip of approvedSlips) {
+                await payrollApi.markAsPaid(slip.slipId);
+            }
+            await Promise.all([
+                payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
+                loadPeriods()
+            ]);
+        } catch (err) {
+            console.error('Failed to mark all paid:', err);
+            setError(err instanceof Error ? err.message : 'Failed to mark all paid');
+        } finally {
+            setActionLoading(false);
+        }
+    };
+
     const handleDownloadPdf = async (slipId: number) => {
         try {
-            const blob = await payrollApi.downloadPdf(slipId);
+            const { blob, filename } = await payrollApi.downloadPdf(slipId);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `payslip-${slipId}.pdf`;
+            a.download = filename || `payslip-${slipId}.pdf`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -114,11 +190,11 @@ export default function PayrollPage() {
     const handleDownloadAll = async () => {
         if (!selectedPeriod) return;
         try {
-            const blob = await payrollApi.exportPayroll(selectedPeriod.periodId);
+            const { blob, filename } = await payrollApi.exportPayroll(selectedPeriod.periodId);
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `payroll-export-${selectedPeriod.periodId}.xlsx`;
+            a.download = filename || `payroll-export-${selectedPeriod.periodId}.xlsx`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
@@ -160,15 +236,23 @@ export default function PayrollPage() {
                 </div>
                 {canManage && (
                     <div className={styles.headerActions}>
-                        {selectedPeriod?.status === 'DRAFT' && slips.length > 0 && (
-                            <Button
-                                variant="secondary"
-                                leftIcon={<PlayIcon />}
-                                onClick={handleRunPayroll}
-                                loading={actionLoading}
-                            >
-                                {t.payroll.runPayroll}
-                            </Button>
+                        {selectedPeriod?.status === 'DRAFT' && (
+                            <>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setShowAdjustmentModal(true)}
+                                >
+                                    Adjustments
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    leftIcon={<PlayIcon />}
+                                    onClick={() => setShowRunPayrollConfirm(true)}
+                                    loading={actionLoading}
+                                >
+                                    {t.payroll.runPayroll}
+                                </Button>
+                            </>
                         )}
                         <Button leftIcon={<PlusIcon />} onClick={() => setShowNewPeriodModal(true)}>
                             {t.payroll.newPeriod}
@@ -177,24 +261,104 @@ export default function PayrollPage() {
                 )}
             </div>
 
-            {/* ... Error, Period Selector, Summary moved to ... */}
+            {error && (
+                <div className={styles.errorAlert}>
+                    <span>{error}</span>
+                    <button onClick={() => setError(null)}>×</button>
+                </div>
+            )}
 
-            {/* (Hiding lines 136-237 for brevity as they are unchanged) */}
+            {periods.length === 0 && !loading && (
+                <Card>
+                    <div className={styles.emptyState}>
+                        <p>{t.payroll.noPeriods}</p>
+                    </div>
+                </Card>
+            )}
+
+            {periods.length > 0 && (
+                <Card className={styles.periodSelector}>
+                    <span className={styles.periodLabel}>{t.payroll.periodLabel}</span>
+                    <div className={styles.periodOptions}>
+                        {periods.map((period) => (
+                            <button
+                                key={period.periodId}
+                                className={`${styles.periodOption} ${selectedPeriod?.periodId === period.periodId ? styles.selected : ''}`}
+                                onClick={() => setSelectedPeriod(period)}
+                            >
+                                <span className={styles.periodName}>
+                                    {formatPayrollPeriod(period.year, period.month)}
+                                </span>
+                                <span className={`${styles.periodStatus} ${styles[period.status.toLowerCase()]}`}>
+                                    {period.status}
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </Card>
+            )}
+
+            {selectedPeriod && slips.length > 0 && (
+                <div className={styles.summaryGrid}>
+                    <SummaryCard
+                        label={t.payroll.summary.gross}
+                        value={formatCurrency(slips.reduce((sum, s) => sum + s.grossIncome, 0))}
+                        icon={<DollarIcon />}
+                    />
+                    <SummaryCard
+                        label={t.payroll.summary.deductions}
+                        value={formatCurrency(slips.reduce((sum, s) => sum + s.nssfEmployeeDeduction + s.taxDeduction + s.otherDeductions, 0))}
+                        icon={<MinusCircleIcon />}
+                    />
+                    <SummaryCard
+                        label={t.payroll.summary.net}
+                        value={formatCurrency(slips.reduce((sum, s) => sum + s.netSalary, 0))}
+                        icon={<WalletIcon />}
+                    />
+                    <SummaryCard
+                        label={t.payroll.summary.employees}
+                        value={slips.length.toString()}
+                        icon={<UsersIcon />}
+                    />
+                </div>
+            )}
 
             {selectedPeriod && (
                 <Card noPadding>
                     <div className={styles.tableHeader}>
                         <CardTitle>{t.payroll.table.title}</CardTitle>
-                        {slips.length > 0 && (
-                            <Button
-                                variant="secondary"
-                                size="sm"
-                                leftIcon={<DownloadIcon />}
-                                onClick={handleDownloadAll}
-                            >
-                                {t.payroll.table.exportAll}
-                            </Button>
-                        )}
+                        <div className={styles.tableActions}>
+                            {canManage && slips.some(s => s.status === 'CALCULATED') && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={handleApproveAll}
+                                    loading={actionLoading}
+                                >
+                                    {t.payroll.table.approveAll}
+                                </Button>
+                            )}
+                            {canManage && slips.some(s => s.status === 'APPROVED') && (
+                                <Button
+                                    variant="primary"
+                                    size="sm"
+                                    onClick={handleMarkAllPaid}
+                                    loading={actionLoading}
+                                >
+                                    {t.payroll.table.markAllPaid}
+                                </Button>
+                            )}
+                            {slips.length > 0 && (
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    leftIcon={<DownloadIcon />}
+                                    onClick={handleDownloadAll}
+                                >
+                                    {t.payroll.table.exportAll}
+                                </Button>
+                            )}
+                        </div>
                     </div>
 
                     {loading ? (
@@ -224,7 +388,7 @@ export default function PayrollPage() {
                                 <thead>
                                     <tr>
                                         <th>{t.payroll.table.headers.employee}</th>
-                                        <th>Contract</th>
+                                        <th>{t.payroll.table.headers.contract}</th>
                                         <th>{t.payroll.table.headers.gross} (LAK)</th>
                                         <th>{t.payroll.table.headers.deductions} (LAK)</th>
                                         <th>{t.payroll.table.headers.net}</th>
@@ -279,13 +443,33 @@ export default function PayrollPage() {
                                                 </span>
                                             </td>
                                             <td>
-                                                <button
-                                                    className={styles.viewBtn}
-                                                    onClick={() => handleDownloadPdf(slip.slipId)}
-                                                >
-                                                    <DownloadIcon />
-                                                    {t.payroll.table.viewPdf}
-                                                </button>
+                                                <div className={styles.slipActions}>
+                                                    <button
+                                                        className={styles.viewBtn}
+                                                        onClick={() => handleDownloadPdf(slip.slipId)}
+                                                    >
+                                                        <DownloadIcon />
+                                                        {t.payroll.table.viewPdf}
+                                                    </button>
+                                                    {canManage && slip.status === 'CALCULATED' && (
+                                                        <button
+                                                            className={styles.actionBtn}
+                                                            onClick={() => handleApproveSlip(slip.slipId)}
+                                                            disabled={actionLoading}
+                                                        >
+                                                            {t.payroll.table.approve}
+                                                        </button>
+                                                    )}
+                                                    {canManage && slip.status === 'APPROVED' && (
+                                                        <button
+                                                            className={`${styles.actionBtn} ${styles.paidBtn}`}
+                                                            onClick={() => handleMarkAsPaid(slip.slipId)}
+                                                            disabled={actionLoading}
+                                                        >
+                                                            {t.payroll.table.markAsPaid}
+                                                        </button>
+                                                    )}
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
@@ -302,6 +486,32 @@ export default function PayrollPage() {
                 onClose={() => setShowNewPeriodModal(false)}
                 onSubmit={handleCreatePeriod}
             />
+
+            {/* Run Payroll Confirmation */}
+            <ConfirmationModal
+                isOpen={showRunPayrollConfirm}
+                onClose={() => setShowRunPayrollConfirm(false)}
+                onConfirm={() => {
+                    setShowRunPayrollConfirm(false);
+                    handleRunPayroll();
+                }}
+                title={t.payroll.confirmRun?.title || 'Run Payroll?'}
+                message={t.payroll.confirmRun?.message || 'This will calculate salaries for all active employees.'}
+                confirmText={t.payroll.runPayroll}
+                cancelText={t.common.cancel}
+                variant="warning"
+                loading={actionLoading}
+            />
+
+            {/* Adjustment Modal */}
+            {selectedPeriod && (
+                <AdjustmentModal
+                    isOpen={showAdjustmentModal}
+                    onClose={() => setShowAdjustmentModal(false)}
+                    periodId={selectedPeriod.periodId}
+                    periodName={formatPayrollPeriod(selectedPeriod.year, selectedPeriod.month)}
+                />
+            )}
         </div>
     );
 }

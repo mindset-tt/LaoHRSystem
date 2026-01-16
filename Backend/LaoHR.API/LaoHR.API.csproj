@@ -31,4 +31,10 @@
     <ProjectReference Include="..\LaoHR.Shared\LaoHR.Shared.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Font\Phetsarath_OT.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

@@ -10,6 +10,8 @@ export const dictionary = {
             required: 'Required',
             select: 'Select...',
             logout: 'Logout',
+            confirm: 'Confirm',
+            cancel: 'Cancel',
         },
         login: {
             title: 'LaoHR',
@@ -237,7 +239,15 @@ export const dictionary = {
                     paternity: 'Paternity Leave',
                     unpaid: 'Unpaid Leave',
                 }
-            }
+            },
+            confirmApprove: {
+                title: 'Approve Leave Request?',
+                message: 'This will approve the leave request and notify the employee.',
+            },
+            confirmReject: {
+                title: 'Reject Leave Request?',
+                message: 'This will reject the leave request. Please consider providing a reason.',
+            },
         },
         dashboardPage: {
             welcome: 'Here\'s what\'s happening today',
@@ -314,6 +324,7 @@ export const dictionary = {
                 exportAll: 'Export All',
                 headers: {
                     employee: 'Employee',
+                    contract: 'Contract',
                     gross: 'Gross Income',
                     deductions: 'Deductions',
                     net: 'Net Salary',
@@ -322,6 +333,22 @@ export const dictionary = {
                 empty: 'No salary slips for this period',
                 runToGenerate: 'Run payroll to generate salary slips',
                 viewPdf: 'PDF',
+                approve: 'Approve',
+                markAsPaid: 'Mark Paid',
+                approveAll: 'Approve All',
+                markAllPaid: 'Mark All Paid',
+            },
+            confirmRun: {
+                title: 'Run Payroll?',
+                message: 'This will calculate payslips for all eligible employees. This action cannot be fully undone once payments are processed.',
+            },
+            confirmApprove: {
+                title: "Approve Leave?",
+                message: "Are you sure you want to approve this leave request? This will deduct from the employee's balance."
+            },
+            confirmReject: {
+                title: "Reject Leave?",
+                message: "Are you sure you want to reject this request?"
             }
         },
     },
@@ -334,6 +361,8 @@ export const dictionary = {
             required: 'ຈຳເປັນ',
             select: 'ເລືອກ...',
             logout: 'ອອກຈາກລະບົບ',
+            confirm: 'ຢືນຢັນ',
+            cancel: 'ຍົກເລີກ',
         },
         login: {
             title: 'LaoHR',
@@ -561,7 +590,15 @@ export const dictionary = {
                     paternity: 'ລາພັກເມຍເກີດລູກ',
                     unpaid: 'ລາພັກບໍ່ໄດ້ຮັບເງິນເດືອນ',
                 }
-            }
+            },
+            confirmApprove: {
+                title: 'ອະນຸມັດການລາພັກ?',
+                message: 'ທ່ານຕ້ອງການອະນຸມັດການລາພັກນີ້ບໍ່? ລະບົບຈະຕັດວັນລາພັກຂອງພະນັກງານ.',
+            },
+            confirmReject: {
+                title: 'ປະຕິເສດການລາພັກ?',
+                message: 'ທ່ານຕ້ອງການປະຕິເສດຄຳຮ້ອງນີ້ບໍ່?',
+            },
         },
         dashboardPage: {
             welcome: 'ນີ້ແມ່ນສິ່ງທີ່ເກີດຂຶ້ນໃນມື້ນີ້',
@@ -638,6 +675,7 @@ export const dictionary = {
                 exportAll: 'ສົ່ງອອກທັງໝົດ',
                 headers: {
                     employee: 'ພະນັກງານ',
+                    contract: 'ສັນຍາ',
                     gross: 'ເງິນເດືອນລວມ',
                     deductions: 'ລາຍການຫັກ',
                     net: 'ເງິນເດືອນສຸດທິ',
@@ -646,7 +684,15 @@ export const dictionary = {
                 empty: 'ບໍ່ມີຂໍ້ມູນເງິນເດືອນໃນງວດນີ້',
                 runToGenerate: 'ກົດຄິດໄລ່ເງິນເດືອນເພື່ອສ້າງຂໍ້ມູນ',
                 viewPdf: 'PDF',
-            }
+                approve: 'ອະນຸມັດ',
+                markAsPaid: 'ຈ່າຍແລ້ວ',
+                approveAll: 'ອະນຸມັດທັງໝົດ',
+                markAllPaid: 'ຈ່າຍທັງໝົດແລ້ວ',
+            },
+            confirmRun: {
+                title: 'ຄິດໄລ່ເງິນເດືອນ?',
+                message: 'ລະບົບຈະຄິດໄລ່ເງິນເດືອນໃຫ້ພະນັກງານທຸກຄົນ. ກະລຸນາກວດສອບກ່ອນຢືນຢັນ.',
+            },
         },
     }
 };

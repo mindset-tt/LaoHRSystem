@@ -14,7 +14,7 @@ const LEAVE_COLORS: Record<string, { dot: string; text: string }> = {
     PERSONAL: { dot: '#f59e0b', text: 'ກິດສ່ວນຕົວ' },
     MATERNITY: { dot: '#ec4899', text: 'ລາຄອດ' },
     PATERNITY: { dot: '#8b5cf6', text: 'ລາເມຍຄອດ' },
-    UNPAID: { dot: '#6b7280', text: 'ບໍ່ມີເງິນ' },
+    UNPAID: { dot: '#6b7280', text: 'ລາພັກບໍ່ມີເງິນເດືອນ' },
 };
 
 /**

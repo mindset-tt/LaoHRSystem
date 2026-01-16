@@ -4,15 +4,18 @@ export const reportsApi = {
     /**
      * Download NSSF Report PDF
      */
-    downloadNssfReport: async (periodId: number): Promise<Blob> => {
-        return apiClient.getBlob(`/api/reports/nssf/${periodId}`);
+    /**
+     * Download NSSF Report PDF
+     */
+    downloadNssfReport: async (periodId: number): Promise<{ blob: Blob, filename: string }> => {
+        return apiClient.getBlobWithFilename(`/api/reports/nssf/${periodId}`);
     },
 
     /**
      * Download NSSF Package (Zip)
      */
-    downloadNssfPackage: async (periodId: number): Promise<Blob> => {
-        return apiClient.getBlob(`/api/reports/nssf/zip/${periodId}`);
+    downloadNssfPackage: async (periodId: number): Promise<{ blob: Blob, filename: string }> => {
+        return apiClient.getBlobWithFilename(`/api/reports/nssf/zip/${periodId}`);
     },
 };
 
