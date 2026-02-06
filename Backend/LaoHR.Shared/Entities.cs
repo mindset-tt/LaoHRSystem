@@ -823,3 +823,37 @@ public class ConversionRate
     public string? Notes { get; set; }
 }
 
+/// <summary>
+/// App User - System User for Authentication
+/// </summary>
+public class AppUser
+{
+    [Key]
+    public int UserId { get; set; }
+    
+    [Required, MaxLength(50)]
+    public string Username { get; set; } = string.Empty;
+    
+    [Required, MaxLength(255)]
+    public string PasswordHash { get; set; } = string.Empty;
+    
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "Employee"; // Admin, HR, Employee
+    
+    [MaxLength(100)]
+    public string? DisplayName { get; set; }
+    
+    /// <summary>
+    /// Link to Employee record (optional, Admins might not be employees)
+    /// </summary>
+    public int? EmployeeId { get; set; }
+    
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? LastLoginAt { get; set; }
+    
+    // Navigation
+    [ForeignKey("EmployeeId")]
+    public virtual Employee? Employee { get; set; }
+}
+
