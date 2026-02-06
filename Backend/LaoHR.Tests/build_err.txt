@@ -1,0 +1,24 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  LaoHR.Shared -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Shared\bin\Debug\net10.0\LaoHR.Shared.dll
+  LaoHR.Bridge.Service -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Bridge.Service\bin\Debug\net10.0\LaoHR.Bridge.Service.dll
+  LaoHR.Bridge.Config -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Bridge.Config\bin\Debug\net10.0-windows\LaoHR.Bridge.Config.dll
+  LaoHR.API -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\bin\Debug\net10.0\LaoHR.API.dll
+  LaoHR.LicenseGen -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.LicenseGen\bin\Debug\net10.0\LaoHR.LicenseGen.dll
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Helpers\CustomWebApplicationFactory.cs(5,7): warning CS0105: The using directive for 'Microsoft.Extensions.DependencyInjection' appeared previously in this namespace [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Api\CrudApiTests.cs(43,13): error CS0117: 'Employee' does not contain a definition for 'Position' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Api\CrudApiTests.cs(44,13): error CS0117: 'Employee' does not contain a definition for 'BasicSalary' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Data\AuditLogTests.cs(52,29): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Data\AuditLogTests.cs(52,29): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+
+Build FAILED.
+
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Helpers\CustomWebApplicationFactory.cs(5,7): warning CS0105: The using directive for 'Microsoft.Extensions.DependencyInjection' appeared previously in this namespace [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Data\AuditLogTests.cs(52,29): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Data\AuditLogTests.cs(52,29): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Api\CrudApiTests.cs(43,13): error CS0117: 'Employee' does not contain a definition for 'Position' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\Integration\Api\CrudApiTests.cs(44,13): error CS0117: 'Employee' does not contain a definition for 'BasicSalary' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Tests\LaoHR.Tests.csproj]
+    3 Warning(s)
+    2 Error(s)
+
+Time Elapsed 00:00:03.33

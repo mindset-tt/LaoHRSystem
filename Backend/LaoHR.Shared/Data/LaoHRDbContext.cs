@@ -16,11 +16,21 @@ public class LaoHRDbContext : DbContext
     public DbSet<PayrollPeriod> PayrollPeriods { get; set; }
     public DbSet<SalarySlip> SalarySlips { get; set; }
     public DbSet<LeaveRequest> LeaveRequests { get; set; }
+    public DbSet<LeavePolicy> LeavePolicies { get; set; }
+    public DbSet<LeaveBalance> LeaveBalances { get; set; }
     public DbSet<TaxBracket> TaxBrackets { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
     public DbSet<Holiday> Holidays { get; set; }
     public DbSet<EmployeeDocument> EmployeeDocuments { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
+    public DbSet<CompanySetting> CompanySettings { get; set; }
+    public DbSet<Province> Provinces { get; set; }
+    public DbSet<District> Districts { get; set; }
+    public DbSet<Village> Villages { get; set; }
+    public DbSet<WorkSchedule> WorkSchedules { get; set; }
+    public DbSet<ConversionRate> ConversionRates { get; set; }
+    public DbSet<PayrollAdjustment> PayrollAdjustments { get; set; }
+    public DbSet<AppUser> Users { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -47,6 +57,26 @@ public class LaoHRDbContext : DbContext
         modelBuilder.Entity<Holiday>()
             .HasIndex(h => h.Date)
             .IsUnique();
+        
+        // Leave policy unique constraint
+        modelBuilder.Entity<LeavePolicy>()
+            .HasIndex(lp => lp.LeaveType)
+            .IsUnique();
+        
+        // Leave balance unique constraint (one balance per employee/type/year)
+        modelBuilder.Entity<LeaveBalance>()
+            .HasIndex(lb => new { lb.EmployeeId, lb.LeaveType, lb.Year })
+            .IsUnique();
+        
+        // Seed default leave policies
+        modelBuilder.Entity<LeavePolicy>().HasData(
+            new LeavePolicy { LeavePolicyId = 1, LeaveType = "ANNUAL", LeaveTypeLao = "ພັກປະຈຳປີ", AnnualQuota = 15, MaxCarryOver = 5, AccrualPerMonth = 1.25m, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 2, LeaveType = "SICK", LeaveTypeLao = "ພັກປ່ວຍ", AnnualQuota = 30, MaxCarryOver = 0, RequiresAttachment = true, MinDaysForAttachment = 3, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 3, LeaveType = "PERSONAL", LeaveTypeLao = "ພັກສ່ວນຕົວ", AnnualQuota = 3, MaxCarryOver = 0, AllowHalfDay = true },
+            new LeavePolicy { LeavePolicyId = 4, LeaveType = "MATERNITY", LeaveTypeLao = "ພັກເກີດລູກ", AnnualQuota = 90, MaxCarryOver = 0, AllowHalfDay = false },
+            new LeavePolicy { LeavePolicyId = 5, LeaveType = "PATERNITY", LeaveTypeLao = "ພັກພໍ່ເກີດລູກ", AnnualQuota = 15, MaxCarryOver = 0, AllowHalfDay = false },
+            new LeavePolicy { LeavePolicyId = 6, LeaveType = "UNPAID", LeaveTypeLao = "ພັກບໍ່ໄດ້ເງິນ", AnnualQuota = 365, MaxCarryOver = 0, AllowHalfDay = false }
+        );
         
         // Seed default tax brackets (Lao PIT)
         modelBuilder.Entity<TaxBracket>().HasData(
@@ -80,16 +110,16 @@ public class LaoHRDbContext : DbContext
 
         // Seed 2026 Holidays
         modelBuilder.Entity<Holiday>().HasData(
-            new Holiday { HolidayId = 1, Date = new DateTime(2026, 1, 1), Name = "ປີໃໝ່ສາກົນ", NameEn = "International New Year", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 2, Date = new DateTime(2026, 3, 8), Name = "ວັນແມ່ຍິງສາກົນ", NameEn = "International Women's Day", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 3, Date = new DateTime(2026, 4, 14), Name = "ວັນປີໃໝ່ລາວ", NameEn = "Lao New Year (Day 1)", Year = 2026, IsRecurring = false },
-            new Holiday { HolidayId = 4, Date = new DateTime(2026, 4, 15), Name = "ວັນປີໃໝ່ລາວ", NameEn = "Lao New Year (Day 2)", Year = 2026, IsRecurring = false },
-            new Holiday { HolidayId = 5, Date = new DateTime(2026, 4, 16), Name = "ວັນປີໃໝ່ລາວ", NameEn = "Lao New Year (Day 3)", Year = 2026, IsRecurring = false },
-            new Holiday { HolidayId = 6, Date = new DateTime(2026, 5, 1), Name = "ວັນກຳມະກອນສາກົນ", NameEn = "International Labour Day", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 7, Date = new DateTime(2026, 6, 1), Name = "ວັນເດັກນ້ອຍສາກົນ", NameEn = "International Children's Day", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 8, Date = new DateTime(2026, 7, 20), Name = "ວັນແມ່ຍິງລາວ", NameEn = "Lao Women's Union Day", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 9, Date = new DateTime(2026, 10, 7), Name = "ວັນຄູແຫ່ງຊາດ", NameEn = "National Teacher's Day", Year = 2026, IsRecurring = true },
-            new Holiday { HolidayId = 10, Date = new DateTime(2026, 12, 2), Name = "ວັນຊາດ", NameEn = "National Day", Year = 2026, IsRecurring = true }
+            new Holiday { HolidayId = 1, Date = new DateTime(2026, 1, 1), Name = "International New Year", NameLao = "ປີໃໝ່ສາກົນ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 2, Date = new DateTime(2026, 3, 8), Name = "International Women's Day", NameLao = "ວັນແມ່ຍິງສາກົນ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 3, Date = new DateTime(2026, 4, 14), Name = "Lao New Year (Day 1)", NameLao = "ວັນປີໃໝ່ລາວ", Year = 2026, IsRecurring = false },
+            new Holiday { HolidayId = 4, Date = new DateTime(2026, 4, 15), Name = "Lao New Year (Day 2)", NameLao = "ວັນປີໃໝ່ລາວ", Year = 2026, IsRecurring = false },
+            new Holiday { HolidayId = 5, Date = new DateTime(2026, 4, 16), Name = "Lao New Year (Day 3)", NameLao = "ວັນປີໃໝ່ລາວ", Year = 2026, IsRecurring = false },
+            new Holiday { HolidayId = 6, Date = new DateTime(2026, 5, 1), Name = "International Labour Day", NameLao = "ວັນກຳມະກອນສາກົນ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 7, Date = new DateTime(2026, 6, 1), Name = "International Children's Day", NameLao = "ວັນເດັກນ້ອຍສາກົນ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 8, Date = new DateTime(2026, 7, 20), Name = "Lao Women's Union Day", NameLao = "ວັນແມ່ຍິງລາວ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 9, Date = new DateTime(2026, 10, 7), Name = "National Teacher's Day", NameLao = "ວັນຄູແຫ່ງຊາດ", Year = 2026, IsRecurring = true },
+            new Holiday { HolidayId = 10, Date = new DateTime(2026, 12, 2), Name = "National Day", NameLao = "ວັນຊາດ", Year = 2026, IsRecurring = true }
         );
         
         // Seed sample employees with Lao names

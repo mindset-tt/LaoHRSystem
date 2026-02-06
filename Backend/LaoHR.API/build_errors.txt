@@ -1,0 +1,26 @@
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  LaoHR.Shared -> C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.Shared\bin\Debug\net10.0\LaoHR.Shared.dll
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollController.cs(212,13): error CS1503: Argument 3: cannot convert from 'decimal' to 'System.Collections.Generic.List<LaoHR.Shared.Models.PayrollAdjustment>?' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollController.cs(213,13): error CS1503: Argument 4: cannot convert from 'decimal' to 'int' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollAdjustmentController.cs(37,41): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(176,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(182,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(188,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(220,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(325,33): warning CS8600: Converting null literal or possible null value to non-nullable type. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+
+Build FAILED.
+
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollAdjustmentController.cs(37,41): warning CS8602: Dereference of a possibly null reference. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(325,33): warning CS8600: Converting null literal or possible null value to non-nullable type. [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollController.cs(212,13): error CS1503: Argument 3: cannot convert from 'decimal' to 'System.Collections.Generic.List<LaoHR.Shared.Models.PayrollAdjustment>?' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Controllers\PayrollController.cs(213,13): error CS1503: Argument 4: cannot convert from 'decimal' to 'int' [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(176,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(182,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(188,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\Services\PayslipPdfService.cs(220,45): error CS0103: The name 'DrawTableColumn' does not exist in the current context [C:\Users\khamp\Documents\WorkAtRL\LaoHRSystem\Backend\LaoHR.API\LaoHR.API.csproj]
+    2 Warning(s)
+    6 Error(s)
+
+Time Elapsed 00:00:07.00

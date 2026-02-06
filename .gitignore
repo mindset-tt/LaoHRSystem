@@ -103,6 +103,7 @@ wwwroot/uploads/
 # Coverage & Testing
 # =====================
 coverage/
+CoverageReport/
 .nyc_output/
 TestResults/
 *.coverage
