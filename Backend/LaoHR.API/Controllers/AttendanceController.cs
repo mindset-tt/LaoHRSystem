@@ -147,15 +147,24 @@ public class AttendanceController : ControllerBase
 
     private int GetCurrentEmployeeId()
     {
-        // For MVP, map hardcoded users to basic Employee IDs
-        var username = User.Identity?.Name?.ToLower();
+        // Get Employee ID from Claims (added by AuthController)
+        var empIdStr = User.FindFirst("EmployeeId")?.Value;
         
-        return username switch
+        if (int.TryParse(empIdStr, out var empId))
         {
-            "admin" => 1,
-            "hr" => 2,
-            _ => 1 // Fallback
-        };
+            return empId;
+        }
+        
+        // Fallback or Error Case
+        // If logged in as "admin" without an Employee record, this might fail or return 0
+        // Ideally should throw or handle gracefully
+        
+        // Fallback for demo/legacy admin login that might not be linked yet:
+        var username = User.Identity?.Name?.ToLower();
+        if (username == "admin") return 1; // Temporary fallback
+        
+        // If we can't identify the employee, throw exception to be caught
+        throw new InvalidOperationException("Current user is not linked to an Employee record.");
     }
     
     /// <summary>
