@@ -8,8 +8,12 @@ using LaoHR.Shared.Models;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using LaoHR.API.Services;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// QuestPDF License
+QuestPDF.Settings.License = LicenseType.Community;
 
 // JWT Configuration
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "LaoHRSystemSecretKey2024VeryLongKeyForSecurity!";
@@ -21,6 +25,7 @@ builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
     });
 
 // FluentValidation
@@ -69,28 +74,47 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<AuditLogInterceptor>();
 
-builder.Services.AddDbContext<LaoHRDbContext>((sp, options) => {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
-        b => b.MigrationsAssembly("LaoHR.API"))
+// Database Configuration
+if (builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddDbContext<LaoHRDbContext>(options =>
+        options.UseInMemoryDatabase("InMemoryDbForTesting"));
+}
+else
+{
+    builder.Services.AddDbContext<LaoHRDbContext>((sp, options) => {
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+            b => b.MigrationsAssembly("LaoHR.API"))
            .AddInterceptors(sp.GetRequiredService<AuditLogInterceptor>());
-});
+    });
+}
 
 // Custom services
 builder.Services.AddScoped<PayrollService>();
 builder.Services.AddScoped<PayslipPdfService>();
 builder.Services.AddScoped<IBankTransferService, BankTransferService>();
 builder.Services.AddScoped<NssfReportService>();
+builder.Services.AddScoped<PdfFormService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ICompanySettingsService, CompanySettingsService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IWorkDayService, WorkDayService>();
+
+// Background Jobs
+builder.Services.AddHostedService<LaoHR.API.Jobs.LeaveScheduledJobsService>();
 
 
-// CORS for frontend
+// CORS for frontend - allow all origins for development
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(_ => true) // Allow any origin
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials()
+              .WithExposedHeaders("Content-Disposition");
     });
 });
 
@@ -109,10 +133,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowFrontend");
 
-// Authentication & Authorization middleware
+// Authenticate & Authorization middleware
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
+}
 
 app.MapControllers();
 
@@ -121,7 +149,20 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LaoHRDbContext>();
     // Apply any pending migrations
-    db.Database.Migrate();
+    if (!builder.Environment.IsEnvironment("Testing"))
+    {
+        // RESET DATABASE to apply new mock data (Wipe old data)
+        // Remove this line later if you want to keep data between restarts
+        // db.Database.EnsureDeleted();   
+        
+        db.Database.Migrate();
+        DbSeeder.Seed(db);
+    }
+    else
+    {
+        db.Database.EnsureCreated();
+        DbSeeder.Seed(db);
+    }
 }
 
 Console.WriteLine("🚀 Lao HR System API running at http://localhost:5000");
@@ -129,3 +170,5 @@ Console.WriteLine("📚 Swagger UI: http://localhost:5000");
 Console.WriteLine("🔐 Default users: admin/admin123, hr/hr123, employee/emp123");
 
 app.Run();
+
+public partial class Program { }

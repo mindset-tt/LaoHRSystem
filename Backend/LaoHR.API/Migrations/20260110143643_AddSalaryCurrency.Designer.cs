@@ -798,7 +798,7 @@ namespace LaoHR.API.Migrations
                     b.Navigation("SalarySlips");
                 });
 
-            modelBuilder.Entity("LaoHR.API.Models.PayrollPeriod", b =>
+            modelBuilder.Entity("LaoHR.Shared.Models.PayrollPeriod", b =>
                 {
                     b.Navigation("SalarySlips");
                 });

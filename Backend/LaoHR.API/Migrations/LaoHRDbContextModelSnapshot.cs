@@ -22,6 +22,52 @@ namespace LaoHR.API.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("LaoHR.Shared.Models.AppUser", b =>
+                {
+                    b.Property<int>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DisplayName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int?>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastLoginAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("Users");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Attendance", b =>
                 {
                     b.Property<int>("AttendanceId")
@@ -127,6 +173,120 @@ namespace LaoHR.API.Migrations
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.CompanySetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BankAccountNo")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CompanyNameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("CompanyNameLao")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int?>("DistrictId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("LSSOCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("ProvinceId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("TaxRisId")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Tel")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("VillageId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("ProvinceId");
+
+                    b.HasIndex("VillageId");
+
+                    b.ToTable("CompanySettings");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ConversionRate", b =>
+                {
+                    b.Property<int>("ConversionRateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConversionRateId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EffectiveDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FromCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<decimal>("Rate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("ToCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("ConversionRateId");
+
+                    b.ToTable("ConversionRates");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
                 {
                     b.Property<int>("DepartmentId")
@@ -162,7 +322,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 1,
-                            CreatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(6297),
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9646),
                             DepartmentCode = "ADMIN",
                             DepartmentName = "ບໍລິຫານ",
                             DepartmentNameEn = "Administration",
@@ -171,7 +331,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 2,
-                            CreatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(7008),
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(85),
                             DepartmentCode = "FIN",
                             DepartmentName = "ການເງິນ",
                             DepartmentNameEn = "Finance & Accounting",
@@ -180,7 +340,7 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 3,
-                            CreatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(7011),
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(87),
                             DepartmentCode = "IT",
                             DepartmentName = "ເຕັກນິກ",
                             DepartmentNameEn = "Information Technology",
@@ -189,12 +349,40 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 4,
-                            CreatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(7012),
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(88),
                             DepartmentCode = "SALES",
                             DepartmentName = "ການຂາຍ",
                             DepartmentNameEn = "Sales & Marketing",
                             IsActive = true
                         });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.District", b =>
+                {
+                    b.Property<int>("DiId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DiId"));
+
+                    b.Property<string>("DiName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("DiNameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("PrId")
+                        .HasColumnType("int");
+
+                    b.HasKey("DiId");
+
+                    b.HasIndex("PrId");
+
+                    b.ToTable("Districts");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.Employee", b =>
@@ -291,6 +479,152 @@ namespace LaoHR.API.Migrations
                         .IsUnique();
 
                     b.ToTable("Employees");
+
+                    b.HasData(
+                        new
+                        {
+                            EmployeeId = 1,
+                            BaseSalary = 8000000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(1703),
+                            DepartmentId = 3,
+                            DependentCount = 0,
+                            Email = "somphon@laohr.la",
+                            EmployeeCode = "EMP001",
+                            EnglishName = "Somphon Khamsouk",
+                            Gender = "Male",
+                            HireDate = new DateTime(2024, 1, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "Software Engineer",
+                            LaoName = "ສົມພອນ ຄຳສຸກ",
+                            Phone = "020 5555 1234",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 2,
+                            BaseSalary = 12000000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3175),
+                            DepartmentId = 1,
+                            DependentCount = 0,
+                            Email = "davanh@laohr.la",
+                            EmployeeCode = "EMP002",
+                            EnglishName = "Davanh Sisavath",
+                            Gender = "Female",
+                            HireDate = new DateTime(2023, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "HR Manager",
+                            LaoName = "ດາວັນ ສີສະຫວັດ",
+                            Phone = "020 5555 5678",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 3,
+                            BaseSalary = 9500000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3180),
+                            DepartmentId = 2,
+                            DependentCount = 0,
+                            Email = "manivanh@laohr.la",
+                            EmployeeCode = "EMP003",
+                            EnglishName = "Manivanh Souksavan",
+                            Gender = "Female",
+                            HireDate = new DateTime(2023, 8, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "Accountant",
+                            LaoName = "ມະນີວັນ ສຸກສະຫວັນ",
+                            Phone = "020 5555 9012",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 4,
+                            BaseSalary = 11000000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3182),
+                            DepartmentId = 4,
+                            DependentCount = 0,
+                            Email = "phouvong@laohr.la",
+                            EmployeeCode = "EMP004",
+                            EnglishName = "Phouvong Xaiyavong",
+                            Gender = "Male",
+                            HireDate = new DateTime(2022, 3, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "Sales Manager",
+                            LaoName = "ພູວົງ ໄຊຍະວົງ",
+                            Phone = "020 5555 3456",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 5,
+                            BaseSalary = 7500000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3184),
+                            DepartmentId = 4,
+                            DependentCount = 0,
+                            Email = "bounmi@laohr.la",
+                            EmployeeCode = "EMP005",
+                            EnglishName = "Bounmi Vongphachan",
+                            Gender = "Male",
+                            HireDate = new DateTime(2024, 2, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = false,
+                            JobTitle = "Marketing Specialist",
+                            LaoName = "ບຸນມີ ວົງພະຈັນ",
+                            Phone = "020 5555 7890",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 6,
+                            BaseSalary = 6500000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3186),
+                            DepartmentId = 1,
+                            DependentCount = 0,
+                            Email = "souphaphon@laohr.la",
+                            EmployeeCode = "EMP006",
+                            EnglishName = "Souphaphon Nang",
+                            Gender = "Female",
+                            HireDate = new DateTime(2023, 11, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "Office Administrator",
+                            LaoName = "ນາງ ສຸພາພອນ",
+                            Phone = "020 5555 2468",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 7,
+                            BaseSalary = 15000000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3188),
+                            DepartmentId = 3,
+                            DependentCount = 0,
+                            Email = "vilayphon@laohr.la",
+                            EmployeeCode = "EMP007",
+                            EnglishName = "Vilayphon Keomanee",
+                            Gender = "Male",
+                            HireDate = new DateTime(2021, 9, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "Senior Developer",
+                            LaoName = "ວິໄລພອນ ແກ້ວມະນີ",
+                            Phone = "020 5555 1357",
+                            SalaryCurrency = "LAK"
+                        },
+                        new
+                        {
+                            EmployeeId = 8,
+                            BaseSalary = 25000000m,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3190),
+                            DepartmentId = 2,
+                            DependentCount = 0,
+                            Email = "chanthala@laohr.la",
+                            EmployeeCode = "EMP008",
+                            EnglishName = "Chanthala Phommavong",
+                            Gender = "Female",
+                            HireDate = new DateTime(2020, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
+                            JobTitle = "CFO",
+                            LaoName = "ຈັນທະລາ ພົມມະວົງ",
+                            Phone = "020 5555 8642",
+                            SalaryCurrency = "LAK"
+                        });
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.EmployeeDocument", b =>
@@ -337,8 +671,18 @@ namespace LaoHR.API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HolidayId"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("Date")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsRecurring")
                         .HasColumnType("bit");
@@ -348,9 +692,12 @@ namespace LaoHR.API.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("NameEn")
+                    b.Property<string>("NameLao")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Year")
                         .HasColumnType("int");
@@ -366,92 +713,293 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             HolidayId = 1,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(372),
                             Date = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ປີໃໝ່ສາກົນ",
-                            NameEn = "International New Year",
+                            Name = "International New Year",
+                            NameLao = "ປີໃໝ່ສາກົນ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(372),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 2,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(980),
                             Date = new DateTime(2026, 3, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນແມ່ຍິງສາກົນ",
-                            NameEn = "International Women's Day",
+                            Name = "International Women's Day",
+                            NameLao = "ວັນແມ່ຍິງສາກົນ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(980),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 3,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(981),
                             Date = new DateTime(2026, 4, 14, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = false,
-                            Name = "ວັນປີໃໝ່ລາວ",
-                            NameEn = "Lao New Year (Day 1)",
+                            Name = "Lao New Year (Day 1)",
+                            NameLao = "ວັນປີໃໝ່ລາວ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(982),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 4,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(983),
                             Date = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = false,
-                            Name = "ວັນປີໃໝ່ລາວ",
-                            NameEn = "Lao New Year (Day 2)",
+                            Name = "Lao New Year (Day 2)",
+                            NameLao = "ວັນປີໃໝ່ລາວ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(983),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 5,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(984),
                             Date = new DateTime(2026, 4, 16, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = false,
-                            Name = "ວັນປີໃໝ່ລາວ",
-                            NameEn = "Lao New Year (Day 3)",
+                            Name = "Lao New Year (Day 3)",
+                            NameLao = "ວັນປີໃໝ່ລາວ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(984),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 6,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(985),
                             Date = new DateTime(2026, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນກຳມະກອນສາກົນ",
-                            NameEn = "International Labour Day",
+                            Name = "International Labour Day",
+                            NameLao = "ວັນກຳມະກອນສາກົນ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(985),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 7,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(986),
                             Date = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນເດັກນ້ອຍສາກົນ",
-                            NameEn = "International Children's Day",
+                            Name = "International Children's Day",
+                            NameLao = "ວັນເດັກນ້ອຍສາກົນ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(987),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 8,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(988),
                             Date = new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນແມ່ຍິງລາວ",
-                            NameEn = "Lao Women's Union Day",
+                            Name = "Lao Women's Union Day",
+                            NameLao = "ວັນແມ່ຍິງລາວ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(988),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 9,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(989),
                             Date = new DateTime(2026, 10, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນຄູແຫ່ງຊາດ",
-                            NameEn = "National Teacher's Day",
+                            Name = "National Teacher's Day",
+                            NameLao = "ວັນຄູແຫ່ງຊາດ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(989),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 10,
+                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(990),
                             Date = new DateTime(2026, 12, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            IsActive = true,
                             IsRecurring = true,
-                            Name = "ວັນຊາດ",
-                            NameEn = "National Day",
+                            Name = "National Day",
+                            NameLao = "ວັນຊາດ",
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(990),
                             Year = 2026
+                        });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.LeaveBalance", b =>
+                {
+                    b.Property<int>("LeaveBalanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeaveBalanceId"));
+
+                    b.Property<decimal>("CarriedOverDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("LeaveType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<decimal>("TotalDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<decimal>("UsedDays")
+                        .HasColumnType("decimal(5,1)");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("int");
+
+                    b.HasKey("LeaveBalanceId");
+
+                    b.HasIndex("EmployeeId", "LeaveType", "Year")
+                        .IsUnique();
+
+                    b.ToTable("LeaveBalances");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.LeavePolicy", b =>
+                {
+                    b.Property<int>("LeavePolicyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeavePolicyId"));
+
+                    b.Property<decimal>("AccrualPerMonth")
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<bool>("AllowHalfDay")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("AnnualQuota")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LeaveType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("LeaveTypeLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("MaxCarryOver")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinDaysForAttachment")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("RequiresAttachment")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("LeavePolicyId");
+
+                    b.HasIndex("LeaveType")
+                        .IsUnique();
+
+                    b.ToTable("LeavePolicies");
+
+                    b.HasData(
+                        new
+                        {
+                            LeavePolicyId = 1,
+                            AccrualPerMonth = 1.25m,
+                            AllowHalfDay = true,
+                            AnnualQuota = 15,
+                            IsActive = true,
+                            LeaveType = "ANNUAL",
+                            LeaveTypeLao = "ພັກປະຈຳປີ",
+                            MaxCarryOver = 5,
+                            MinDaysForAttachment = 0,
+                            RequiresAttachment = false,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(3417)
+                        },
+                        new
+                        {
+                            LeavePolicyId = 2,
+                            AccrualPerMonth = 0m,
+                            AllowHalfDay = true,
+                            AnnualQuota = 30,
+                            IsActive = true,
+                            LeaveType = "SICK",
+                            LeaveTypeLao = "ພັກປ່ວຍ",
+                            MaxCarryOver = 0,
+                            MinDaysForAttachment = 3,
+                            RequiresAttachment = true,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4386)
+                        },
+                        new
+                        {
+                            LeavePolicyId = 3,
+                            AccrualPerMonth = 0m,
+                            AllowHalfDay = true,
+                            AnnualQuota = 3,
+                            IsActive = true,
+                            LeaveType = "PERSONAL",
+                            LeaveTypeLao = "ພັກສ່ວນຕົວ",
+                            MaxCarryOver = 0,
+                            MinDaysForAttachment = 0,
+                            RequiresAttachment = false,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4564)
+                        },
+                        new
+                        {
+                            LeavePolicyId = 4,
+                            AccrualPerMonth = 0m,
+                            AllowHalfDay = false,
+                            AnnualQuota = 90,
+                            IsActive = true,
+                            LeaveType = "MATERNITY",
+                            LeaveTypeLao = "ພັກເກີດລູກ",
+                            MaxCarryOver = 0,
+                            MinDaysForAttachment = 0,
+                            RequiresAttachment = false,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4566)
+                        },
+                        new
+                        {
+                            LeavePolicyId = 5,
+                            AccrualPerMonth = 0m,
+                            AllowHalfDay = false,
+                            AnnualQuota = 15,
+                            IsActive = true,
+                            LeaveType = "PATERNITY",
+                            LeaveTypeLao = "ພັກພໍ່ເກີດລູກ",
+                            MaxCarryOver = 0,
+                            MinDaysForAttachment = 0,
+                            RequiresAttachment = false,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4577)
+                        },
+                        new
+                        {
+                            LeavePolicyId = 6,
+                            AccrualPerMonth = 0m,
+                            AllowHalfDay = false,
+                            AnnualQuota = 365,
+                            IsActive = true,
+                            LeaveType = "UNPAID",
+                            LeaveTypeLao = "ພັກບໍ່ໄດ້ເງິນ",
+                            MaxCarryOver = 0,
+                            MinDaysForAttachment = 0,
+                            RequiresAttachment = false,
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4578)
                         });
                 });
 
@@ -473,6 +1021,10 @@ namespace LaoHR.API.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("AttachmentPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -481,6 +1033,13 @@ namespace LaoHR.API.Migrations
 
                     b.Property<DateTime>("EndDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("HalfDayType")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool>("IsHalfDay")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LeaveType")
                         .IsRequired()
@@ -499,14 +1058,59 @@ namespace LaoHR.API.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("TotalDays")
-                        .HasColumnType("int");
+                    b.Property<decimal>("TotalDays")
+                        .HasColumnType("decimal(5,1)");
 
                     b.HasKey("LeaveId");
 
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("LeaveRequests");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PayrollAdjustment", b =>
+                {
+                    b.Property<int>("AdjustmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdjustmentId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsNssfAssessable")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsTaxable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PeriodId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("AdjustmentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("PeriodId");
+
+                    b.ToTable("PayrollAdjustments");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.PayrollPeriod", b =>
@@ -550,6 +1154,29 @@ namespace LaoHR.API.Migrations
                     b.ToTable("PayrollPeriods");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Province", b =>
+                {
+                    b.Property<int>("PrId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrId"));
+
+                    b.Property<string>("PrName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("PrNameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("PrId");
+
+                    b.ToTable("Provinces");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.SalarySlip", b =>
                 {
                     b.Property<int>("SlipId")
@@ -564,16 +1191,33 @@ namespace LaoHR.API.Migrations
                     b.Property<decimal>("BaseSalary")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<decimal>("BaseSalaryOriginal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Bonus")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("ContractCurrency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("nvarchar(3)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("EmployeeId")
                         .HasColumnType("int");
 
+                    b.Property<decimal>("ExchangeRateUsed")
+                        .HasColumnType("decimal(18,4)");
+
                     b.Property<decimal>("GrossIncome")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NetSalary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("NetSalaryOriginal")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("NssfBase")
@@ -590,6 +1234,11 @@ namespace LaoHR.API.Migrations
 
                     b.Property<decimal>("OvertimePay")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("PaymentCurrency")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<int>("PeriodId")
                         .HasColumnType("int");
@@ -642,56 +1291,56 @@ namespace LaoHR.API.Migrations
                             SettingKey = "NSSF_CEILING_BASE",
                             Description = "Maximum salary for NSSF calculation",
                             SettingValue = "4500000",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5053)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(8891)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYEE_RATE",
                             Description = "Employee NSSF contribution rate (5.5%)",
                             SettingValue = "0.055",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5606)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9206)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYER_RATE",
                             Description = "Employer NSSF contribution rate (6.0%)",
                             SettingValue = "0.060",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5608)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9207)
                         },
                         new
                         {
                             SettingKey = "WORK_START_TIME",
                             Description = "Standard work start time",
                             SettingValue = "08:30",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5609)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9208)
                         },
                         new
                         {
                             SettingKey = "WORK_END_TIME",
                             Description = "Standard work end time",
                             SettingValue = "17:30",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5610)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9209)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_USD",
                             Description = "USD to LAK Exchange Rate",
                             SettingValue = "22000",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5611)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9209)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_THB",
                             Description = "THB to LAK Exchange Rate",
                             SettingValue = "650",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5612)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9210)
                         },
                         new
                         {
                             SettingKey = "ZKTECO_ENABLED",
                             Description = "Global Switch for ZKTeco Integration",
                             SettingValue = "false",
-                            UpdatedAt = new DateTime(2026, 1, 11, 2, 20, 21, 607, DateTimeKind.Utc).AddTicks(5613)
+                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9211)
                         });
                 });
 
@@ -779,6 +1428,120 @@ namespace LaoHR.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Village", b =>
+                {
+                    b.Property<int>("VillId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VillId"));
+
+                    b.Property<int>("DiId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("VillName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("VillNameEn")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("VillId");
+
+                    b.HasIndex("DiId");
+
+                    b.ToTable("Villages");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkSchedule", b =>
+                {
+                    b.Property<int>("WorkScheduleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkScheduleId"));
+
+                    b.Property<TimeSpan>("BreakEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("BreakStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<decimal>("DailyWorkHours")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("Friday")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LateThresholdMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("Monday")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Saturday")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan?>("SaturdayEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<decimal>("SaturdayHours")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<TimeSpan?>("SaturdayStartTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("SaturdayWeeks")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SaturdayWorkType")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<decimal>("StandardMonthlyHours")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("Sunday")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Thursday")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Tuesday")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Wednesday")
+                        .HasColumnType("bit");
+
+                    b.Property<TimeSpan>("WorkEndTime")
+                        .HasColumnType("time");
+
+                    b.Property<TimeSpan>("WorkStartTime")
+                        .HasColumnType("time");
+
+                    b.HasKey("WorkScheduleId");
+
+                    b.ToTable("WorkSchedules");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AppUser", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId");
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Attendance", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
@@ -788,6 +1551,38 @@ namespace LaoHR.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CompanySetting", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId");
+
+                    b.HasOne("LaoHR.Shared.Models.Province", "Province")
+                        .WithMany()
+                        .HasForeignKey("ProvinceId");
+
+                    b.HasOne("LaoHR.Shared.Models.Village", "Village")
+                        .WithMany()
+                        .HasForeignKey("VillageId");
+
+                    b.Navigation("District");
+
+                    b.Navigation("Province");
+
+                    b.Navigation("Village");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.District", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Province", "Province")
+                        .WithMany("Districts")
+                        .HasForeignKey("PrId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Province");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.Employee", b =>
@@ -810,6 +1605,17 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.LeaveBalance", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.LeaveRequest", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
@@ -819,6 +1625,25 @@ namespace LaoHR.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PayrollAdjustment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.PayrollPeriod", "PayrollPeriod")
+                        .WithMany()
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayrollPeriod");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.SalarySlip", b =>
@@ -840,9 +1665,25 @@ namespace LaoHR.API.Migrations
                     b.Navigation("PayrollPeriod");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Village", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.District", "District")
+                        .WithMany("Villages")
+                        .HasForeignKey("DiId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("District");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
                 {
                     b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.District", b =>
+                {
+                    b.Navigation("Villages");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.Employee", b =>
@@ -857,6 +1698,11 @@ namespace LaoHR.API.Migrations
             modelBuilder.Entity("LaoHR.Shared.Models.PayrollPeriod", b =>
                 {
                     b.Navigation("SalarySlips");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Province", b =>
+                {
+                    b.Navigation("Districts");
                 });
 #pragma warning restore 612, 618
         }

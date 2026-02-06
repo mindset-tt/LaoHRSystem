@@ -17,7 +17,9 @@ public class PayrollService
     private decimal _nssfEmployerRate = 0.060m;
     private decimal _exRateUsd = 22000m;
     private decimal _exRateThb = 650m;
+    private decimal _exRateCny = 3100m;  // Chinese Yuan
     private List<TaxBracket>? _taxBrackets;
+    private WorkSchedule? _workSchedule;
     
     public PayrollService(LaoHRDbContext context)
     {
@@ -46,6 +48,111 @@ public class PayrollService
             .Where(t => t.IsActive)
             .OrderBy(t => t.SortOrder)
             .ToListAsync();
+        
+        // Load work schedule
+        _workSchedule = await _context.WorkSchedules.FirstOrDefaultAsync();
+    }
+    
+    /// <summary>
+    /// Get conversion rate for a currency from database
+    /// Falls back to settings if no rate found
+    /// </summary>
+    public async Task<decimal> GetConversionRateAsync(string fromCurrency, string toCurrency = "LAK", DateTime? asOfDate = null)
+    {
+        if (fromCurrency == toCurrency) return 1m;
+        
+        var date = asOfDate ?? DateTime.UtcNow;
+        
+        // Try to find rate from database
+        var rate = await _context.ConversionRates
+            .Where(r => r.FromCurrency == fromCurrency && 
+                        r.ToCurrency == toCurrency && 
+                        r.IsActive &&
+                        r.EffectiveDate <= date &&
+                        (r.ExpiryDate == null || r.ExpiryDate > date))
+            .OrderByDescending(r => r.EffectiveDate)
+            .FirstOrDefaultAsync();
+        
+        if (rate != null) return rate.Rate;
+        
+        // Fallback to system settings (approximate rates to LAK)
+        return fromCurrency switch
+        {
+            "USD" => _exRateUsd,   // ~22,000 LAK
+            "THB" => _exRateThb,   // ~650 LAK
+            "CNY" => _exRateCny,   // ~3,100 LAK
+            "LAK" => 1m,
+            _ => 1m
+        };
+    }
+    
+    /// <summary>
+    /// Get standard monthly hours based on work schedule
+    /// Mon-Fri = 160 hours
+    /// Mon-Sat (half day) = 180 hours
+    /// Mon-Sat (full day) = 200 hours
+    /// </summary>
+    public decimal GetStandardMonthlyHours()
+    {
+        if (_workSchedule == null) return 160m;
+        
+        return _workSchedule.SaturdayWorkType switch
+        {
+            "HALF" => 180m,
+            "FULL" => 200m,
+            _ => 160m
+        };
+    }
+    
+    /// <summary>
+    /// Check if a specific date is a scheduled work day (including Saturday logic)
+    /// </summary>
+    public bool IsScheduledWorkDay(DateTime date)
+    {
+        if (_workSchedule == null) 
+        {
+            // Default: Mon-Fri
+            return date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday;
+        }
+        
+        // Sunday is never a work day
+        if (date.DayOfWeek == DayOfWeek.Sunday) return false;
+        
+        // Saturday special handling
+        if (date.DayOfWeek == DayOfWeek.Saturday)
+        {
+            if (!_workSchedule.Saturday || _workSchedule.SaturdayWorkType == "NONE")
+                return false;
+            
+            // Check which week of month this Saturday falls on
+            int weekOfMonth = GetWeekOfMonth(date);
+            return _workSchedule.IsSaturdayWorkDay(weekOfMonth);
+        }
+        
+        // Mon-Fri: Check the day flags
+        return _workSchedule.IsWorkDay(date.DayOfWeek);
+    }
+    
+    /// <summary>
+    /// Get work hours for a specific day
+    /// </summary>
+    public decimal GetWorkHoursForDay(DateTime date)
+    {
+        if (_workSchedule == null) return 8m;
+        
+        if (date.DayOfWeek == DayOfWeek.Saturday && _workSchedule.SaturdayWorkType == "HALF")
+            return 4m;
+        
+        return _workSchedule.DailyWorkHours;
+    }
+    
+    /// <summary>
+    /// Calculate which week of the month a date falls on (1-5)
+    /// </summary>
+    private int GetWeekOfMonth(DateTime date)
+    {
+        int day = date.Day;
+        return (day - 1) / 7 + 1;
     }
     
     /// <summary>
@@ -91,9 +198,23 @@ public class PayrollService
     /// <summary>
     /// Calculate complete salary breakdown
     /// </summary>
-    public SalaryCalculation CalculateSalary(decimal baseSalary, decimal overtimePay = 0, decimal allowances = 0, decimal otherDeductions = 0, int dependentCount = 0)
+    /// <summary>
+    /// Calculate complete salary breakdown
+    /// </summary>
+    public SalaryCalculation CalculateSalary(decimal baseSalary, decimal overtimePay = 0, List<PayrollAdjustment>? adjustments = null, int dependentCount = 0)
     {
-        decimal grossIncome = baseSalary + overtimePay + allowances;
+        adjustments ??= new List<PayrollAdjustment>();
+        
+        // Earnings
+        decimal taxableAllowances = adjustments.Where(a => a.Type == "EARNING" && a.IsTaxable).Sum(a => a.Amount);
+        decimal nonTaxableAllowances = adjustments.Where(a => a.Type == "EARNING" && !a.IsTaxable).Sum(a => a.Amount);
+        decimal bonuses = adjustments.Where(a => a.Type == "BONUS").Sum(a => a.Amount); // If dynamic bonus uses Type="BONUS"
+
+        // Deductions (Pre-Tax?) - Usually deductions are just Net deductions, unless specific tax-exempt deductions exist.
+        // Assuming Adjustments type DEDUCTION are net deductions (loan repayment etc).
+        decimal otherDeductions = adjustments.Where(a => a.Type == "DEDUCTION").Sum(a => a.Amount);
+
+        decimal grossIncome = baseSalary + overtimePay + taxableAllowances + bonuses;
         
         // Calculate NSSF
         var (nssfBase, nssfEmployee, nssfEmployer) = CalculateNSSF(grossIncome);
@@ -104,17 +225,6 @@ public class PayrollService
         // Article 52 Deduction: Family Support
         // 5,000,000 LAK per person per year => ~416,667 per month
         // Max 3 persons
-        // Note: For now we assume standard deduction. In a real scenario we'd fetch this from Employee properties.
-        // We need to pass employee object or dependent count to CalculateSalary.
-        
-        // This method signature update requires careful refactoring.
-        // For now, I will add an optional parameter for dependentCount to avoid breaking existing calls immediately
-        // but typically this service should access the employee data.
-        // Wait, the caller ProcessPayrollAsync has 'emp' object. I should update CalculateSalary signature.
-        
-        // Let's check the method signature in the file content again. It's public.
-        // I will add 'int dependentCount = 0' to arguments.
-        
         decimal familyDeduction = Math.Min(dependentCount, 3) * 416667m;
         taxableIncome = Math.Max(0, taxableIncome - familyDeduction);
         
@@ -122,14 +232,16 @@ public class PayrollService
         decimal taxDeduction = CalculateProgressiveTax(taxableIncome);
         
         // Net salary
-        decimal netSalary = grossIncome - nssfEmployee - taxDeduction - otherDeductions;
+        // Net = (Gross - NSSF - Tax) + NonTaxableEarnings - Deductions
+        decimal netSalary = (grossIncome - nssfEmployee - taxDeduction) + nonTaxableAllowances - otherDeductions;
         
         return new SalaryCalculation
         {
             BaseSalary = baseSalary,
             OvertimePay = overtimePay,
-            Allowances = allowances,
-            GrossIncome = grossIncome,
+            Allowances = taxableAllowances + nonTaxableAllowances, // Total for display
+            Bonus = bonuses,
+            GrossIncome = grossIncome, // Note: Gross normally includes Taxable only for tax calc purposes
             NssfBase = nssfBase,
             NssfEmployeeDeduction = nssfEmployee,
             NssfEmployerContribution = nssfEmployer,
@@ -141,13 +253,28 @@ public class PayrollService
         };
     }
     
+
+    
     /// <summary>
     /// Calculate overtime pay based on attendance records (Articles 114-116)
+    /// Now considers work schedule for Saturday handling
     /// </summary>
     public async Task<decimal> CalculateOvertimePay(int employeeId, DateTime startDate, DateTime endDate, decimal baseSalary)
     {
-        // Article 114: Hourly rate = Salary / 26 days / 8 hours
-        decimal hourlyRate = baseSalary / 26 / 8;
+        // Ensure settings are loaded
+        if (_workSchedule == null)
+        {
+            await LoadSettingsAsync();
+        }
+        
+        // Article 114: Hourly rate = Salary / work_days / daily_hours
+        // Dynamic calculation based on work schedule:
+        // Mon-Fri: 20 days × 8 hrs
+        // Mon-Sat(half): 23 days × 8 hrs average
+        // Mon-Sat(full): 26 days × 8 hrs
+        decimal workDaysPerMonth = _workSchedule?.GetWorkDaysPerMonth() ?? 26m;
+        decimal dailyHours = _workSchedule?.DailyWorkHours ?? 8m;
+        decimal hourlyRate = baseSalary / workDaysPerMonth / dailyHours;
         decimal totalOvertimePay = 0;
 
         var attendances = await _context.Attendances
@@ -155,15 +282,13 @@ public class PayrollService
             .ToListAsync();
 
         var holidays = await _context.Holidays
-            .Where(h => h.Date >= startDate && h.Date <= endDate)
-            .Select(h => h.Date)
+            .Where(h => h.Date >= startDate && h.Date <= endDate && h.IsActive)
+            .Select(h => h.Date.Date)
             .ToListAsync();
             
         // Get work schedule settings
-        var settings = await _context.SystemSettings.ToDictionaryAsync(s => s.SettingKey, s => s.SettingValue);
-        // Default 08:30 - 17:30
-        TimeSpan workStart = TimeSpan.Parse(settings.GetValueOrDefault("WORK_START_TIME", "08:30"));
-        TimeSpan workEnd = TimeSpan.Parse(settings.GetValueOrDefault("WORK_END_TIME", "17:30"));
+        TimeSpan workStart = _workSchedule?.WorkStartTime ?? new TimeSpan(8, 30, 0);
+        TimeSpan workEnd = _workSchedule?.WorkEndTime ?? new TimeSpan(17, 30, 0);
 
         foreach (var att in attendances)
         {
@@ -172,56 +297,65 @@ public class PayrollService
             DateTime clockIn = att.ClockIn.Value;
             DateTime clockOut = att.ClockOut.Value;
             
-            // If clockOut is before clockIn (e.g. overnight shift error), skip or fix. 
-            // Assuming valid data for now. If clockOut < clockIn, it might mean next day, but data usually stores absolute DateTime.
             if (clockOut <= clockIn) continue;
 
             bool isHoliday = holidays.Contains(att.AttendanceDate.Date);
-            bool isWeekend = att.AttendanceDate.DayOfWeek == DayOfWeek.Saturday || att.AttendanceDate.DayOfWeek == DayOfWeek.Sunday;
+            
+            // Check if this is a scheduled work day (considers Saturday config)
+            bool isScheduledWorkDay = IsScheduledWorkDay(att.AttendanceDate.Date);
+            bool isWeekendOrNotScheduled = !isScheduledWorkDay;
             
             // Define Rate Buckets for this day
             var buckets = new List<RateBucket>();
             
-            if (isHoliday || isWeekend)
+            if (isHoliday || isWeekendOrNotScheduled)
             {
-                // Article 115: Weekly Rest or Holiday
+                // Article 115: Weekly Rest, Holiday, or Non-Scheduled Day
+                // ALL hours worked are OT
                 // 06:00 - 16:00: 250%
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(6), att.AttendanceDate.Date.AddHours(16), 2.5m));
                 // 16:00 - 22:00: 300%
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(16), att.AttendanceDate.Date.AddHours(22), 3.0m));
                 // 22:00 - 06:00 (Next Day): 350%
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(22), att.AttendanceDate.Date.AddDays(1).AddHours(6), 3.5m));
-                
-                // Also cover early morning before 06:00? The law implies 22:00-06:00 is night.
-                // So 00:00 - 06:00 on the day itself should also be 350% (continuation of previous night).
+                // 00:00 - 06:00 (continuation of previous night): 350%
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(0), att.AttendanceDate.Date.AddHours(6), 3.5m));
             }
             else
             {
-                // Article 114: Normal Work Day
-                // Normal hours are NOT overtime. We must exclude 08:30-17:30 (or configured work hours).
-                // Actually, OT is usually calculated ONLY outside work hours.
-                // But if someone works through lunch or comes early, that's OT.
+                // Article 114: Normal Work Day (including scheduled Saturday)
+                // Only hours OUTSIDE normal work hours are OT
                 
-                // 17:00 - 22:00: 150%
-                // Note: There's an overlap if work ends at 17:30.
-                // Strictly speaking, OT starts after work ends.
-                // If work ends at 17:30, 17:00-17:30 is NOT OT.
-                // We will handle "Is Working Hour" exclusion logic below.
+                // Get the work end time for this specific day
+                TimeSpan dayWorkEnd = workEnd;
+                if (att.AttendanceDate.DayOfWeek == DayOfWeek.Saturday && _workSchedule?.SaturdayWorkType == "HALF")
+                {
+                    // Half day Saturday ends earlier (e.g., 12:00)
+                    dayWorkEnd = _workSchedule?.SaturdayEndTime ?? new TimeSpan(12, 0, 0);
+                }
                 
-                // 06:00 - 22:00: 150% (General Day OT) - Specific window 17-22 is 150%, assuming general day OT is also 150%
-                buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(6), att.AttendanceDate.Date.AddHours(22), 1.5m));
+                // After work ends until 22:00: 150%
+                buckets.Add(new RateBucket(att.AttendanceDate.Date.Add(dayWorkEnd), att.AttendanceDate.Date.AddHours(22), 1.5m));
                 
                 // 22:00 - 06:00 (Next Day): 200%
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(22), att.AttendanceDate.Date.AddDays(1).AddHours(6), 2.0m));
                 
-                // Early Morning 00:00 - 06:00: 200%
+                // Early Morning 00:00 - 06:00: 200% (before work start)
                 buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(0), att.AttendanceDate.Date.AddHours(6), 2.0m));
+                
+                // Before work start until work start: 150% (e.g., 06:00 - 08:30)
+                buckets.Add(new RateBucket(att.AttendanceDate.Date.AddHours(6), att.AttendanceDate.Date.Add(workStart), 1.5m));
             }
 
-            // Normal Working Hours (to exclude from OT)
+            // Normal Working Hours (to exclude from OT) - only for scheduled work days
             DateTime workStartDateTime = att.AttendanceDate.Date.Add(workStart);
             DateTime workEndDateTime = att.AttendanceDate.Date.Add(workEnd);
+            
+            // Adjust for Saturday half day
+            if (att.AttendanceDate.DayOfWeek == DayOfWeek.Saturday && _workSchedule?.SaturdayWorkType == "HALF")
+            {
+                workEndDateTime = att.AttendanceDate.Date.Add(_workSchedule?.SaturdayEndTime ?? new TimeSpan(12, 0, 0));
+            }
             
             // Calculate Pay for this record
             foreach (var bucket in buckets)
@@ -232,11 +366,10 @@ public class PayrollService
                 
                 if (overlapStart < overlapEnd)
                 {
-                    // If this is a work day, exclude normal working hours from OT
-                    if (!isHoliday && !isWeekend)
+                    // If this is a scheduled work day, exclude normal working hours from OT
+                    if (isScheduledWorkDay && !isHoliday)
                     {
-                        // We need to subtract any time that falls within Normal Work Hours
-                        // Simple way: Calculate intersection of (OverlapStart, OverlapEnd) and (WorkStart, WorkEnd)
+                        // Subtract time that falls within Normal Work Hours
                         DateTime workOverlapStart = overlapStart > workStartDateTime ? overlapStart : workStartDateTime;
                         DateTime workOverlapEnd = overlapEnd < workEndDateTime ? overlapEnd : workEndDateTime;
                         
@@ -256,8 +389,7 @@ public class PayrollService
                     }
                     else
                     {
-                        // Holiday/Weekend: All hours are OT (simplification: assuming no "normal hours" on these days)
-                        // Or does "weekly rest day" mean NO work is normal? Yes.
+                        // Holiday or Non-Scheduled Day: All hours are OT
                         decimal hours = (decimal)(overlapEnd - overlapStart).TotalHours;
                         totalOvertimePay += hours * hourlyRate * bucket.Rate;
                     }
@@ -292,6 +424,10 @@ public class PayrollService
         var period = await _context.PayrollPeriods.FindAsync(periodId);
         if (period == null) throw new InvalidOperationException("Period not found");
         
+        // Prevent re-processing of locked periods
+        if (period.Status == "APPROVED" || period.Status == "LOCKED")
+            throw new InvalidOperationException($"Cannot re-run payroll for {period.Status} period. Create a new period or unlock first.");
+        
         var activeEmployees = await _context.Employees
             .Where(e => e.IsActive)
             .ToListAsync();
@@ -307,29 +443,35 @@ public class PayrollService
         foreach (var emp in activeEmployees)
         {
             // Convert Base Salary to LAK if dealing with foreign currency
-            decimal effectiveBaseSalary = emp.BaseSalary;
-            if (emp.SalaryCurrency == "USD")
-            {
-                effectiveBaseSalary = Math.Round(emp.BaseSalary * _exRateUsd, 2);
-            }
-            else if (emp.SalaryCurrency == "THB")
-            {
-                effectiveBaseSalary = Math.Round(emp.BaseSalary * _exRateThb, 2);
-            }
+            // Uses current conversion rate from database or fallback to settings
+            decimal conversionRate = await GetConversionRateAsync(emp.SalaryCurrency, "LAK", period.EndDate);
+            decimal effectiveBaseSalary = Math.Round(emp.BaseSalary * conversionRate, 2);
+
+            // Fetch Adjustments for this employee in this period
+            var adjustments = await _context.PayrollAdjustments
+                .Where(a => a.EmployeeId == emp.EmployeeId && a.PeriodId == periodId)
+                .ToListAsync();
 
             // Auto-calculate Overtime using LAK base salary
             decimal overtimePay = await CalculateOvertimePay(emp.EmployeeId, period.StartDate, period.EndDate, effectiveBaseSalary);
             
             // Calculate final salary components (using LAK values)
-            var calc = CalculateSalary(effectiveBaseSalary, overtimePay: overtimePay, dependentCount: emp.DependentCount);
+            var calc = CalculateSalary(effectiveBaseSalary, overtimePay: overtimePay, adjustments: adjustments, dependentCount: emp.DependentCount);
+            
+            // Calculate original currency amounts (for non-LAK contracts)
+            decimal netSalaryOriginal = emp.SalaryCurrency == "LAK" 
+                ? calc.NetSalary 
+                : Math.Round(calc.NetSalary / conversionRate, 2);
             
             var slip = new SalarySlip
             {
                 EmployeeId = emp.EmployeeId,
                 PeriodId = periodId,
+                // LAK amounts (for tax/NSSF calculation)
                 BaseSalary = calc.BaseSalary,
                 OvertimePay = calc.OvertimePay,
                 Allowances = calc.Allowances,
+                Bonus = calc.Bonus,
                 GrossIncome = calc.GrossIncome,
                 NssfBase = calc.NssfBase,
                 NssfEmployeeDeduction = calc.NssfEmployeeDeduction,
@@ -338,6 +480,12 @@ public class PayrollService
                 TaxDeduction = calc.TaxDeduction,
                 OtherDeductions = calc.OtherDeductions,
                 NetSalary = calc.NetSalary,
+                // Original currency info
+                ContractCurrency = emp.SalaryCurrency,
+                ExchangeRateUsed = conversionRate,
+                BaseSalaryOriginal = emp.BaseSalary,
+                NetSalaryOriginal = netSalaryOriginal,
+                PaymentCurrency = emp.SalaryCurrency, // Default to contract currency
                 Status = "CALCULATED"
             };
             
@@ -361,6 +509,7 @@ public class SalaryCalculation
     public decimal BaseSalary { get; set; }
     public decimal OvertimePay { get; set; }
     public decimal Allowances { get; set; }
+    public decimal Bonus { get; set; }
     public decimal GrossIncome { get; set; }
     public decimal NssfBase { get; set; }
     public decimal NssfEmployeeDeduction { get; set; }
