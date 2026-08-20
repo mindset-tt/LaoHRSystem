@@ -1150,3 +1150,207 @@ public class ActivityLog
     public virtual Employee? Actor { get; set; }
 }
 
+// =============================================================================
+// Phase 3 — Risk, Issue, Resource
+// -----------------------------------------------------------------------------
+// Lightweight operational entities complementing the project workspace.
+// - Risk: identified project-level risk with likelihood / impact / mitigation.
+// - Issue: ad-hoc blocker or problem (with optional linked task); has comments.
+// - Resource: lightweight allocation of an employee to a project with a role
+//   and date range. No capacity / utilization calculations — just ownership
+//   and a window of commitment.
+// =============================================================================
+
+/// <summary>
+/// A risk identified for a project. Status reflects how it has been handled.
+/// </summary>
+public class Risk
+{
+    [Key]
+    public int RiskId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    /// <summary>LOW, MEDIUM, HIGH, CRITICAL.</summary>
+    [Required, MaxLength(10)]
+    public string Priority { get; set; } = "MEDIUM";
+
+    /// <summary>1-5. Higher = more likely.</summary>
+    [Range(1, 5)]
+    public int Likelihood { get; set; } = 3;
+
+    /// <summary>1-5. Higher = more impactful.</summary>
+    [Range(1, 5)]
+    public int Impact { get; set; } = 3;
+
+    /// <summary>Computed: Likelihood * Impact. Not stored; cheap to derive.</summary>
+    [NotMapped]
+    public int Score => Likelihood * Impact;
+
+    /// <summary>OPEN, MITIGATING, CLOSED, ACCEPTED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "OPEN";
+
+    [MaxLength(2000)]
+    public string? Mitigation { get; set; }
+
+    public int? OwnerId { get; set; }
+
+    public DateTime? DueDate { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("OwnerId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+}
+
+/// <summary>
+/// An ad-hoc issue / blocker. Can be linked back to a project (and optionally
+/// a task) and carries its own comment thread.
+/// </summary>
+public class Issue
+{
+    [Key]
+    public int IssueId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    public int? TaskId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(5000)]
+    public string? Description { get; set; }
+
+    /// <summary>TODO, IN_PROGRESS, BLOCKED, REVIEW, DONE, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "TODO";
+
+    /// <summary>LOW, MEDIUM, HIGH, CRITICAL.</summary>
+    [Required, MaxLength(10)]
+    public string Priority { get; set; } = "MEDIUM";
+
+    public int ReporterId { get; set; }
+    public int? AssigneeId { get; set; }
+
+    public DateTime? DueDate { get; set; }
+    public DateTime? ResolvedAt { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("TaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Task { get; set; }
+
+    [ForeignKey("ReporterId")]
+    [JsonIgnore]
+    public virtual Employee? Reporter { get; set; }
+
+    [ForeignKey("AssigneeId")]
+    [JsonIgnore]
+    public virtual Employee? Assignee { get; set; }
+
+    public virtual ICollection<IssueComment> Comments { get; set; } = new List<IssueComment>();
+}
+
+/// <summary>
+/// A comment on an issue. Same threading model as TaskComment.
+/// </summary>
+public class IssueComment
+{
+    [Key]
+    public int IssueCommentId { get; set; }
+
+    [Required]
+    public int IssueId { get; set; }
+
+    [Required]
+    public int AuthorId { get; set; }
+
+    [Required, MaxLength(4000)]
+    public string Body { get; set; } = string.Empty;
+
+    public int? ParentCommentId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("IssueId")]
+    [JsonIgnore]
+    public virtual Issue? Issue { get; set; }
+
+    [ForeignKey("AuthorId")]
+    [JsonIgnore]
+    public virtual Employee? Author { get; set; }
+
+    [ForeignKey("ParentCommentId")]
+    [JsonIgnore]
+    public virtual IssueComment? Parent { get; set; }
+}
+
+/// <summary>
+/// A lightweight allocation of an employee to a project. Captures the role and
+/// the date window during which the allocation is valid. Intentionally not a
+/// capacity engine — just enough to answer "who is working on what, when".
+/// </summary>
+public class Resource
+{
+    [Key]
+    public int ResourceId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>LEAD, CONTRIBUTOR, REVIEWER, ADVISOR.</summary>
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "CONTRIBUTOR";
+
+    /// <summary>0-100. Allocation percentage; informational only.</summary>
+    [Range(0, 100)]
+    public int AllocationPercent { get; set; } = 100;
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+
+    [MaxLength(500)]
+    public string? Notes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+

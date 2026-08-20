@@ -224,6 +224,19 @@ export default function ProjectDetailPage() {
                 </button>
             </div>
 
+            {/* Sub-navigation for project workspace slices */}
+            <div className={styles.filters}>
+                <Link href={`/projects/${projectId}/risks`} className={styles.linkButton}>
+                    {t.risks.title} →
+                </Link>
+                <Link href={`/projects/${projectId}/issues`} className={styles.linkButton}>
+                    {t.issues.title} →
+                </Link>
+                <Link href={`/projects/${projectId}/resources`} className={styles.linkButton}>
+                    {t.resources.title} →
+                </Link>
+            </div>
+
             {tab === 'board' && (
                 <div className={styles.board}>
                     {STATUS_COLUMNS.map(col => (

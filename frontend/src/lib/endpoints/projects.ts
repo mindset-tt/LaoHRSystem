@@ -1,6 +1,7 @@
 /**
- * Project workspace endpoints (Phase 2).
+ * Project workspace endpoints (Phase 2 + Phase 3).
  * Lightweight PM slice: project list / detail, task list / detail, comments, activity.
+ * Phase 3 adds risk, issue (with comments), and resource endpoints.
  */
 import { apiClient } from '../apiClient';
 import type { PaginatedResponse } from '../types/pagination';
@@ -262,4 +263,231 @@ export const myTasksApi = {
         apiClient.get<PaginatedResponse<TaskListItem>>(
             `/api/my-tasks${toQuery(params ?? {})}`
         ),
+};
+
+// =============================================================================
+// Phase 3 — Risk / Issue / Resource
+// =============================================================================
+
+export interface RiskListItem {
+    riskId: number;
+    projectId: number;
+    title: string;
+    priority: string;
+    likelihood: number;
+    impact: number;
+    score: number;
+    status: string;
+    ownerId?: number | null;
+    ownerName?: string | null;
+    dueDate?: string | null;
+    updatedAt: string;
+}
+
+export interface RiskDetail extends Omit<RiskListItem, 'score'> {
+    description?: string | null;
+    mitigation?: string | null;
+    createdAt: string;
+}
+
+export interface CreateRiskInput {
+    title: string;
+    description?: string;
+    priority?: string;
+    likelihood?: number;
+    impact?: number;
+    status?: string;
+    mitigation?: string;
+    ownerId?: number;
+    dueDate?: string;
+}
+
+export interface UpdateRiskInput {
+    title?: string;
+    description?: string;
+    priority?: string;
+    likelihood?: number;
+    impact?: number;
+    status?: string;
+    mitigation?: string;
+    ownerId?: number;
+    dueDate?: string;
+}
+
+export const risksApi = {
+    getAll: (
+        projectId: number,
+        params?: { status?: string; priority?: string; search?: string; page?: number; pageSize?: number }
+    ) =>
+        apiClient.get<PaginatedResponse<RiskListItem>>(
+            `/api/projects/${projectId}/risks${toQuery(params ?? {})}`
+        ),
+    getById: (projectId: number, riskId: number) =>
+        apiClient.get<RiskDetail>(`/api/projects/${projectId}/risks/${riskId}`),
+    create: (projectId: number, input: CreateRiskInput) =>
+        apiClient.post<RiskDetail>(`/api/projects/${projectId}/risks`, input),
+    update: (projectId: number, riskId: number, input: UpdateRiskInput) =>
+        apiClient.put<void>(`/api/projects/${projectId}/risks/${riskId}`, input),
+    delete: (projectId: number, riskId: number) =>
+        apiClient.delete<void>(`/api/projects/${projectId}/risks/${riskId}`),
+};
+
+export interface IssueListItem {
+    issueId: number;
+    projectId: number;
+    taskId?: number | null;
+    taskNumber?: string | null;
+    title: string;
+    status: string;
+    priority: string;
+    reporterId: number;
+    reporterName?: string | null;
+    assigneeId?: number | null;
+    assigneeName?: string | null;
+    dueDate?: string | null;
+    resolvedAt?: string | null;
+    isOverdue: boolean;
+    commentCount: number;
+    updatedAt: string;
+}
+
+export interface IssueCommentDetail {
+    issueCommentId: number;
+    issueId: number;
+    authorId: number;
+    authorName: string;
+    body: string;
+    createdAt: string;
+}
+
+export interface IssueDetail {
+    issueId: number;
+    projectId: number;
+    taskId?: number | null;
+    taskNumber?: string | null;
+    title: string;
+    description?: string | null;
+    status: string;
+    priority: string;
+    reporterId: number;
+    reporterName?: string | null;
+    assigneeId?: number | null;
+    assigneeName?: string | null;
+    dueDate?: string | null;
+    resolvedAt?: string | null;
+    createdAt: string;
+    updatedAt: string;
+    comments: IssueCommentDetail[];
+}
+
+export interface CreateIssueInput {
+    title: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    taskId?: number;
+    assigneeId?: number;
+    dueDate?: string;
+}
+
+export interface UpdateIssueInput {
+    title?: string;
+    description?: string;
+    status?: string;
+    priority?: string;
+    taskId?: number;
+    assigneeId?: number;
+    dueDate?: string;
+}
+
+export const issuesApi = {
+    getAll: (
+        projectId: number,
+        params?: {
+            status?: string;
+            priority?: string;
+            assigneeId?: number;
+            mineOnly?: boolean;
+            search?: string;
+            page?: number;
+            pageSize?: number;
+        }
+    ) =>
+        apiClient.get<PaginatedResponse<IssueListItem>>(
+            `/api/projects/${projectId}/issues${toQuery(params ?? {})}`
+        ),
+    getById: (projectId: number, issueId: number) =>
+        apiClient.get<IssueDetail>(`/api/projects/${projectId}/issues/${issueId}`),
+    create: (projectId: number, input: CreateIssueInput) =>
+        apiClient.post<IssueDetail>(`/api/projects/${projectId}/issues`, input),
+    update: (projectId: number, issueId: number, input: UpdateIssueInput) =>
+        apiClient.put<void>(`/api/projects/${projectId}/issues/${issueId}`, input),
+    delete: (projectId: number, issueId: number) =>
+        apiClient.delete<void>(`/api/projects/${projectId}/issues/${issueId}`),
+    addComment: (projectId: number, issueId: number, body: string) =>
+        apiClient.post<IssueCommentDetail>(
+            `/api/projects/${projectId}/issues/${issueId}/comments`,
+            { body }
+        ),
+};
+
+export interface ResourceListItem {
+    resourceId: number;
+    projectId: number;
+    projectCode: string;
+    projectName: string;
+    employeeId: number;
+    employeeName: string;
+    role: string;
+    allocationPercent: number;
+    startDate?: string | null;
+    endDate?: string | null;
+}
+
+export interface ResourceDetail extends ResourceListItem {
+    notes?: string | null;
+    createdAt: string;
+}
+
+export interface CreateResourceInput {
+    employeeId: number;
+    role?: string;
+    allocationPercent?: number;
+    startDate?: string;
+    endDate?: string;
+    notes?: string;
+}
+
+export interface UpdateResourceInput {
+    role?: string;
+    allocationPercent?: number;
+    startDate?: string;
+    endDate?: string;
+    notes?: string;
+}
+
+export const resourcesApi = {
+    getAll: (
+        projectId: number,
+        params?: { role?: string; activeOn?: boolean; page?: number; pageSize?: number }
+    ) =>
+        apiClient.get<PaginatedResponse<ResourceListItem>>(
+            `/api/projects/${projectId}/resources${toQuery(params ?? {})}`
+        ),
+    getCrossProject: (params?: {
+        employeeId?: number;
+        role?: string;
+        activeOn?: boolean;
+        page?: number;
+        pageSize?: number;
+    }) =>
+        apiClient.get<PaginatedResponse<ResourceListItem>>(
+            `/api/resources${toQuery(params ?? {})}`
+        ),
+    create: (projectId: number, input: CreateResourceInput) =>
+        apiClient.post<ResourceDetail>(`/api/projects/${projectId}/resources`, input),
+    update: (projectId: number, resourceId: number, input: UpdateResourceInput) =>
+        apiClient.put<void>(`/api/projects/${projectId}/resources/${resourceId}`, input),
+    delete: (projectId: number, resourceId: number) =>
+        apiClient.delete<void>(`/api/projects/${projectId}/resources/${resourceId}`),
 };

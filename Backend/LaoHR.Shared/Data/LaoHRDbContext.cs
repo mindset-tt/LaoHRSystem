@@ -41,6 +41,12 @@ public class LaoHRDbContext : DbContext
     public DbSet<TaskComment> TaskComments { get; set; }
     public DbSet<ActivityLog> ActivityLogs { get; set; }
 
+    // Phase 3 — Risk, Issue, Resource
+    public DbSet<Risk> Risks { get; set; }
+    public DbSet<Issue> Issues { get; set; }
+    public DbSet<IssueComment> IssueComments { get; set; }
+    public DbSet<Resource> Resources { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
@@ -95,6 +101,29 @@ public class LaoHRDbContext : DbContext
 
         modelBuilder.Entity<ActivityLog>()
             .HasIndex(a => new { a.ProjectId, a.CreatedAt });
+
+        // Phase 3 — Risk, Issue, Resource indexes
+        modelBuilder.Entity<Risk>()
+            .HasIndex(r => new { r.ProjectId, r.Status });
+
+        modelBuilder.Entity<Risk>()
+            .HasIndex(r => new { r.ProjectId, r.Priority });
+
+        modelBuilder.Entity<Issue>()
+            .HasIndex(i => new { i.ProjectId, i.Status });
+
+        modelBuilder.Entity<Issue>()
+            .HasIndex(i => new { i.ProjectId, i.AssigneeId });
+
+        modelBuilder.Entity<IssueComment>()
+            .HasIndex(c => new { c.IssueId, c.CreatedAt });
+
+        modelBuilder.Entity<Resource>()
+            .HasIndex(r => new { r.ProjectId, r.EmployeeId })
+            .IsUnique();
+
+        modelBuilder.Entity<Resource>()
+            .HasIndex(r => new { r.EmployeeId, r.StartDate, r.EndDate });
         
         // Seed default leave policies
         modelBuilder.Entity<LeavePolicy>().HasData(

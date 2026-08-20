@@ -12,7 +12,7 @@ export { reportsApi } from './reports';
 export { workScheduleApi, holidaysApi } from './schedule';
 export { conversionRatesApi } from './conversionRates';
 export { adjustmentApi } from './adjustments';
-export { projectsApi, projectTasksApi, myTasksApi } from './projects';
+export { projectsApi, projectTasksApi, myTasksApi, risksApi, issuesApi, resourcesApi } from './projects';
 
 // Re-export types
 export type { AttendanceFilters, ClockInRequest } from './attendance';
