@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { DataTable, type DataTableColumn } from '@/components/ui/DataTable';
 import { Pagination } from '@/components/ui/Pagination';
@@ -123,9 +124,14 @@ export default function ProjectRisksPage() {
                     { label: t.risks.title },
                 ]}
                 actions={
-                    <Link href={`/projects/${projectId}`} className={styles.linkButton}>
-                        ← {t.projects.detail.overview}
-                    </Link>
+                    <div className={styles.headerActions}>
+                        <Link href={`/projects/${projectId}`} className={styles.linkButton}>
+                            ← {t.projects.detail.overview}
+                        </Link>
+                        <Link href={`/projects/${projectId}/risks/new`}>
+                            <Button>{t.risks.newRisk}</Button>
+                        </Link>
+                    </div>
                 }
             />
 

@@ -350,14 +350,6 @@ export const dictionary = {
                 title: 'Run Payroll?',
                 message: 'This will calculate payslips for all eligible employees. This action cannot be fully undone once payments are processed.',
             },
-            confirmApprove: {
-                title: "Approve Leave?",
-                message: "Are you sure you want to approve this leave request? This will deduct from the employee's balance."
-            },
-            confirmReject: {
-                title: "Reject Leave?",
-                message: "Are you sure you want to reject this request?"
-            }
         },
         projects: {
             title: 'Projects',
