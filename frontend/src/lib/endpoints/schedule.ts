@@ -3,6 +3,7 @@
  */
 import { apiClient } from '../apiClient';
 import type { WorkSchedule, UpdateWorkSchedule, Holiday, CreateHoliday, UpdateHoliday, WorkDayBreakdown } from '../types';
+import type { PaginatedResponse } from '../types/pagination';
 
 export const workScheduleApi = {
     /**
@@ -30,11 +31,14 @@ export const workScheduleApi = {
 
 export const holidaysApi = {
     /**
-     * Get all holidays, optionally filtered by year
+     * Get holidays (paged), optionally filtered by year.
      */
-    getAll: async (year?: number): Promise<Holiday[]> => {
-        const params = year ? `?year=${year}` : '';
-        return apiClient.get<Holiday[]>(`/api/holidays${params}`);
+    getAll: async (year?: number, page = 1, pageSize = 50): Promise<PaginatedResponse<Holiday>> => {
+        const params = new URLSearchParams();
+        if (year !== undefined) params.set('year', year.toString());
+        params.set('page', page.toString());
+        params.set('pageSize', pageSize.toString());
+        return apiClient.get<PaginatedResponse<Holiday>>(`/api/holidays?${params.toString()}`);
     },
 
     /**

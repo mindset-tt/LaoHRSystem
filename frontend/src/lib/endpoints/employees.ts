@@ -5,23 +5,29 @@
 
 import { apiClient } from '../apiClient';
 import type { Employee, Department, CreateEmployeeRequest } from '../types';
+import type { PaginatedResponse } from '../types/pagination';
 
 export const employeesApi = {
     /**
-     * Get all employees
+     * Get employees (paged). Returns the standard pagination envelope; use
+     * `.items` for the rows.
      */
     getAll: async (params?: {
         departmentId?: number;
         isActive?: boolean;
         search?: string;
-    }): Promise<Employee[]> => {
+        page?: number;
+        pageSize?: number;
+    }): Promise<PaginatedResponse<Employee>> => {
         const searchParams = new URLSearchParams();
         if (params?.departmentId) searchParams.set('departmentId', params.departmentId.toString());
         if (params?.isActive !== undefined) searchParams.set('isActive', params.isActive.toString());
         if (params?.search) searchParams.set('search', params.search);
+        if (params?.page) searchParams.set('page', params.page.toString());
+        if (params?.pageSize) searchParams.set('pageSize', params.pageSize.toString());
 
         const query = searchParams.toString();
-        return apiClient.get<Employee[]>(`/api/employees${query ? `?${query}` : ''}`);
+        return apiClient.get<PaginatedResponse<Employee>>(`/api/employees${query ? `?${query}` : ''}`);
     },
 
     /**

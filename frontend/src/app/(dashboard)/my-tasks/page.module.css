@@ -1,0 +1,65 @@
+.page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.filtersCard {
+    padding: var(--space-3) var(--space-4);
+}
+
+.filters {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.taskNumber {
+    font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
+    font-size: var(--font-size-xs);
+    color: rgb(var(--color-text-secondary));
+}
+
+.projectLink {
+    color: rgb(var(--color-text-secondary));
+    text-decoration: none;
+}
+
+.projectLink:hover {
+    color: rgb(var(--color-primary-600));
+}
+
+.taskTitle {
+    color: rgb(var(--color-text));
+    text-decoration: none;
+    font-weight: var(--font-weight-medium);
+}
+
+.taskTitle:hover {
+    color: rgb(var(--color-primary-600));
+}
+
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.status_todo { background: rgba(var(--color-text-muted), 0.15); color: rgb(var(--color-text-secondary)); }
+.status_in_progress { background: rgba(var(--color-info-500), 0.15); color: rgb(var(--color-info-700)); }
+.status_blocked { background: rgba(var(--color-warning-500), 0.15); color: rgb(var(--color-warning-700)); }
+.status_review { background: rgba(var(--color-info-500), 0.15); color: rgb(var(--color-info-700)); }
+.status_done { background: rgba(var(--color-success-500), 0.15); color: rgb(var(--color-success-700)); }
+
+.priority_low { background: rgba(var(--color-text-muted), 0.15); color: rgb(var(--color-text-secondary)); }
+.priority_medium { background: rgba(var(--color-info-500), 0.15); color: rgb(var(--color-info-700)); }
+.priority_high { background: rgba(var(--color-warning-500), 0.15); color: rgb(var(--color-warning-700)); }
+.priority_critical { background: rgba(var(--color-error-500), 0.15); color: rgb(var(--color-error-700)); }
+
+.overdue {
+    color: rgb(var(--color-error-600));
+    font-weight: var(--font-weight-semibold);
+}

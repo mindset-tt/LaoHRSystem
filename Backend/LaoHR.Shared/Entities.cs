@@ -857,3 +857,296 @@ public class AppUser
     public virtual Employee? Employee { get; set; }
 }
 
+// =============================================================================
+// Phase 2 — Project Workspace Foundation
+// -----------------------------------------------------------------------------
+// Lightweight PM slice: Project / Milestone / Task / Assignee / Comment / Activity.
+// Status, priority, due-date, percent-complete. No dependency DAG, no Gantt.
+// =============================================================================
+
+/// <summary>
+/// A workspace project. Has members, milestones, and tasks.
+/// </summary>
+public class Project
+{
+    [Key]
+    public int ProjectId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    /// <summary>PLANNING, ACTIVE, ON_HOLD, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PLANNING";
+
+    /// <summary>LOW, MEDIUM, HIGH, CRITICAL.</summary>
+    [Required, MaxLength(10)]
+    public string Priority { get; set; } = "MEDIUM";
+
+    [MaxLength(20)]
+    public string? Color { get; set; }
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
+    public DateTime? CompletedAt { get; set; }
+
+    public int OwnerId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("OwnerId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+
+    public virtual ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
+    public virtual ICollection<Milestone> Milestones { get; set; } = new List<Milestone>();
+    public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+    public virtual ICollection<ActivityLog> Activities { get; set; } = new List<ActivityLog>();
+}
+
+/// <summary>
+/// Many-to-many between Project and Employee. Captures the role a member plays.
+/// </summary>
+public class ProjectMember
+{
+    [Key]
+    public int ProjectMemberId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>OWNER, LEAD, MEMBER, VIEWER.</summary>
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "MEMBER";
+
+    public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// A milestone within a project — a grouping of tasks around a target date.
+/// </summary>
+public class Milestone
+{
+    [Key]
+    public int MilestoneId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Description { get; set; }
+
+    public DateTime? DueDate { get; set; }
+    public DateTime? CompletedAt { get; set; }
+
+    /// <summary>OPEN, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "OPEN";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    public virtual ICollection<ProjectTask> Tasks { get; set; } = new List<ProjectTask>();
+}
+
+/// <summary>
+/// A unit of work. Assignable to multiple employees.
+/// </summary>
+public class ProjectTask
+{
+    [Key]
+    public int TaskId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    public int? MilestoneId { get; set; }
+
+    /// <summary>e.g. PRJ-1-3 (project, sequence).</summary>
+    [MaxLength(20)]
+    public string? TaskNumber { get; set; }
+
+    [Required, MaxLength(300)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(5000)]
+    public string? Description { get; set; }
+
+    /// <summary>TODO, IN_PROGRESS, BLOCKED, REVIEW, DONE, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "TODO";
+
+    /// <summary>LOW, MEDIUM, HIGH, CRITICAL.</summary>
+    [Required, MaxLength(10)]
+    public string Priority { get; set; } = "MEDIUM";
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
+    public DateTime? CompletedAt { get; set; }
+
+    /// <summary>0-100. Manual percentage; for lightweight rollup only.</summary>
+    [Range(0, 100)]
+    public int ProgressPercent { get; set; } = 0;
+
+    [Column(TypeName = "decimal(6,2)")]
+    public decimal? EstimatedHours { get; set; }
+
+    [Column(TypeName = "decimal(6,2)")]
+    public decimal? ActualHours { get; set; }
+
+    public int ReporterId { get; set; }
+    public int SortOrder { get; set; } = 0;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("MilestoneId")]
+    [JsonIgnore]
+    public virtual Milestone? Milestone { get; set; }
+
+    [ForeignKey("ReporterId")]
+    [JsonIgnore]
+    public virtual Employee? Reporter { get; set; }
+
+    public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
+    public virtual ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
+}
+
+/// <summary>
+/// Many-to-many between Task and Employee. Captures assignment role.
+/// </summary>
+public class TaskAssignee
+{
+    [Key]
+    public int TaskAssigneeId { get; set; }
+
+    [Required]
+    public int TaskId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>ASSIGNEE, REVIEWER, WATCHER.</summary>
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "ASSIGNEE";
+
+    public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("TaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Task { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// A comment on a task. Light thread via optional ParentCommentId.
+/// </summary>
+public class TaskComment
+{
+    [Key]
+    public int CommentId { get; set; }
+
+    [Required]
+    public int TaskId { get; set; }
+
+    [Required]
+    public int AuthorId { get; set; }
+
+    [Required, MaxLength(4000)]
+    public string Body { get; set; } = string.Empty;
+
+    public int? ParentCommentId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("TaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Task { get; set; }
+
+    [ForeignKey("AuthorId")]
+    [JsonIgnore]
+    public virtual Employee? Author { get; set; }
+
+    [ForeignKey("ParentCommentId")]
+    [JsonIgnore]
+    public virtual TaskComment? Parent { get; set; }
+}
+
+/// <summary>
+/// Append-only activity log for projects and tasks. Powers the audit/timeline view.
+/// </summary>
+public class ActivityLog
+{
+    [Key]
+    public long ActivityId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    public int? TaskId { get; set; }
+
+    [Required]
+    public int ActorId { get; set; }
+
+    /// <summary>CREATED, UPDATED_STATUS, ASSIGNED, COMMENTED, COMPLETED, MEMBER_ADDED, ...</summary>
+    [Required, MaxLength(40)]
+    public string Action { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? PayloadJson { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("TaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Task { get; set; }
+
+    [ForeignKey("ActorId")]
+    [JsonIgnore]
+    public virtual Employee? Actor { get; set; }
+}
+

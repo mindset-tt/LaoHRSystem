@@ -42,8 +42,8 @@ export default function HolidaysSettingsPage() {
     const loadHolidays = useCallback(async () => {
         try {
             setError(null);
-            const data = await holidaysApi.getAll();
-            setHolidays(data);
+            const data = await holidaysApi.getAll(undefined, 1, 100);
+            setHolidays(data.items);
         } catch (err) {
             console.error('Failed to load holidays:', err);
             setError(language === 'lo' ? 'ບໍ່ສາມາດໂຫຼດຂໍ້ມູນໄດ້' : 'Failed to load holidays');

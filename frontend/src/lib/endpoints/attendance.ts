@@ -5,12 +5,15 @@
 
 import { apiClient } from '../apiClient';
 import type { Attendance } from '../types';
+import type { PaginatedResponse } from '../types/pagination';
 
 export interface AttendanceFilters {
     employeeId?: number;
     startDate?: string;
     endDate?: string;
     status?: 'PRESENT' | 'ABSENT' | 'LEAVE' | 'HOLIDAY';
+    page?: number;
+    pageSize?: number;
 }
 
 export interface ClockInRequest {
@@ -22,17 +25,19 @@ export interface ClockInRequest {
 
 export const attendanceApi = {
     /**
-     * Get attendance records
+     * Get attendance records (paged).
      */
-    getAll: async (filters?: AttendanceFilters): Promise<Attendance[]> => {
+    getAll: async (filters?: AttendanceFilters): Promise<PaginatedResponse<Attendance>> => {
         const params = new URLSearchParams();
         if (filters?.employeeId) params.set('employeeId', filters.employeeId.toString());
         if (filters?.startDate) params.set('startDate', filters.startDate);
         if (filters?.endDate) params.set('endDate', filters.endDate);
         if (filters?.status) params.set('status', filters.status);
+        if (filters?.page) params.set('page', filters.page.toString());
+        if (filters?.pageSize) params.set('pageSize', filters.pageSize.toString());
 
         const query = params.toString();
-        return apiClient.get<Attendance[]>(`/api/attendance${query ? `?${query}` : ''}`);
+        return apiClient.get<PaginatedResponse<Attendance>>(`/api/attendance${query ? `?${query}` : ''}`);
     },
 
     /**

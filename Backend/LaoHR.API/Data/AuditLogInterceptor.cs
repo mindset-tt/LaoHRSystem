@@ -3,22 +3,31 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using System.Security.Claims;
 using System.Text.Json;
+using System.Threading.Channels;
 using LaoHR.Shared.Models;
 
 namespace LaoHR.API.Data;
 
+/// <summary>
+/// Collects audit entries on save and enqueues them onto a <see cref="Channel{T}"/>
+/// for an <see cref="IAuditLogWriter"/> worker. The user-facing transaction is no
+/// longer coupled to the audit write — a failing audit cannot roll back the
+/// caller's work, and a slow audit sink cannot delay the response.
+/// </summary>
 public class AuditLogInterceptor : SaveChangesInterceptor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly Channel<AuditLog> _channel;
 
-    public AuditLogInterceptor(IHttpContextAccessor httpContextAccessor)
+    public AuditLogInterceptor(IHttpContextAccessor httpContextAccessor, IAuditLogChannel channel)
     {
         _httpContextAccessor = httpContextAccessor;
+        _channel = channel.Writer;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
-        DbContextEventData eventData, 
-        InterceptionResult<int> result, 
+        DbContextEventData eventData,
+        InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
         var context = eventData.Context;
@@ -82,15 +91,106 @@ public class AuditLogInterceptor : SaveChangesInterceptor
             audit.KeyValues = JsonSerializer.Serialize(keyValues);
             audit.OldValues = oldValues.Count == 0 ? null : JsonSerializer.Serialize(oldValues);
             audit.NewValues = newValues.Count == 0 ? null : JsonSerializer.Serialize(newValues);
-            
+
             auditEntries.Add(audit);
         }
 
-        if (auditEntries.Count > 0)
+        // Enqueue rather than Add — the user transaction is no longer responsible
+        // for persisting the audit row. The background writer drains the channel.
+        foreach (var a in auditEntries)
         {
-            context.AddRange(auditEntries);
+            _channel.TryWrite(a);
         }
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
+    }
+}
+
+/// <summary>
+/// Process-wide single-writer channel for audit entries. Bounded so a runaway
+/// producer cannot OOM the host. When the channel is full the audit entry is
+/// dropped and logged (better to lose a log line than to fail the user request).
+/// </summary>
+public interface IAuditLogChannel
+{
+    ChannelReader<AuditLog> Reader { get; }
+    bool TryWrite(AuditLog entry);
+}
+
+public sealed class AuditLogChannel : IAuditLogChannel
+{
+    private readonly Channel<AuditLog> _channel;
+    private readonly ILogger<AuditLogChannel> _logger;
+
+    public AuditLogChannel(ILogger<AuditLogChannel> logger)
+    {
+        _logger = logger;
+        _channel = Channel.CreateBounded<AuditLog>(new BoundedChannelOptions(10_000)
+        {
+            FullMode = BoundedChannelFullMode.DropOldest,
+            SingleReader = true,
+            SingleWriter = false
+        });
+    }
+
+    public ChannelReader<AuditLog> Reader => _channel.Reader;
+
+    public bool TryWrite(AuditLog entry)
+    {
+        if (_channel.Writer.TryWrite(entry)) return true;
+        _logger.LogWarning("Audit channel full; dropping entry for {Entity}", entry.EntityName);
+        return false;
+    }
+}
+
+/// <summary>
+/// Drains the channel and writes entries to the DB. Lives as a singleton in the
+/// host so it survives scoped DbContext instances. Uses an injected scoped
+/// factory per write to avoid capturing a disposed context.
+/// </summary>
+public sealed class AuditLogWriter : BackgroundService
+{
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<AuditLogWriter> _logger;
+    private readonly ChannelReader<AuditLog> _reader;
+
+    public AuditLogWriter(IAuditLogChannel channel, IServiceScopeFactory scopeFactory, ILogger<AuditLogWriter> logger)
+    {
+        _reader = channel.Reader;
+        _scopeFactory = scopeFactory;
+        _logger = logger;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        var batch = new List<AuditLog>(capacity: 256);
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            batch.Clear();
+            try
+            {
+                // Wait for the first item so we don't busy-loop.
+                if (!await _reader.WaitToReadAsync(stoppingToken)) break;
+                while (batch.Count < 256 && _reader.TryRead(out var item))
+                {
+                    batch.Add(item);
+                }
+            }
+            catch (OperationCanceledException) { break; }
+
+            if (batch.Count == 0) continue;
+            try
+            {
+                using var scope = _scopeFactory.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<LaoHR.Shared.Data.LaoHRDbContext>();
+                db.AuditLogs.AddRange(batch);
+                await db.SaveChangesAsync(stoppingToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to persist {Count} audit entries", batch.Count);
+                // Drop and continue. We cannot block the user path on this.
+            }
+        }
     }
 }

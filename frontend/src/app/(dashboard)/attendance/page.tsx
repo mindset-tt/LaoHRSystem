@@ -6,6 +6,9 @@ import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { DataTable, type DataTableColumn } from '@/components/ui/DataTable';
+import { useToast } from '@/components/ui/Toast';
 import { attendanceApi } from '@/lib/endpoints';
 import { formatDate, formatTime, getCurrentLaoDate } from '@/lib/datetime';
 import type { Attendance } from '@/lib/types';
@@ -19,6 +22,7 @@ import styles from './page.module.css';
 export default function AttendancePage() {
     const { role } = useAuth();
     const { t, language } = useLanguage();
+    const toast = useToast();
     const [view, setView] = useState<'calendar' | 'list'>('calendar');
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(getCurrentLaoDate());
@@ -49,19 +53,20 @@ export default function AttendancePage() {
             const endDate = new Date(currentYear, currentMonth + 1, 0).toISOString();
 
             const [records, today] = await Promise.all([
-                attendanceApi.getAll({ startDate, endDate }),
+                attendanceApi.getAll({ startDate, endDate, page: 1, pageSize: 100 }),
                 attendanceApi.getToday(),
             ]);
 
-            setAttendanceRecords(records);
+            setAttendanceRecords(records.items);
             setTodayAttendance(today);
         } catch (err) {
             console.error('Failed to load attendance:', err);
             setError(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setLoading(false);
         }
-    }, [currentMonth, currentYear, t.common.error]);
+    }, [currentMonth, currentYear, t.common.error, toast]);
 
     useEffect(() => {
         loadData();
@@ -92,6 +97,7 @@ export default function AttendancePage() {
         } catch (err) {
             console.error('Clock in failed:', err);
             setError(err instanceof Error ? err.message : t.common.error);
+            toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
             setActionLoading(false);
         }
@@ -119,6 +125,7 @@ export default function AttendancePage() {
         } catch (err) {
             console.error('Clock out failed:', err);
             setError(err instanceof Error ? err.message : t.common.error);
+            toast.error(err instanceof Error ? err.message : t.common.error);
         } finally {
             setActionLoading(false);
         }
@@ -164,33 +171,30 @@ export default function AttendancePage() {
 
     return (
         <div className={styles.page}>
-            {/* Header */}
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>{t.attendance.title}</h1>
-                    <p className={styles.subtitle}>
-                        {t.attendance.subtitle}
-                    </p>
-                </div>
-                <div className={styles.viewToggle}>
-                    <button
-                        className={`${styles.toggleBtn} ${view === 'calendar' ? styles.active : ''}`}
-                        onClick={() => setView('calendar')}
-                    >
-                        <CalendarIcon />
-                        {t.attendance.viewCalendar}
-                    </button>
-                    <button
-                        className={`${styles.toggleBtn} ${view === 'list' ? styles.active : ''}`}
-                        onClick={() => setView('list')}
-                    >
-                        <ListIcon />
-                        {t.attendance.viewList}
-                    </button>
-                </div>
-            </div>
+            <PageHeader
+                title={t.attendance.title}
+                subtitle={t.attendance.subtitle}
+                breadcrumbs={[{ label: t.nav.dashboard, href: '/' }, { label: t.attendance.title }]}
+                actions={
+                    <div className={styles.viewToggle}>
+                        <button
+                            className={`${styles.toggleBtn} ${view === 'calendar' ? styles.active : ''}`}
+                            onClick={() => setView('calendar')}
+                        >
+                            <CalendarIcon />
+                            {t.attendance.viewCalendar}
+                        </button>
+                        <button
+                            className={`${styles.toggleBtn} ${view === 'list' ? styles.active : ''}`}
+                            onClick={() => setView('list')}
+                        >
+                            <ListIcon />
+                            {t.attendance.viewList}
+                        </button>
+                    </div>
+                }
+            />
 
-            {/* Error Alert */}
             {error && (
                 <div className={styles.errorAlert}>
                     {error}
@@ -347,52 +351,61 @@ export default function AttendancePage() {
                         <div className={styles.loadingList}>
                             <Skeleton height={300} />
                         </div>
-                    ) : (
-                        <div className={styles.tableWrapper}>
-                            <table className={styles.table}>
-                                <thead>
-                                    <tr>
-                                        <th>{t.attendance.table.date}</th>
-                                        <th>{t.attendance.table.clockIn}</th>
-                                        <th>{t.attendance.table.clockOut}</th>
-                                        <th>{t.attendance.table.workHours}</th>
-                                        <th>{t.attendance.table.status}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {attendanceRecords.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={5} style={{ textAlign: 'center', padding: '2rem' }}>
-                                                {t.attendance.table.empty}
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        attendanceRecords.slice().reverse().map((record) => (
-                                            <tr key={record.attendanceId}>
-                                                <td>{formatDate(record.attendanceDate)}</td>
-                                                <td>
-                                                    <span className={record.isLate ? styles.lateText : ''}>
-                                                        {record.clockIn ? formatTime(record.clockIn) : '-'}
-                                                    </span>
-                                                    {record.isLate && <span className={styles.lateTag}>{t.attendance.legend.late}</span>}
-                                                </td>
-                                                <td>
-                                                    {record.clockOut ? formatTime(record.clockOut) : '-'}
-                                                    {record.isEarlyLeave && <span className={styles.earlyTag}>{t.attendance.early}</span>}
-                                                </td>
-                                                <td>{record.workHours?.toFixed(1) || '-'} {t.attendance.hrs}</td>
-                                                <td>
-                                                    <span className={`${styles.status} ${styles[record.status.toLowerCase()]}`}>
-                                                        {t.attendance.legend[record.status.toLowerCase() as keyof typeof t.attendance.legend] || record.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    ) : (() => {
+                        const columns: DataTableColumn<Attendance>[] = [
+                            {
+                                key: 'date',
+                                header: t.attendance.table.date,
+                                sortBy: a => new Date(a.attendanceDate),
+                                render: r => formatDate(r.attendanceDate),
+                            },
+                            {
+                                key: 'clockIn',
+                                header: t.attendance.table.clockIn,
+                                render: r => (
+                                    <>
+                                        <span className={r.isLate ? styles.lateText : ''}>
+                                            {r.clockIn ? formatTime(r.clockIn) : '-'}
+                                        </span>
+                                        {r.isLate && <span className={styles.lateTag}>{t.attendance.legend.late}</span>}
+                                    </>
+                                ),
+                            },
+                            {
+                                key: 'clockOut',
+                                header: t.attendance.table.clockOut,
+                                render: r => (
+                                    <>
+                                        {r.clockOut ? formatTime(r.clockOut) : '-'}
+                                        {r.isEarlyLeave && <span className={styles.earlyTag}>{t.attendance.early}</span>}
+                                    </>
+                                ),
+                            },
+                            {
+                                key: 'workHours',
+                                header: t.attendance.table.workHours,
+                                align: 'right',
+                                render: r => `${r.workHours?.toFixed(1) || '-'} ${t.attendance.hrs}`,
+                            },
+                            {
+                                key: 'status',
+                                header: t.attendance.table.status,
+                                render: r => (
+                                    <span className={`${styles.status} ${styles[r.status.toLowerCase()]}`}>
+                                        {t.attendance.legend[r.status.toLowerCase() as keyof typeof t.attendance.legend] || r.status}
+                                    </span>
+                                ),
+                            },
+                        ];
+                        return (
+                            <DataTable<Attendance>
+                                columns={columns}
+                                rows={attendanceRecords.slice().reverse()}
+                                rowKey={r => r.attendanceId}
+                                emptyTitle={t.attendance.table.empty}
+                            />
+                        );
+                    })()}
                 </Card>
             )}
         </div>

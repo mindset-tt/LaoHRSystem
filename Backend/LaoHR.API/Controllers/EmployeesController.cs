@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using LaoHR.API.Data;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 
 namespace LaoHR.API.Controllers;
 
@@ -13,38 +14,75 @@ namespace LaoHR.API.Controllers;
 public class EmployeesController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
-    
+
     public EmployeesController(LaoHRDbContext context)
     {
         _context = context;
     }
-    
+
     /// <summary>
-    /// Get all employees
+    /// Get employees (paged + projected). Use the filters to narrow the result
+    /// set server-side rather than paging through everything client-side.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Employee>>> GetEmployees(
+    public async Task<ActionResult<PaginatedResponse<EmployeeListItem>>> GetEmployees(
         [FromQuery] bool? isActive = null,
         [FromQuery] int? departmentId = null,
-        [FromQuery] string? search = null)
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
         var query = _context.Employees
             .Include(e => e.Department)
+            .AsNoTracking()
             .AsQueryable();
-        
+
         if (isActive.HasValue)
             query = query.Where(e => e.IsActive == isActive.Value);
-        
+
         if (departmentId.HasValue)
             query = query.Where(e => e.DepartmentId == departmentId.Value);
-        
+
         if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(e => 
-                e.LaoName.Contains(search) || 
-                (e.EnglishName != null && e.EnglishName.Contains(search)) ||
-                e.EmployeeCode.Contains(search));
-        
-        return await query.OrderBy(e => e.EmployeeCode).ToListAsync();
+        {
+            var term = search.Trim();
+            query = query.Where(e =>
+                e.LaoName.Contains(term) ||
+                (e.EnglishName != null && e.EnglishName.Contains(term)) ||
+                e.EmployeeCode.Contains(term));
+        }
+
+        var total = await query.LongCountAsync();
+
+        var items = await query
+            .OrderBy(e => e.EmployeeCode)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new EmployeeListItem
+            {
+                EmployeeId = e.EmployeeId,
+                EmployeeCode = e.EmployeeCode,
+                LaoName = e.LaoName,
+                EnglishName = e.EnglishName,
+                Email = e.Email,
+                Phone = e.Phone,
+                JobTitle = e.JobTitle,
+                IsActive = e.IsActive,
+                DepartmentId = e.DepartmentId,
+                DepartmentName = e.Department != null ? e.Department.DepartmentName : null
+            })
+            .ToListAsync();
+
+        return new PaginatedResponse<EmployeeListItem>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
     
     /// <summary>
@@ -288,4 +326,18 @@ public class DepartmentsController : ControllerBase
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentId }, department);
     }
+}
+
+public sealed class EmployeeListItem
+{
+    public int EmployeeId { get; set; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string LaoName { get; set; } = string.Empty;
+    public string? EnglishName { get; set; }
+    public string? Email { get; set; }
+    public string? Phone { get; set; }
+    public string? JobTitle { get; set; }
+    public bool IsActive { get; set; }
+    public int? DepartmentId { get; set; }
+    public string? DepartmentName { get; set; }
 }

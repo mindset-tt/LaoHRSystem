@@ -5,6 +5,7 @@
 
 import { apiClient } from '../apiClient';
 import type { PayrollPeriod, SalarySlip, SalaryCalculation } from '../types';
+import type { PaginatedResponse } from '../types/pagination';
 
 export interface CreatePeriodRequest {
     year: number;
@@ -52,8 +53,8 @@ export const payrollApi = {
     /**
      * Get salary slips for a period
      */
-    getSlips: async (periodId: number): Promise<SalarySlip[]> => {
-        return apiClient.get<SalarySlip[]>(`/api/payroll/periods/${periodId}/slips`);
+    getSlips: async (periodId: number, page = 1, pageSize = 50): Promise<PaginatedResponse<SalarySlip>> => {
+        return apiClient.get<PaginatedResponse<SalarySlip>>(`/api/payroll/periods/${periodId}/slips?page=${page}&pageSize=${pageSize}`);
     },
 
     /**

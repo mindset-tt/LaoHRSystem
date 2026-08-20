@@ -32,6 +32,15 @@ public class LaoHRDbContext : DbContext
     public DbSet<PayrollAdjustment> PayrollAdjustments { get; set; }
     public DbSet<AppUser> Users { get; set; }
 
+    // Phase 2 — Project Workspace
+    public DbSet<Project> Projects { get; set; }
+    public DbSet<ProjectMember> ProjectMembers { get; set; }
+    public DbSet<Milestone> Milestones { get; set; }
+    public DbSet<ProjectTask> ProjectTasks { get; set; }
+    public DbSet<TaskAssignee> TaskAssignees { get; set; }
+    public DbSet<TaskComment> TaskComments { get; set; }
+    public DbSet<ActivityLog> ActivityLogs { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
@@ -67,6 +76,25 @@ public class LaoHRDbContext : DbContext
         modelBuilder.Entity<LeaveBalance>()
             .HasIndex(lb => new { lb.EmployeeId, lb.LeaveType, lb.Year })
             .IsUnique();
+
+        // Phase 2 — Project Workspace indexes
+        modelBuilder.Entity<Project>()
+            .HasIndex(p => p.Code)
+            .IsUnique();
+
+        modelBuilder.Entity<ProjectMember>()
+            .HasIndex(pm => new { pm.ProjectId, pm.EmployeeId })
+            .IsUnique();
+
+        modelBuilder.Entity<TaskAssignee>()
+            .HasIndex(ta => new { ta.TaskId, ta.EmployeeId })
+            .IsUnique();
+
+        modelBuilder.Entity<ProjectTask>()
+            .HasIndex(t => new { t.ProjectId, t.Status });
+
+        modelBuilder.Entity<ActivityLog>()
+            .HasIndex(a => new { a.ProjectId, a.CreatedAt });
         
         // Seed default leave policies
         modelBuilder.Entity<LeavePolicy>().HasData(

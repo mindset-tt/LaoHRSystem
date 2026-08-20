@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
@@ -7,6 +8,7 @@ using LaoHR.API.Services;
 namespace LaoHR.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/settings")]
 public class WorkScheduleController : ControllerBase
 {

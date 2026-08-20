@@ -1,9 +1,11 @@
 using LaoHR.API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace LaoHR.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/address")]
 public class AddressController : ControllerBase
 {

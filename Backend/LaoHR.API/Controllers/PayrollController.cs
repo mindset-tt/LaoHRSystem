@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 using LaoHR.API.Services;
 
 namespace LaoHR.API.Controllers;
@@ -92,14 +93,45 @@ public class PayrollController : ControllerBase
     /// Get salary slips for a period
     /// </summary>
     [HttpGet("periods/{periodId}/slips")]
-    public async Task<ActionResult<IEnumerable<SalarySlip>>> GetSlips(int periodId)
+    public async Task<ActionResult<PaginatedResponse<SalarySlipListItem>>> GetSlips(
+        int periodId,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var slips = await _context.SalarySlips
-            .Include(s => s.Employee)
-            .Where(s => s.PeriodId == periodId)
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
+        var query = _context.SalarySlips
+            .AsNoTracking()
+            .Where(s => s.PeriodId == periodId);
+
+        var total = await query.LongCountAsync();
+
+        var items = await query
+            .OrderBy(s => s.Employee!.EmployeeCode)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(s => new SalarySlipListItem
+            {
+                SlipId = s.SlipId,
+                EmployeeId = s.EmployeeId,
+                EmployeeCode = s.Employee != null ? s.Employee.EmployeeCode : null,
+                EmployeeName = s.Employee != null ? (s.Employee.EnglishName ?? s.Employee.LaoName) : null,
+                PeriodId = s.PeriodId,
+                NetSalary = s.NetSalary,
+                GrossIncome = s.GrossIncome,
+                Status = s.Status,
+                SalaryCurrency = s.SalaryCurrency
+            })
             .ToListAsync();
-        
-        return Ok(slips);
+
+        return new PaginatedResponse<SalarySlipListItem>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
     
     /// <summary>
@@ -405,4 +437,17 @@ public class CalculateRequest
     public decimal OvertimePay { get; set; }
     public decimal Allowances { get; set; }
     public decimal OtherDeductions { get; set; }
+}
+
+public sealed class SalarySlipListItem
+{
+    public int SlipId { get; set; }
+    public int EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
+    public int PeriodId { get; set; }
+    public decimal NetSalary { get; set; }
+    public decimal GrossIncome { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? SalaryCurrency { get; set; }
 }

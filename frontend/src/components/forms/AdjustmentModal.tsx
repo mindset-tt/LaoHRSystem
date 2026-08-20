@@ -45,8 +45,8 @@ export function AdjustmentModal({ isOpen, onClose, periodId, periodName }: Adjus
 
     const loadEmployees = async () => {
         try {
-            const data = await employeesApi.getAll();
-            setEmployees(data.filter(e => e.isActive));
+            const data = await employeesApi.getAll({ isActive: true, page: 1, pageSize: 200 });
+            setEmployees(data.items.filter(e => e.isActive));
         } catch (err) {
             console.error('Failed to load employees', err);
         }

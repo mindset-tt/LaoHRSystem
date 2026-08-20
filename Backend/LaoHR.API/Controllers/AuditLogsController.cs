@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 
 namespace LaoHR.API.Controllers;
 
@@ -19,21 +20,40 @@ public class AuditLogsController : ControllerBase
     }
 
     /// <summary>
-    /// Get recent audit logs
+    /// Get recent audit logs (paged).
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<AuditLog>>> GetLogs([FromQuery] int limit = 100, [FromQuery] string? entity = null)
+    public async Task<ActionResult<PaginatedResponse<AuditLog>>> GetLogs(
+        [FromQuery] string? entity = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50)
     {
-        var query = _context.AuditLogs.AsQueryable();
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
+        var query = _context.AuditLogs
+            .AsNoTracking()
+            .AsQueryable();
 
         if (!string.IsNullOrEmpty(entity))
         {
             query = query.Where(l => l.EntityName == entity);
         }
 
-        return await query
+        var total = await query.LongCountAsync();
+
+        var items = await query
             .OrderByDescending(l => l.Timestamp)
-            .Take(limit)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
+        return new PaginatedResponse<AuditLog>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
 }

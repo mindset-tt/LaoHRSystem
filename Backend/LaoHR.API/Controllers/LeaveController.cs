@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 using LaoHR.API.Services;
 using Microsoft.Extensions.Configuration;
 using ClosedXML.Excel;
@@ -34,32 +35,67 @@ public class LeaveController : ControllerBase
     #region Leave Requests
     
     /// <summary>
-    /// Get all leave requests
+    /// Get leave requests (paged + projected).
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<LeaveRequest>>> GetLeaveRequests(
+    public async Task<ActionResult<PaginatedResponse<LeaveRequestListItem>>> GetLeaveRequests(
         [FromQuery] string? status = null,
         [FromQuery] int? employeeId = null,
         [FromQuery] int? year = null,
-        [FromQuery] int? month = null)
+        [FromQuery] int? month = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
         var query = _context.LeaveRequests
-            .Include(l => l.Employee)
+            .AsNoTracking()
             .AsQueryable();
-        
+
         if (!string.IsNullOrWhiteSpace(status))
             query = query.Where(l => l.Status == status);
-        
+
         if (employeeId.HasValue)
             query = query.Where(l => l.EmployeeId == employeeId.Value);
-        
+
         if (year.HasValue)
             query = query.Where(l => l.StartDate.Year == year.Value);
-        
+
         if (month.HasValue)
             query = query.Where(l => l.StartDate.Month == month.Value);
-        
-        return await query.OrderByDescending(l => l.CreatedAt).ToListAsync();
+
+        var total = await query.LongCountAsync();
+
+        var items = await query
+            .OrderByDescending(l => l.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(l => new LeaveRequestListItem
+            {
+                LeaveRequestId = l.LeaveRequestId,
+                EmployeeId = l.EmployeeId,
+                LeaveType = l.LeaveType,
+                StartDate = l.StartDate,
+                EndDate = l.EndDate,
+                TotalDays = l.TotalDays,
+                Reason = l.Reason,
+                Status = l.Status,
+                ApprovedById = l.ApprovedById,
+                ApprovedAt = l.ApprovedAt,
+                CreatedAt = l.CreatedAt,
+                EmployeeCode = l.Employee != null ? l.Employee.EmployeeCode : null,
+                EmployeeName = l.Employee != null ? l.Employee.EnglishName ?? l.Employee.LaoName : null
+            })
+            .ToListAsync();
+
+        return new PaginatedResponse<LeaveRequestListItem>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
     
     /// <summary>
@@ -539,3 +575,20 @@ public class UpdateLeavePolicyDto
 }
 
 #endregion
+
+public sealed class LeaveRequestListItem
+{
+    public int LeaveRequestId { get; set; }
+    public int EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
+    public string LeaveType { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public int TotalDays { get; set; }
+    public string? Reason { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public int? ApprovedById { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+}

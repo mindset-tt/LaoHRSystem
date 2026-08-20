@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
@@ -6,6 +7,7 @@ using LaoHR.Shared.Models;
 namespace LaoHR.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class DocumentsController : ControllerBase
 {

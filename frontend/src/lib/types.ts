@@ -352,13 +352,8 @@ export interface ApiError {
     details?: Record<string, string[]>;
 }
 
-export interface PaginatedResponse<T> {
-    data: T[];
-    total: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-}
+// Note: PaginatedResponse<T> lives in ./types/pagination.ts and is the canonical
+// envelope that mirrors the backend's PaginatedResponse<T> (items / totalItems).
 
 // -----------------------------------------------------------------------------
 // Work Schedule

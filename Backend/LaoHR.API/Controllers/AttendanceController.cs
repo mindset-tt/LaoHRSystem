@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 
 namespace LaoHR.API.Controllers;
 
@@ -12,31 +13,72 @@ namespace LaoHR.API.Controllers;
 public class AttendanceController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
-    
+
     public AttendanceController(LaoHRDbContext context)
     {
         _context = context;
     }
-    
+
     /// <summary>
-    /// Get attendance records
+    /// Get attendance records (paged).
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Attendance>>> GetAttendance(
+    public async Task<ActionResult<PaginatedResponse<AttendanceListItem>>> GetAttendance(
         [FromQuery] DateTime? date = null,
-        [FromQuery] int? employeeId = null)
+        [FromQuery] DateTime? startDate = null,
+        [FromQuery] DateTime? endDate = null,
+        [FromQuery] int? employeeId = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
         var query = _context.Attendances
-            .Include(a => a.Employee)
+            .AsNoTracking()
             .AsQueryable();
-        
+
         if (date.HasValue)
             query = query.Where(a => a.AttendanceDate.Date == date.Value.Date);
-        
+
+        if (startDate.HasValue)
+            query = query.Where(a => a.AttendanceDate >= startDate.Value.Date);
+
+        if (endDate.HasValue)
+            query = query.Where(a => a.AttendanceDate <= endDate.Value.Date);
+
         if (employeeId.HasValue)
             query = query.Where(a => a.EmployeeId == employeeId.Value);
-        
-        return await query.OrderByDescending(a => a.AttendanceDate).Take(100).ToListAsync();
+
+        var total = await query.LongCountAsync();
+
+        var items = await query
+            .OrderByDescending(a => a.AttendanceDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(a => new AttendanceListItem
+            {
+                AttendanceId = a.AttendanceId,
+                EmployeeId = a.EmployeeId,
+                EmployeeCode = a.Employee != null ? a.Employee.EmployeeCode : null,
+                EmployeeName = a.Employee != null ? (a.Employee.EnglishName ?? a.Employee.LaoName) : null,
+                AttendanceDate = a.AttendanceDate,
+                ClockIn = a.ClockIn,
+                ClockOut = a.ClockOut,
+                Status = a.Status,
+                IsLate = a.IsLate,
+                IsEarlyLeave = a.IsEarlyLeave,
+                WorkHours = a.WorkHours
+            })
+            .ToListAsync();
+
+        return new PaginatedResponse<AttendanceListItem>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
     
     /// <summary>
@@ -203,4 +245,19 @@ public class ClockRequest
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public string? Method { get; set; }
+}
+
+public sealed class AttendanceListItem
+{
+    public int AttendanceId { get; set; }
+    public int EmployeeId { get; set; }
+    public string? EmployeeCode { get; set; }
+    public string? EmployeeName { get; set; }
+    public DateTime AttendanceDate { get; set; }
+    public DateTime? ClockIn { get; set; }
+    public DateTime? ClockOut { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public bool IsLate { get; set; }
+    public bool IsEarlyLeave { get; set; }
+    public decimal? WorkHours { get; set; }
 }

@@ -5,27 +5,32 @@
 
 import { apiClient } from '../apiClient';
 import type { LeaveRequest, CreateLeaveRequest, LeaveBalance, LeavePolicy, LeaveCalendarItem } from '../types';
+import type { PaginatedResponse } from '../types/pagination';
 
 export interface LeaveFilters {
     employeeId?: number;
     status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
     year?: number;
     month?: number;
+    page?: number;
+    pageSize?: number;
 }
 
 export const leaveApi = {
     /**
-     * Get leave requests
+     * Get leave requests (paged).
      */
-    getAll: async (filters?: LeaveFilters): Promise<LeaveRequest[]> => {
+    getAll: async (filters?: LeaveFilters): Promise<PaginatedResponse<LeaveRequest>> => {
         const params = new URLSearchParams();
         if (filters?.employeeId) params.set('employeeId', filters.employeeId.toString());
         if (filters?.status) params.set('status', filters.status);
         if (filters?.year) params.set('year', filters.year.toString());
         if (filters?.month) params.set('month', filters.month.toString());
+        if (filters?.page) params.set('page', filters.page.toString());
+        if (filters?.pageSize) params.set('pageSize', filters.pageSize.toString());
 
         const query = params.toString();
-        return apiClient.get<LeaveRequest[]>(`/api/leave${query ? `?${query}` : ''}`);
+        return apiClient.get<PaginatedResponse<LeaveRequest>>(`/api/leave${query ? `?${query}` : ''}`);
     },
 
     /**

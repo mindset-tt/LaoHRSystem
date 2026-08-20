@@ -1,5 +1,6 @@
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.API.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace LaoHR.API.Data;
@@ -8,8 +9,8 @@ public static class DbSeeder
 {
     public static void Seed(LaoHRDbContext context)
     {
-        // Ensure database is created
-        context.Database.EnsureCreated();
+        // Schema is created by Program.cs (Migrate or EnsureCreated). The
+        // seeder only fills missing reference data.
 
         // 1. Seed Departments
         if (!context.Departments.Any())
@@ -275,6 +276,18 @@ public static class DbSeeder
             context.SaveChanges();
         }
 
+        // 4b. Seed default Users (admin / hr / employee). Caller must guarantee
+        // IsDevelopment || IsTesting — Program.cs enforces this.
+        if (!context.Users.Any())
+        {
+            context.Users.AddRange(
+                new AppUser { Username = "admin", PasswordHash = PasswordHasher.HashPassword("admin123"), Role = "Admin", DisplayName = "System Administrator", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new AppUser { Username = "hr", PasswordHash = PasswordHasher.HashPassword("hr123"), Role = "HR", DisplayName = "HR Manager", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new AppUser { Username = "employee", PasswordHash = PasswordHasher.HashPassword("emp123"), Role = "Employee", DisplayName = "Demo Employee", IsActive = true, CreatedAt = DateTime.UtcNow }
+            );
+            context.SaveChanges();
+        }
+
         // 5. Seed Payroll Data
         if (!context.PayrollPeriods.Any())
         {
@@ -348,6 +361,89 @@ public static class DbSeeder
         }
             // 6. Seed Address Data (Provinces, Districts, Villages)
         SeedAddresses(context);
+
+        // 7. Phase 2 — sample project so the workspace isn't empty in dev.
+        SeedSampleProject(context);
+    }
+
+    private static void SeedSampleProject(LaoHRDbContext context)
+    {
+        if (context.Projects.Any()) return;
+
+        var owner = context.Employees.FirstOrDefault();
+        if (owner == null) return;
+
+        var project = new Project
+        {
+            Code = "PRJ-001",
+            Name = "Sample Workspace Project",
+            Description = "Demonstrates the project workspace slice: tasks, milestones, members, and an activity timeline.",
+            Status = "ACTIVE",
+            Priority = "MEDIUM",
+            Color = "#3b82f6",
+            StartDate = DateTime.UtcNow.AddDays(-7),
+            DueDate = DateTime.UtcNow.AddDays(30),
+            OwnerId = owner.EmployeeId,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        context.Projects.Add(project);
+        context.SaveChanges();
+
+        // Owner becomes a member.
+        context.ProjectMembers.Add(new ProjectMember
+        {
+            ProjectId = project.ProjectId,
+            EmployeeId = owner.EmployeeId,
+            Role = "OWNER",
+            JoinedAt = DateTime.UtcNow,
+        });
+
+        // Add a couple of milestones.
+        var m1 = new Milestone
+        {
+            ProjectId = project.ProjectId,
+            Name = "Phase 1 - Setup",
+            Description = "Project scaffolding and member onboarding.",
+            DueDate = DateTime.UtcNow.AddDays(7),
+            Status = "OPEN",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        var m2 = new Milestone
+        {
+            ProjectId = project.ProjectId,
+            Name = "Phase 2 - Build",
+            DueDate = DateTime.UtcNow.AddDays(21),
+            Status = "OPEN",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+        };
+        context.Milestones.AddRange(m1, m2);
+        context.SaveChanges();
+
+        // Seed a few sample tasks across statuses so the board isn't empty.
+        var tasks = new List<ProjectTask>
+        {
+            new() { ProjectId = project.ProjectId, MilestoneId = m1.MilestoneId, TaskNumber = "PRJ-001-1", Title = "Set up workspace", Status = "DONE", Priority = "HIGH", ReporterId = owner.EmployeeId, ProgressPercent = 100, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new() { ProjectId = project.ProjectId, MilestoneId = m1.MilestoneId, TaskNumber = "PRJ-001-2", Title = "Invite initial members", Status = "IN_PROGRESS", Priority = "MEDIUM", ReporterId = owner.EmployeeId, ProgressPercent = 40, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new() { ProjectId = project.ProjectId, MilestoneId = m2.MilestoneId, TaskNumber = "PRJ-001-3", Title = "Define milestones and timeline", Status = "TODO", Priority = "MEDIUM", ReporterId = owner.EmployeeId, DueDate = DateTime.UtcNow.AddDays(14), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new() { ProjectId = project.ProjectId, MilestoneId = m2.MilestoneId, TaskNumber = "PRJ-001-4", Title = "Build task board UI", Status = "TODO", Priority = "HIGH", ReporterId = owner.EmployeeId, DueDate = DateTime.UtcNow.AddDays(20), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+        };
+        context.ProjectTasks.AddRange(tasks);
+        context.SaveChanges();
+
+        // A sample activity entry so the timeline renders immediately.
+        context.ActivityLogs.Add(new ActivityLog
+        {
+            ProjectId = project.ProjectId,
+            TaskId = null,
+            ActorId = owner.EmployeeId,
+            Action = "CREATED",
+            PayloadJson = $"{{\"code\":\"{project.Code}\",\"name\":\"{project.Name}\"}}",
+            CreatedAt = DateTime.UtcNow,
+        });
+        context.SaveChanges();
     }
 
     private static void SeedAddresses(LaoHRDbContext context)

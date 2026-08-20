@@ -1,5 +1,7 @@
 using System.Text;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using LaoHR.API.Data;
@@ -49,7 +51,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+// Default-deny: every controller/action without an explicit [Authorize] or
+// [AllowAnonymous] is still required to be opted-in. We achieve this by
+// registering a fallback policy and applying it to all controller endpoints.
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
+
+// Rate limiter on /api/auth/login: 5 attempts per 60 seconds per IP, sliding window.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("auth-login", context =>
+    {
+        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+        {
+            PermitLimit = 5,
+            Window = TimeSpan.FromSeconds(60),
+            SegmentsPerWindow = 6,
+            QueueLimit = 0,
+            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+            AutoReplenishment = true
+        });
+    });
+});
+
+// License key cache (5 minutes) — the license middleware reads this instead of
+// hitting the DB on every request.
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<LaoHR.API.Services.ILicenseKeyCache, LaoHR.API.Services.LicenseKeyCache>();
+
+// Health checks for liveness/readiness probes.
+builder.Services.AddHealthChecks();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -72,7 +109,9 @@ builder.Services.AddSwaggerGen(c =>
 
 // Database - using SQL Server
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<LaoHR.API.Data.IAuditLogChannel, LaoHR.API.Data.AuditLogChannel>();
 builder.Services.AddScoped<AuditLogInterceptor>();
+builder.Services.AddHostedService<LaoHR.API.Data.AuditLogWriter>();
 
 // Database Configuration
 if (builder.Environment.IsEnvironment("Testing"))
@@ -83,7 +122,7 @@ if (builder.Environment.IsEnvironment("Testing"))
 else
 {
     builder.Services.AddDbContext<LaoHRDbContext>((sp, options) => {
-        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"),
+        options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"),
             b => b.MigrationsAssembly("LaoHR.API"))
            .AddInterceptors(sp.GetRequiredService<AuditLogInterceptor>());
     });
@@ -105,13 +144,37 @@ builder.Services.AddScoped<IWorkDayService, WorkDayService>();
 builder.Services.AddHostedService<LaoHR.API.Jobs.LeaveScheduledJobsService>();
 
 
-// CORS for frontend - allow all origins for development
+// CORS for frontend — locked to a known-origin allow-list.
+// In Development any origin is allowed for convenience; in non-Development the
+// allow-list is sourced from configuration (comma-separated), so misconfiguration
+// defaults to "no origins" instead of "any origin".
+var corsOriginsConfig = builder.Configuration["Cors:AllowedOrigins"] ?? string.Empty;
+var corsOrigins = corsOriginsConfig
+    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.SetIsOriginAllowed(_ => true) // Allow any origin
-              .AllowAnyMethod()
+        if (builder.Environment.IsDevelopment())
+        {
+            // Dev convenience: reflect any localhost / 127.0.0.1 origin. Do NOT
+            // blanket-allow arbitrary hosts even in dev.
+            policy.SetIsOriginAllowed(origin =>
+            {
+                if (string.IsNullOrEmpty(origin)) return false;
+                if (origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase)) return true;
+                if (origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase)) return true;
+                return corsOrigins.Contains(origin);
+            });
+        }
+        else
+        {
+            policy.WithOrigins(corsOrigins.ToArray());
+        }
+
+        policy.AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials()
               .WithExposedHeaders("Content-Disposition");
@@ -132,42 +195,74 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
+app.UseRateLimiter();
 
-// Authenticate & Authorization middleware
-app.UseAuthentication();
-app.UseAuthorization();
-
+// License check BEFORE authentication: an expired/invalid license should not
+// let a request get a JWT issued.
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
 }
 
-app.MapControllers();
+// Authenticate & Authorization middleware
+app.UseAuthentication();
+app.UseAuthorization();
 
-// Seed database on startup
+app.MapControllers();
+app.MapHealthChecks("/health");
+
+// Seed / migrate database on startup
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<LaoHRDbContext>();
-    // Apply any pending migrations
-    if (!builder.Environment.IsEnvironment("Testing"))
+    var isTesting = builder.Environment.IsEnvironment("Testing");
+    var isDevelopment = builder.Environment.IsDevelopment();
+
+    if (isTesting)
     {
-        // RESET DATABASE to apply new mock data (Wipe old data)
-        // Remove this line later if you want to keep data between restarts
-        // db.Database.EnsureDeleted();   
-        
-        db.Database.Migrate();
-        DbSeeder.Seed(db);
+        db.Database.EnsureCreated();
     }
     else
     {
-        db.Database.EnsureCreated();
+        // Try Migrate() first. If it fails (e.g. on a fresh DB where the
+        // migration history table doesn't exist yet, or against a provider
+        // mismatch), fall back to EnsureCreated. Once the bootstrap has run
+        // and the schema is in place, future boots will succeed with Migrate().
+        try
+        {
+            db.Database.Migrate();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️  Migrate() failed: {ex.Message}. Falling back to EnsureCreated().");
+            db.Database.EnsureCreated();
+        }
+    }
+
+    // Demo users (admin/admin123, hr/hr123, employee/emp123) and other sample
+    // data are seeded only in Development or Testing — never in Production.
+    if (isDevelopment || isTesting)
+    {
         DbSeeder.Seed(db);
+    }
+
+    // Provider-agnostic performance indexes (IF NOT EXISTS — safe to run on every boot).
+    try
+    {
+        PerformanceIndexes.Apply(db);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️  PerformanceIndexes.Apply failed: {ex.Message}");
     }
 }
 
 Console.WriteLine("🚀 Lao HR System API running at http://localhost:5000");
-Console.WriteLine("📚 Swagger UI: http://localhost:5000");
-Console.WriteLine("🔐 Default users: admin/admin123, hr/hr123, employee/emp123");
+if (builder.Environment.IsDevelopment())
+{
+    Console.WriteLine("� Swagger UI: http://localhost:5000");
+    Console.WriteLine("🔐 Default users: admin/admin123, hr/hr123, employee/emp123 (Development only)");
+}
 
 app.Run();
 

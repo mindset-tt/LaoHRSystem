@@ -9,10 +9,14 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { LeaveRequestForm } from '@/components/forms/LeaveRequestForm';
 import { LeaveCalendar } from '@/components/leave/LeaveCalendar';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { Pagination } from '@/components/ui/Pagination';
+import { useToast } from '@/components/ui/Toast';
 import { leaveApi } from '@/lib/endpoints';
 import { formatDate, formatRelativeTime } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
 import type { LeaveRequest, CreateLeaveRequest } from '@/lib/types';
+import type { PaginatedResponse } from '@/lib/types/pagination';
 import styles from './page.module.css';
 
 /**
@@ -22,9 +26,13 @@ import styles from './page.module.css';
 export default function LeavePage() {
     const { role } = useAuth();
     const { t } = useLanguage();
+    const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'my-leave' | 'approvals' | 'calendar'>('my-leave');
-    const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+    const [pageData, setPageData] = useState<PaginatedResponse<LeaveRequest>>({
+        items: [], page: 1, pageSize: 25, totalItems: 0, totalPages: 0, hasNext: false, hasPrevious: false,
+    });
+    const [page, setPage] = useState(1);
     const [showRequestModal, setShowRequestModal] = useState(false);
     const [actionLoading, setActionLoading] = useState<number | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -51,15 +59,16 @@ export default function LeavePage() {
     const loadLeaveRequests = useCallback(async () => {
         try {
             setError(null);
-            const data = await leaveApi.getAll();
-            setLeaveRequests(data);
+            const data = await leaveApi.getAll({ page, pageSize: 25 });
+            setPageData(data);
         } catch (err) {
             console.error('Failed to load leave requests:', err);
             setError(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setLoading(false);
         }
-    }, [t.common.error]);
+    }, [page, t.common.error, toast]);
 
     const loadBalances = useCallback(async () => {
         try {
@@ -91,6 +100,7 @@ export default function LeavePage() {
         } catch (err) {
             console.error('Failed to approve leave:', err);
             setError(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setActionLoading(null);
         }
@@ -105,6 +115,7 @@ export default function LeavePage() {
         } catch (err) {
             console.error('Failed to reject leave:', err);
             setError(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setActionLoading(null);
         }
@@ -134,16 +145,13 @@ export default function LeavePage() {
         } catch (err) {
             console.error('Export failed:', err);
             setError(t.common.error);
+            toast.error(t.common.error);
         } finally {
             setExporting(false);
         }
     };
 
-    // Filter requests - for now show all for HR, own for employees
-    // In production, backend should filter by current user's employee ID
-    const myRequests = leaveRequests.filter((r) =>
-        !canApprove || r.status !== 'PENDING' || activeTab === 'my-leave'
-    );
+    const leaveRequests = pageData.items;
     const pendingApprovals = leaveRequests.filter((r) => r.status === 'PENDING');
 
     const getLeaveStatusLabel = (status: string) => {
@@ -158,25 +166,22 @@ export default function LeavePage() {
 
     return (
         <div className={styles.page}>
-            {/* Header */}
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>{t.leave.title}</h1>
-                    <p className={styles.subtitle}>
-                        {t.leave.subtitle}
-                    </p>
-                </div>
-                <div className={styles.headerActions}>
-                    <Button variant="secondary" onClick={handleExport} loading={exporting}>
-                        📥 {t.leave.export || 'Export'}
-                    </Button>
-                    <Button leftIcon={<PlusIcon />} onClick={() => setShowRequestModal(true)}>
-                        {t.leave.requestLeave}
-                    </Button>
-                </div>
-            </div>
+            <PageHeader
+                title={t.leave.title}
+                subtitle={t.leave.subtitle}
+                breadcrumbs={[{ label: t.nav.dashboard, href: '/' }, { label: t.leave.title }]}
+                actions={
+                    <>
+                        <Button variant="secondary" onClick={handleExport} loading={exporting}>
+                            📥 {t.leave.export || 'Export'}
+                        </Button>
+                        <Button leftIcon={<PlusIcon />} onClick={() => setShowRequestModal(true)}>
+                            {t.leave.requestLeave}
+                        </Button>
+                    </>
+                }
+            />
 
-            {/* Error Alert */}
             {error && (
                 <div className={styles.errorAlert}>
                     {error}
@@ -251,77 +256,90 @@ export default function LeavePage() {
                             <Skeleton height={200} />
                         </div>
                     ) : (
-                        <div className={styles.requestList}>
-                            {(activeTab === 'my-leave' ? leaveRequests : pendingApprovals).length === 0 ? (
-                                <div className={styles.emptyState}>
-                                    <CalendarIcon />
-                                    <p>{activeTab === 'my-leave' ? t.leave.requests.empty : t.leave.requests.emptyApprovals}</p>
-                                </div>
-                            ) : (
-                                (activeTab === 'my-leave' ? leaveRequests : pendingApprovals).map((request) => (
-                                    <div key={request.leaveId} className={styles.requestCard}>
-                                        <div className={styles.requestHeader}>
-                                            <div className={styles.requestType}>
-                                                <span className={`${styles.typeTag} ${styles[request.leaveType.toLowerCase()]}`}>
-                                                    {getLeaveTypeLabel(request.leaveType)}
-                                                </span>
-                                                <span className={styles.requestDays}>
-                                                    {request.totalDays} {request.totalDays === 1 ? t.leave.requests.day : t.leave.requests.days}
-                                                </span>
-                                            </div>
-                                            <span className={`${styles.statusTag} ${styles[request.status.toLowerCase()]}`}>
-                                                {getLeaveStatusLabel(request.status)}
-                                            </span>
-                                        </div>
-
-                                        <div className={styles.requestDates}>
-                                            <CalendarSmallIcon />
-                                            {formatDate(request.startDate)}
-                                            {request.startDate !== request.endDate && (
-                                                <> → {formatDate(request.endDate)}</>
-                                            )}
-                                        </div>
-
-                                        {request.reason && (
-                                            <p className={styles.requestReason}>{request.reason}</p>
-                                        )}
-
-                                        <div className={styles.requestFooter}>
-                                            {request.employee && (
-                                                <span className={styles.requestEmployee}>
-                                                    {request.employee.englishName || request.employee.laoName}
-                                                </span>
-                                            )}
-                                            <span className={styles.requestTime}>
-                                                {formatRelativeTime(request.createdAt)}
-                                            </span>
-                                        </div>
-
-                                        {canApprove && request.status === 'PENDING' && (
-                                            <div className={styles.requestActions}>
-                                                <Button
-                                                    size="sm"
-                                                    variant="secondary"
-                                                    onClick={() => setPendingAction({ type: 'reject', leaveId: request.leaveId })}
-                                                    loading={actionLoading === request.leaveId}
-                                                    disabled={actionLoading !== null}
-                                                >
-                                                    {t.leave.requests.reject}
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => setPendingAction({ type: 'approve', leaveId: request.leaveId })}
-                                                    loading={actionLoading === request.leaveId}
-                                                    disabled={actionLoading !== null}
-                                                >
-                                                    {t.leave.requests.approve}
-                                                </Button>
-                                            </div>
-                                        )}
+                        <>
+                            <div className={styles.requestList}>
+                                {(activeTab === 'my-leave' ? leaveRequests : pendingApprovals).length === 0 ? (
+                                    <div className={styles.emptyState}>
+                                        <CalendarIcon />
+                                        <p>{activeTab === 'my-leave' ? t.leave.requests.empty : t.leave.requests.emptyApprovals}</p>
                                     </div>
-                                ))
+                                ) : (
+                                    (activeTab === 'my-leave' ? leaveRequests : pendingApprovals).map((request) => (
+                                        <div key={request.leaveId} className={styles.requestCard}>
+                                            <div className={styles.requestHeader}>
+                                                <div className={styles.requestType}>
+                                                    <span className={`${styles.typeTag} ${styles[request.leaveType.toLowerCase()]}`}>
+                                                        {getLeaveTypeLabel(request.leaveType)}
+                                                    </span>
+                                                    <span className={styles.requestDays}>
+                                                        {request.totalDays} {request.totalDays === 1 ? t.leave.requests.day : t.leave.requests.days}
+                                                    </span>
+                                                </div>
+                                                <span className={`${styles.statusTag} ${styles[request.status.toLowerCase()]}`}>
+                                                    {getLeaveStatusLabel(request.status)}
+                                                </span>
+                                            </div>
+
+                                            <div className={styles.requestDates}>
+                                                <CalendarSmallIcon />
+                                                {formatDate(request.startDate)}
+                                                {request.startDate !== request.endDate && (
+                                                    <> → {formatDate(request.endDate)}</>
+                                                )}
+                                            </div>
+
+                                            {request.reason && (
+                                                <p className={styles.requestReason}>{request.reason}</p>
+                                            )}
+
+                                            <div className={styles.requestFooter}>
+                                                {request.employee && (
+                                                    <span className={styles.requestEmployee}>
+                                                        {request.employee.englishName || request.employee.laoName}
+                                                    </span>
+                                                )}
+                                                <span className={styles.requestTime}>
+                                                    {formatRelativeTime(request.createdAt)}
+                                                </span>
+                                            </div>
+
+                                            {canApprove && request.status === 'PENDING' && (
+                                                <div className={styles.requestActions}>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="secondary"
+                                                        onClick={() => setPendingAction({ type: 'reject', leaveId: request.leaveId })}
+                                                        loading={actionLoading === request.leaveId}
+                                                        disabled={actionLoading !== null}
+                                                    >
+                                                        {t.leave.requests.reject}
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => setPendingAction({ type: 'approve', leaveId: request.leaveId })}
+                                                        loading={actionLoading === request.leaveId}
+                                                        disabled={actionLoading !== null}
+                                                    >
+                                                        {t.leave.requests.approve}
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            {activeTab === 'my-leave' && !loading && (
+                                <Pagination
+                                    page={pageData.page}
+                                    pageSize={pageData.pageSize}
+                                    totalItems={pageData.totalItems}
+                                    totalPages={pageData.totalPages}
+                                    hasNext={pageData.hasNext}
+                                    hasPrevious={pageData.hasPrevious}
+                                    onPageChange={setPage}
+                                />
                             )}
-                        </div>
+                        </>
                     )}
                 </Card>
             )}

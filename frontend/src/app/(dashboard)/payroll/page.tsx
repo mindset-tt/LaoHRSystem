@@ -10,6 +10,8 @@ import { MaskedField } from '@/components/ui/MaskedField';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { NewPeriodModal } from '@/components/forms/NewPeriodModal';
 import { AdjustmentModal } from '@/components/forms/AdjustmentModal';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { useToast } from '@/components/ui/Toast';
 import { payrollApi, reportsApi } from '@/lib/endpoints';
 import { formatPayrollPeriod } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
@@ -23,6 +25,7 @@ import styles from './page.module.css';
 export default function PayrollPage() {
     const { role } = useAuth();
     const { t } = useLanguage();
+    const toast = useToast();
     const [loading, setLoading] = useState(true);
     const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
     const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod | null>(null);
@@ -45,10 +48,11 @@ export default function PayrollPage() {
         } catch (err) {
             console.error('Failed to load payroll periods:', err);
             setError('Failed to load payroll periods');
+            toast.error('Failed to load payroll periods');
         } finally {
             setLoading(false);
         }
-    }, [selectedPeriod]);
+    }, [selectedPeriod, toast]);
 
     useEffect(() => {
         loadPeriods();
@@ -59,10 +63,11 @@ export default function PayrollPage() {
             if (!selectedPeriod) return;
             try {
                 const data = await payrollApi.getSlips(selectedPeriod.periodId);
-                setSlips(data);
+                setSlips(data.items);
             } catch (err) {
                 console.error('Failed to load slips:', err);
                 setError('Failed to load salary slips');
+                toast.error('Failed to load salary slips');
             }
         };
 
@@ -87,12 +92,13 @@ export default function PayrollPage() {
             setError(null);
             await payrollApi.runPayroll(selectedPeriod.periodId);
             await Promise.all([
-                payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
+                payrollApi.getSlips(selectedPeriod.periodId).then(d => setSlips(d.items)),
                 loadPeriods()
             ]);
         } catch (err) {
             console.error('Failed to run payroll:', err);
             setError(err instanceof Error ? err.message : 'Failed to run payroll');
+            toast.error(err instanceof Error ? err.message : 'Failed to run payroll');
         } finally {
             setActionLoading(false);
         }
@@ -104,11 +110,12 @@ export default function PayrollPage() {
             await payrollApi.approveSlip(slipId);
             if (selectedPeriod) {
                 const data = await payrollApi.getSlips(selectedPeriod.periodId);
-                setSlips(data);
+                setSlips(data.items);
             }
         } catch (err) {
             console.error('Failed to approve slip:', err);
             setError(err instanceof Error ? err.message : 'Failed to approve slip');
+            toast.error(err instanceof Error ? err.message : 'Failed to approve slip');
         } finally {
             setActionLoading(false);
         }
@@ -120,13 +127,14 @@ export default function PayrollPage() {
             await payrollApi.markAsPaid(slipId);
             if (selectedPeriod) {
                 await Promise.all([
-                    payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
+                    payrollApi.getSlips(selectedPeriod.periodId).then(d => setSlips(d.items)),
                     loadPeriods()
                 ]);
             }
         } catch (err) {
             console.error('Failed to mark as paid:', err);
             setError(err instanceof Error ? err.message : 'Failed to mark as paid');
+            toast.error(err instanceof Error ? err.message : 'Failed to mark as paid');
         } finally {
             setActionLoading(false);
         }
@@ -145,6 +153,7 @@ export default function PayrollPage() {
         } catch (err) {
             console.error('Failed to approve all:', err);
             setError(err instanceof Error ? err.message : 'Failed to approve all');
+            toast.error(err instanceof Error ? err.message : 'Failed to approve all');
         } finally {
             setActionLoading(false);
         }
@@ -159,12 +168,13 @@ export default function PayrollPage() {
                 await payrollApi.markAsPaid(slip.slipId);
             }
             await Promise.all([
-                payrollApi.getSlips(selectedPeriod.periodId).then(setSlips),
+                payrollApi.getSlips(selectedPeriod.periodId).then(d => setSlips(d.items)),
                 loadPeriods()
             ]);
         } catch (err) {
             console.error('Failed to mark all paid:', err);
             setError(err instanceof Error ? err.message : 'Failed to mark all paid');
+            toast.error(err instanceof Error ? err.message : 'Failed to mark all paid');
         } finally {
             setActionLoading(false);
         }
@@ -184,6 +194,7 @@ export default function PayrollPage() {
         } catch (err) {
             console.error('Failed to download PDF:', err);
             setError('Failed to download payslip PDF');
+            toast.error('Failed to download payslip PDF');
         }
     };
 
@@ -202,6 +213,7 @@ export default function PayrollPage() {
         } catch (err) {
             console.error('Failed to export payroll:', err);
             setError('Failed to export payroll data');
+            toast.error('Failed to export payroll data');
         }
     };
 
@@ -227,14 +239,11 @@ export default function PayrollPage() {
     return (
         <div className={styles.page}>
             {/* ... keeping previous sections ... */}
-            <div className={styles.header}>
-                <div>
-                    <h1 className={styles.title}>{t.payroll.title}</h1>
-                    <p className={styles.subtitle}>
-                        {t.payroll.subtitle}
-                    </p>
-                </div>
-                {canManage && (
+            <PageHeader
+                title={t.payroll.title}
+                subtitle={t.payroll.subtitle}
+                breadcrumbs={[{ label: t.nav.dashboard, href: '/' }, { label: t.payroll.title }]}
+                actions={canManage ? (
                     <div className={styles.headerActions}>
                         {selectedPeriod?.status === 'DRAFT' && (
                             <>
@@ -258,8 +267,8 @@ export default function PayrollPage() {
                             {t.payroll.newPeriod}
                         </Button>
                     </div>
-                )}
-            </div>
+                ) : undefined}
+            />
 
             {error && (
                 <div className={styles.errorAlert}>

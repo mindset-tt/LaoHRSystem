@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 
 namespace LaoHR.API.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public class HolidaysController : ControllerBase
 {
@@ -17,20 +20,43 @@ public class HolidaysController : ControllerBase
     }
 
     /// <summary>
-    /// Get all holidays, optionally filtered by year
+    /// Get all holidays (paged), optionally filtered by year.
     /// </summary>
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Holiday>>> GetHolidays([FromQuery] int? year = null)
+    public async Task<ActionResult<PaginatedResponse<Holiday>>> GetHolidays(
+        [FromQuery] int? year = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25)
     {
-        var query = _context.Holidays.Where(h => h.IsActive);
-        
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
+
+        var query = _context.Holidays
+            .AsNoTracking()
+            .Where(h => h.IsActive)
+            .AsQueryable();
+
         if (year.HasValue)
         {
-            query = query.Where(h => 
-                h.Date.Year == year.Value || h.IsRecurring);
+            query = query.Where(h => h.Date.Year == year.Value || h.IsRecurring);
         }
-        
-        return await query.OrderBy(h => h.Date.Month).ThenBy(h => h.Date.Day).ToListAsync();
+
+        var total = await query.LongCountAsync();
+
+        var items = await query
+            .OrderBy(h => h.Date.Month)
+            .ThenBy(h => h.Date.Day)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return new PaginatedResponse<Holiday>
+        {
+            Items = items,
+            Page = page,
+            PageSize = pageSize,
+            TotalItems = total
+        };
     }
 
     /// <summary>

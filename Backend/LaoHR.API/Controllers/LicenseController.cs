@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.API.Data;
@@ -8,6 +9,7 @@ using LaoHR.Shared.Services;
 namespace LaoHR.API.Controllers;
 
 [ApiController]
+[AllowAnonymous]
 [Route("api/[controller]")]
 public class LicenseController : ControllerBase
 {

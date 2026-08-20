@@ -50,6 +50,16 @@ export function Sidebar() {
             permission: 'payroll.view',
         },
         {
+            label: t.sidebar.projects,
+            href: '/projects',
+            icon: <ProjectsIcon />,
+        },
+        {
+            label: t.sidebar.myTasks,
+            href: '/my-tasks',
+            icon: <TasksIcon />,
+        },
+        {
             label: t.sidebar.reports,
             href: '/reports',
             icon: <ChartIcon />,
@@ -312,6 +322,26 @@ function ChevronDownIcon() {
     return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="6 9 12 15 18 9" />
+        </svg>
+    );
+}
+
+function ProjectsIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+        </svg>
+    );
+}
+
+function TasksIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="9 11 12 14 22 4" />
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
         </svg>
     );
 }

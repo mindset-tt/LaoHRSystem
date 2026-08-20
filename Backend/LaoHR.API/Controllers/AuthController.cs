@@ -1,7 +1,9 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
@@ -16,40 +18,41 @@ public class AuthController : ControllerBase
 {
     private readonly IConfiguration _configuration;
     private readonly LaoHRDbContext _context;
-    
+
     public AuthController(IConfiguration configuration, LaoHRDbContext context)
     {
         _configuration = configuration;
         _context = context;
     }
-    
+
     /// <summary>
-    /// Login and get JWT token
+    /// Login and get JWT token. Public endpoint.
+    /// Demo users are seeded once at startup by DbSeeder — never as a side
+    /// effect of an authentication request.
     /// </summary>
     [HttpPost("login")]
+    [AllowAnonymous]
+    [EnableRateLimiting("auth-login")]
     public async Task<ActionResult<LoginResponse>> Login([FromBody] LoginRequest request)
     {
-        // Ensure default admin exists (Seeding Logic)
-        await SeedDefaultAdminAsync();
-
         var user = await _context.Users
             .Include(u => u.Employee)
             .FirstOrDefaultAsync(u => u.Username == request.Username);
-            
+
         if (user == null || !user.IsActive)
             return Unauthorized(new { message = "Invalid username or password" });
-            
+
         if (!PasswordHasher.VerifyPassword(request.Password, user.PasswordHash))
-             return Unauthorized(new { message = "Invalid username or password" });
-        
+            return Unauthorized(new { message = "Invalid username or password" });
+
         // Update Last Login
         user.LastLoginAt = DateTime.UtcNow;
         await _context.SaveChangesAsync();
-        
+
         // Generate JWT token
         var displayName = user.DisplayName ?? user.Employee?.EnglishName ?? user.Username;
         var token = GenerateJwtToken(user.Username, user.Role, displayName, user.EmployeeId);
-        
+
         return Ok(new LoginResponse
         {
             Token = token,
@@ -60,34 +63,6 @@ public class AuthController : ControllerBase
         });
     }
 
-    private async Task SeedDefaultAdminAsync()
-    {
-        if (!await _context.Users.AnyAsync())
-        {
-            var admin = new AppUser
-            {
-                Username = "admin",
-                PasswordHash = PasswordHasher.HashPassword("admin123"),
-                Role = "Admin",
-                DisplayName = "System Administrator",
-                IsActive = true
-            };
-            _context.Users.Add(admin);
-            
-            var hr = new AppUser
-            {
-                Username = "hr",
-                PasswordHash = PasswordHasher.HashPassword("hr123"),
-                Role = "HR",
-                DisplayName = "HR Manager",
-                IsActive = true
-            };
-             _context.Users.Add(hr);
-             
-            await _context.SaveChangesAsync();
-        }
-    }
-    
     /// <summary>
     /// Get current user info from token
     /// </summary>
