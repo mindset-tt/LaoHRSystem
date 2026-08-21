@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Language, dictionary, Dictionary } from '@/lib/i18n';
+import { auditI18n } from '@/lib/i18n-audit';
 
 interface LanguageContextType {
     language: Language;
@@ -13,6 +14,11 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguageState] = useState<Language>('en');
+
+    // Audit en/lo parity at startup — dev-only warnings.
+    useEffect(() => {
+        auditI18n();
+    }, []);
 
     useEffect(() => {
         // Load from localStorage if available
