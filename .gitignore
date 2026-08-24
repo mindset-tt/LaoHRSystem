@@ -114,3 +114,6 @@ TestResults/
 *.bak
 *.tmp
 *.temp
+
+# Phase 4D.1 — backup artifacts (synthetic-data dumps; never commit)
+backup/

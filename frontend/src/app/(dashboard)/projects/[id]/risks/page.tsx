@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -38,7 +39,9 @@ export default function ProjectRisksPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         risksApi
             .getAll(projectId, {
                 status: status || undefined,
@@ -56,10 +59,10 @@ export default function ProjectRisksPage() {
         return () => { cancelled = true; };
     }, [projectId, status, priority, search, page, pageSize, t.common.error, toast]);
 
-    const statusLabel = (s: string) =>
-        (t.risks.status as Record<string, string>)[s.toLowerCase()] ?? s;
-    const priorityLabel = (p: string) =>
-        (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p;
+    const statusLabel = useCallback((s: string) =>
+        (t.risks.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
+    const priorityLabel = useCallback((p: string) =>
+        (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p, [t]);
 
     const scoreClass = (s: number) => {
         if (s >= 15) return styles.scoreCritical;

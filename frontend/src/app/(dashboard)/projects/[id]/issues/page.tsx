@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -37,7 +38,9 @@ export default function ProjectIssuesPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         issuesApi
             .getAll(projectId, {
                 status: status || undefined,
@@ -55,10 +58,10 @@ export default function ProjectIssuesPage() {
         return () => { cancelled = true; };
     }, [projectId, status, priority, search, page, pageSize, t.common.error, toast]);
 
-    const statusLabel = (s: string) =>
-        (t.issues.status as Record<string, string>)[s.toLowerCase()] ?? s;
-    const priorityLabel = (p: string) =>
-        (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p;
+    const statusLabel = useCallback((s: string) =>
+        (t.issues.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
+    const priorityLabel = useCallback((p: string) =>
+        (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p, [t]);
 
     const columns: DataTableColumn<IssueListItem>[] = useMemo(() => [
         {

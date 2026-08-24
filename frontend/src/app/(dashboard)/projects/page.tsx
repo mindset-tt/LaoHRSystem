@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -36,7 +37,9 @@ export default function ProjectsPage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         projectsApi
             .getAll({ status: status || undefined, priority: priority || undefined, search: search || undefined, mineOnly, page, pageSize })
             .then((res) => { if (!cancelled) setPageData(res); })
@@ -48,8 +51,8 @@ export default function ProjectsPage() {
         return () => { cancelled = true; };
     }, [status, priority, search, mineOnly, page, pageSize, t.common.error, toast]);
 
-    const statusLabel = (s: string) => (t.projects.status as Record<string, string>)[s.toLowerCase()] ?? s;
-    const priorityLabel = (p: string) => (t.projects.priority as Record<string, string>)[p.toLowerCase()] ?? p;
+    const statusLabel = useCallback((s: string) => (t.projects.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
+    const priorityLabel = useCallback((p: string) => (t.projects.priority as Record<string, string>)[p.toLowerCase()] ?? p, [t]);
 
     const columns: DataTableColumn<ProjectListItem>[] = useMemo(() => [
         {
@@ -108,7 +111,7 @@ export default function ProjectsPage() {
             sortBy: p => p.dueDate,
             render: p => p.dueDate ? new Date(p.dueDate).toLocaleDateString() : '—',
         },
-    ], [t]);
+    ], [t, statusLabel, priorityLabel]);
 
     return (
         <div className={styles.page}>

@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/components/providers/AuthProvider';
-import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { organizationApi } from '@/lib/endpoints';
@@ -14,8 +12,6 @@ import styles from './page.module.css';
  * Phase 3C1 foundation. Read-only tree for now; admin editing comes in a later phase.
  */
 export default function OrganizationPage() {
-    const { role } = useAuth();
-    const { language } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [tree, setTree] = useState<DepartmentNode[]>([]);
     const [error, setError] = useState<string | null>(null);

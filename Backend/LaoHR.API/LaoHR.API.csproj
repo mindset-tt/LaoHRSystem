@@ -37,6 +37,9 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" Version="1.17.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.EntityFrameworkCore" Version="1.17.0-beta.1" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.17.0-beta.1" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" Version="1.17.0" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Process" Version="1.17.0-rc.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\LaoHR.Shared\LaoHR.Shared.csproj" />
@@ -45,5 +48,9 @@
     <None Update="Font\Phetsarath_OT.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <!-- Phase 4D.1 — license verification reads public.key at runtime from
+         the app base directory; without this the published/container image
+         cannot validate any license. -->
+    <None Include="public.key" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

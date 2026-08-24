@@ -73,6 +73,7 @@ public class RetentionService : BackgroundService
             catch (Exception ex) when (!stoppingToken.IsCancellationRequested)
             {
                 _log.LogError(ex, "Retention sweep failed");
+                Metrics.AppMetrics.BackgroundJobFailures.Add(1, new KeyValuePair<string, object?>("job", "retention"));
             }
 
             try

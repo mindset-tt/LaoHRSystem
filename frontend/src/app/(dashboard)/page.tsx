@@ -7,6 +7,7 @@ import { apiClient } from '@/lib/apiClient';
 import { Card, CardTitle, CardDescription } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { formatDate, getCurrentLaoDate } from '@/lib/datetime';
+import type { Dictionary } from '@/lib/i18n';
 import styles from './page.module.css';
 
 interface DashboardStats {
@@ -22,7 +23,7 @@ interface DashboardStats {
  */
 export default function DashboardPage() {
     const { user } = useAuth();
-    const { t, language } = useLanguage();
+    const { t } = useLanguage();
     const [stats, setStats] = useState<DashboardStats | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -183,30 +184,8 @@ function QuickActionButton({
     );
 }
 
-// Activity Item
-function ActivityItem({
-    title,
-    description,
-    time,
-}: {
-    title: string;
-    description: string;
-    time: string;
-}) {
-    return (
-        <div className={styles.activityItem}>
-            <div className={styles.activityDot} />
-            <div className={styles.activityContent}>
-                <span className={styles.activityTitle}>{title}</span>
-                <span className={styles.activityDescription}>{description}</span>
-                <span className={styles.activityTime}>{time}</span>
-            </div>
-        </div>
-    );
-}
-
 // Greeting based on time
-function getGreeting(t: any): string {
+function getGreeting(t: Dictionary): string {
     const hour = new Date().getHours();
 
     if (hour < 12) return t.dashboardPage.greetings.morning;

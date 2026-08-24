@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
-import { MaskedField } from '@/components/ui/MaskedField';
 import { employeesApi, adjustmentApi } from '@/lib/endpoints';
-import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Employee, PayrollAdjustment } from '@/lib/types';
 
 interface AdjustmentModalProps {
@@ -16,7 +15,6 @@ interface AdjustmentModalProps {
 }
 
 export function AdjustmentModal({ isOpen, onClose, periodId, periodName }: AdjustmentModalProps) {
-    const { t } = useLanguage();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(null);
     const [adjustments, setAdjustments] = useState<PayrollAdjustment[]>([]);
@@ -29,30 +27,16 @@ export function AdjustmentModal({ isOpen, onClose, periodId, periodName }: Adjus
     const [type, setType] = useState<'EARNING' | 'DEDUCTION' | 'BONUS'>('EARNING');
     const [isTaxable, setIsTaxable] = useState(true);
 
-    useEffect(() => {
-        if (isOpen) {
-            loadEmployees();
-        }
-    }, [isOpen]);
-
-    useEffect(() => {
-        if (selectedEmployeeId) {
-            loadAdjustments(selectedEmployeeId);
-        } else {
-            setAdjustments([]);
-        }
-    }, [selectedEmployeeId, periodId]);
-
-    const loadEmployees = async () => {
+    const loadEmployees = useCallback(async () => {
         try {
             const data = await employeesApi.getAll({ isActive: true, page: 1, pageSize: 200 });
             setEmployees(data.items.filter(e => e.isActive));
         } catch (err) {
             console.error('Failed to load employees', err);
         }
-    };
+    }, []);
 
-    const loadAdjustments = async (empId: number) => {
+    const loadAdjustments = useCallback(async (empId: number) => {
         setLoadingList(true);
         try {
             const data = await adjustmentApi.getAdjustments(periodId, empId);
@@ -62,7 +46,27 @@ export function AdjustmentModal({ isOpen, onClose, periodId, periodName }: Adjus
         } finally {
             setLoadingList(false);
         }
-    };
+    }, [periodId]);
+
+    useEffect(() => {
+        if (isOpen) {
+            React.startTransition(() => {
+                loadEmployees();
+            });
+        }
+    }, [isOpen, loadEmployees]);
+
+    useEffect(() => {
+        if (selectedEmployeeId) {
+            React.startTransition(() => {
+                loadAdjustments(selectedEmployeeId);
+            });
+        } else {
+            React.startTransition(() => {
+                setAdjustments([]);
+            });
+        }
+    }, [selectedEmployeeId, periodId, loadAdjustments]);
 
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -175,7 +179,7 @@ export function AdjustmentModal({ isOpen, onClose, periodId, periodName }: Adjus
                                         <label style={{ display: 'block', fontSize: '0.8rem', marginBottom: '4px' }}>Type</label>
                                         <select
                                             value={type}
-                                            onChange={e => setType(e.target.value as any)}
+                                            onChange={e => setType(e.target.value as 'EARNING' | 'DEDUCTION' | 'BONUS')}
                                             style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #ddd' }}
                                         >
                                             <option value="EARNING">Income</option>

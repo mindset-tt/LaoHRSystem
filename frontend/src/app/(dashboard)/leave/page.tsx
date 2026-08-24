@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -16,6 +17,7 @@ import { leaveApi } from '@/lib/endpoints';
 import { formatDate, formatRelativeTime } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
 import type { LeaveRequest, CreateLeaveRequest } from '@/lib/types';
+import type { Dictionary } from '@/lib/i18n';
 import type { PaginatedResponse } from '@/lib/types/pagination';
 import styles from './page.module.css';
 
@@ -80,8 +82,8 @@ export default function LeavePage() {
     }, []);
 
     useEffect(() => {
-        loadLeaveRequests();
-        loadBalances();
+        React.startTransition(() => { loadLeaveRequests(); });
+        React.startTransition(() => { loadBalances(); });
     }, [loadLeaveRequests, loadBalances]);
 
     const handleCreateRequest = async (request: CreateLeaveRequest) => {
@@ -387,7 +389,7 @@ function BalanceCard({
     used: number;
     total: number;
     color: 'primary' | 'warning' | 'accent';
-    t: any;
+    t: Dictionary;
 }) {
     const remaining = total - used;
     const percentage = (used / total) * 100;

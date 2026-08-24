@@ -175,6 +175,7 @@ public sealed class AuditLogChannel : IAuditLogChannel
     {
         if (_channel.Writer.TryWrite(entry)) return true;
         _logger.LogWarning("Audit channel full; dropping entry for {Entity}", entry.EntityName);
+        Metrics.AppMetrics.AuditEntriesDropped.Add(1);
         return false;
     }
 }
@@ -225,6 +226,7 @@ public sealed class AuditLogWriter : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to persist {Count} audit entries", batch.Count);
+                Metrics.AppMetrics.AuditPersistFailures.Add(1);
                 // Drop and continue. We cannot block the user path on this.
             }
         }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { payrollApi, reportsApi } from '@/lib/endpoints';
@@ -15,10 +15,6 @@ export default function ReportsPage() {
     const [nssfPeriod, setNssfPeriod] = useState<string>('');
     const [downloading, setDownloading] = useState(false);
 
-    useEffect(() => {
-        loadPeriods();
-    }, []);
-
     const loadPeriods = async () => {
         try {
             const data = await payrollApi.getPeriods();
@@ -32,6 +28,12 @@ export default function ReportsPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        React.startTransition(() => {
+            loadPeriods();
+        });
+    }, []);
 
     const handleDownloadNssf = async () => {
         if (!nssfPeriod) return;

@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
-import { loansApi, LOAN_STATUSES, type LoanDetail } from '@/lib/endpoints';
+import { loansApi, type LoanDetail } from '@/lib/endpoints';
 import styles from '../../page.module.css';
 
 export default function LoanDetailPage() {
@@ -26,7 +27,9 @@ export default function LoanDetailPage() {
     useEffect(() => {
         if (!loanId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         loansApi.get(loanId)
             .then((d) => { if (!cancelled) setLoan(d); })
             .catch((err) => {

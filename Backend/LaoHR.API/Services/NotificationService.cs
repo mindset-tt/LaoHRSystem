@@ -38,7 +38,17 @@ public sealed class NotificationService : INotificationService
             EntityType = entityType,
             EntityId = entityId
         });
-        await _context.SaveChangesAsync(ct);
+        try
+        {
+            await _context.SaveChangesAsync(ct);
+        }
+        catch (Exception)
+        {
+            // Phase 4D.1 — count the failure, then preserve existing behavior
+            // (callers treat notifications as best-effort and handle exceptions).
+            Metrics.AppMetrics.NotificationFailures.Add(1);
+            throw;
+        }
     }
 
     public async Task NotifyEmployeeAsync(int employeeId, string type, string title, string? message, string? entityType, int? entityId, CancellationToken ct = default)

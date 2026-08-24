@@ -33,10 +33,13 @@ public class LicenseMiddleware
         // 2. Auth (Login / Refresh)
         // 3. License activation endpoints
         // 4. Health checks (load balancers must not require a license)
+        // 5. Metrics scrape endpoint (Phase 4D.1; monitoring must observe even
+        //    when licensing is broken)
         if (path.StartsWith("/swagger") ||
             path.StartsWith("/api/auth") ||
             path.StartsWith("/api/license") ||
-            path.StartsWith("/health"))
+            path.StartsWith("/health") ||
+            path.StartsWith("/metrics"))
         {
             await _next(context);
             return;

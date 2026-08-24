@@ -25,7 +25,6 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             size = 'md',
             disabled,
             className = '',
-            placeholder = 'Select an option',
             id: providedId,
             ...props
         },

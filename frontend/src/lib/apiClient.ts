@@ -14,7 +14,6 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 let accessToken: string | null = null;
 let tokenExpiresAt: Date | null = null;
 let refreshToken: string | null = null;
-let refreshTokenExpiresAt: Date | null = null;
 
 // Initialize from localStorage if available (client-side only)
 if (typeof window !== 'undefined') {
@@ -39,7 +38,6 @@ if (typeof window !== 'undefined') {
         const expiryDate = new Date(storedRefreshExpiry);
         if (expiryDate > new Date()) {
             refreshToken = storedRefresh;
-            refreshTokenExpiresAt = expiryDate;
         } else {
             localStorage.removeItem('refreshToken');
             localStorage.removeItem('refreshTokenExpiresAt');
@@ -66,7 +64,6 @@ export function setAccessToken(token: string, expiresAt: Date): void {
 
 export function setRefreshToken(token: string, expiresAt: Date): void {
     refreshToken = token;
-    refreshTokenExpiresAt = expiresAt;
 
     if (typeof window !== 'undefined') {
         localStorage.setItem('refreshToken', token);
@@ -81,7 +78,6 @@ export function clearAccessToken(): void {
     accessToken = null;
     tokenExpiresAt = null;
     refreshToken = null;
-    refreshTokenExpiresAt = null;
 
     if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
@@ -136,7 +132,7 @@ async function refreshAccessToken(): Promise<void> {
     } catch {
         clearAccessToken();
         if (typeof window !== 'undefined') {
-            window.location.href = '/login?expired=true';
+            window.location.assign(new URL('/login?expired=true', window.location.origin).href);
         }
         throw new Error('Session expired');
     }

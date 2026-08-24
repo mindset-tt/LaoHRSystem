@@ -1,18 +1,19 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
-import { Skeleton, SkeletonTable } from '@/components/ui/Skeleton';
+import { SkeletonTable } from '@/components/ui/Skeleton';
 import { MaskedField } from '@/components/ui/MaskedField';
 import { ConfirmationModal } from '@/components/ui/ConfirmationModal';
 import { NewPeriodModal } from '@/components/forms/NewPeriodModal';
 import { AdjustmentModal } from '@/components/forms/AdjustmentModal';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { useToast } from '@/components/ui/Toast';
-import { payrollApi, reportsApi } from '@/lib/endpoints';
+import { payrollApi } from '@/lib/endpoints';
 import { formatPayrollPeriod } from '@/lib/datetime';
 import { isHROrAdmin } from '@/lib/permissions';
 import type { PayrollPeriod, SalarySlip } from '@/lib/types';
@@ -55,7 +56,7 @@ export default function PayrollPage() {
     }, [selectedPeriod, toast]);
 
     useEffect(() => {
-        loadPeriods();
+        React.startTransition(() => { loadPeriods(); });
     }, [loadPeriods]);
 
     useEffect(() => {
@@ -72,7 +73,7 @@ export default function PayrollPage() {
         };
 
         loadSlips();
-    }, [selectedPeriod]);
+    }, [selectedPeriod, toast]);
 
     const handleCreatePeriod = async (year: number, month: number) => {
         try {

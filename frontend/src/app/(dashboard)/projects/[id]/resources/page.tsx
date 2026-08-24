@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -34,7 +35,9 @@ export default function ProjectResourcesPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         resourcesApi
             .getAll(projectId, { role: role || undefined, page, pageSize })
             .then((p) => { if (!cancelled) setPageData(p); })
@@ -46,8 +49,8 @@ export default function ProjectResourcesPage() {
         return () => { cancelled = true; };
     }, [projectId, role, page, pageSize, t.common.error, toast]);
 
-    const roleLabel = (r: string) =>
-        (t.resources.role as Record<string, string>)[r.toLowerCase()] ?? r;
+    const roleLabel = useCallback((r: string) =>
+        (t.resources.role as Record<string, string>)[r.toLowerCase()] ?? r, [t]);
 
     const columns: DataTableColumn<ResourceListItem>[] = useMemo(() => [
         {

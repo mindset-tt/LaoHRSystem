@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Card } from '@/components/ui/Card';
@@ -9,12 +8,10 @@ import { Button } from '@/components/ui/Button';
 import { companyApi, addressApi } from '@/lib/endpoints/company';
 import type { CompanySetting, Province, District, Village } from '@/lib/types';
 
-import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import styles from './page.module.css';
 
 export default function CompanySettingsPage() {
-    const router = useRouter();
     const { t, language } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -26,10 +23,6 @@ export default function CompanySettingsPage() {
     const [provinces, setProvinces] = useState<Province[]>([]);
     const [districts, setDistricts] = useState<District[]>([]);
     const [villages, setVillages] = useState<Village[]>([]);
-
-    useEffect(() => {
-        loadInitialData();
-    }, []);
 
     // Load initial data
     const loadInitialData = async () => {
@@ -58,6 +51,12 @@ export default function CompanySettingsPage() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        React.startTransition(() => {
+            loadInitialData();
+        });
+    }, []);
 
     const handleChange = (field: keyof CompanySetting, value: string | number) => {
         setFormData(prev => ({ ...prev, [field]: value }));

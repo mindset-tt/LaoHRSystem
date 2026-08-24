@@ -243,8 +243,6 @@ export function Sidebar() {
         setExpandedMenu(expandedMenu === href ? null : href);
     };
 
-    const isSettingsActive = pathname.startsWith('/settings');
-
     return (
         <aside className={`${styles.sidebar} ${collapsed ? styles.collapsed : ''}`}>
             {/* Logo */}

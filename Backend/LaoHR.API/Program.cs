@@ -17,6 +17,8 @@ using Serilog.Events;
 using Serilog.Formatting.Compact;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using LaoHR.API.Metrics;
 
 // Phase 6a — Serilog as the host logger.
 // Configuration is sourced from `Serilog` section in appsettings; a fallback
@@ -36,6 +38,19 @@ Log.Logger = new LoggerConfiguration()
 
 try
 {
+    // Migration compatibility (Phase 4D.1): the existing migration chain embeds
+    // seed data with DateTimeKind.Unspecified literals (e.g. holidays), which
+    // Npgsql rejects for timestamptz outside legacy mode. Operators set
+    // NPGSQL_LEGACY_TIMESTAMP=1 so RUNTIME startup migration can apply the same
+    // chain `dotnet ef database update` applies (see LaoHRDbContextFactory and
+    // scripts/validate-postgres.ps1). Must be set before any Npgsql use.
+    if (string.Equals(
+            Environment.GetEnvironmentVariable("NPGSQL_LEGACY_TIMESTAMP"), "1",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+    }
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog((ctx, services, lc) =>
@@ -163,6 +178,23 @@ if (!builder.Environment.IsEnvironment("Testing"))
     {
         options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+        // Phase 4D.1 — standard 429 metadata: advertise when the client may retry.
+        // Built-in limiters don't populate RetryAfter metadata on rejection;
+        // fall back to the configured window length (worst-case wait).
+        options.OnRejected = static (context, _) =>
+        {
+            if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+            {
+                context.HttpContext.Response.Headers.RetryAfter =
+                    ((TimeSpan)retryAfter).TotalSeconds.ToString("0", System.Globalization.CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                context.HttpContext.Response.Headers.RetryAfter = "60";
+            }
+            return ValueTask.CompletedTask;
+        };
+
         // Login: 5 attempts / 60s per IP (sliding window).
         options.AddPolicy("auth-login", context =>
         {
@@ -230,6 +262,23 @@ builder.Services.AddOpenTelemetry()
         {
             tb.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
         }
+    })
+    // Phase 4D.1 — metrics. HTTP request count/duration, runtime (GC/threads/
+    // memory), and process CPU/memory via built-in meters; LaoHR operational
+    // counters via AppMetrics. Exported on a local Prometheus pull endpoint
+    // (/metrics). The endpoint is network-internal: the API container port is
+    // not published to the host in the production compose topology.
+    .WithMetrics(mb =>
+    {
+        // ASP.NET Core request metrics are emitted by the framework itself
+        // ("Microsoft.AspNetCore.Hosting" / "...Kestrel"); no extra call needed.
+        mb.AddRuntimeInstrumentation()
+          .AddProcessInstrumentation()
+          .AddMeter("Microsoft.AspNetCore.Hosting")
+          .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
+          .AddMeter(AppMetrics.MeterName);
+
+        mb.AddPrometheusExporter();
     });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -436,6 +485,14 @@ app.UseSerilogRequestLogging(opts =>
 if (!builder.Environment.IsEnvironment("Testing"))
 {
     app.UseMiddleware<LaoHR.API.Middleware.LicenseMiddleware>();
+}
+
+// Phase 4D.1 — Prometheus scrape endpoint (/metrics). Network-restricted by
+// topology (API port not published to the host; reverse proxy does not route
+// /metrics). Operators must keep it off untrusted interfaces.
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    app.MapPrometheusScrapingEndpoint("/metrics").AllowAnonymous();
 }
 
 // Authenticate & Authorization middleware

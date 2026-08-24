@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -29,7 +30,9 @@ export default function AnnouncementsPage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         announcementsApi.list({
             severity: severity || undefined,
             unreadOnly: unreadOnly || undefined,

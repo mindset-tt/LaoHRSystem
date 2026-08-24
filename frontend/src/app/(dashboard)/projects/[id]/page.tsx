@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -53,8 +54,10 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setProjectLoading(true);
-        setProjectError(null);
+        React.startTransition(() => {
+            setProjectLoading(true);
+            setProjectError(null);
+        });
         projectsApi
             .getById(projectId)
             .then((p) => { if (!cancelled) setProject(p); })
@@ -73,7 +76,9 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setTasksLoading(true);
+        React.startTransition(() => {
+            setTasksLoading(true);
+        });
         projectTasksApi
             .getAll(projectId, { page: taskPage, pageSize: 50 })
             .then((p) => { if (!cancelled) setTasksPage(p); })
@@ -88,7 +93,9 @@ export default function ProjectDetailPage() {
     useEffect(() => {
         if (!projectId) return;
         let cancelled = false;
-        setActivityLoading(true);
+        React.startTransition(() => {
+            setActivityLoading(true);
+        });
         projectsApi
             .getActivities(projectId, 1, 25)
             .then((p) => { if (!cancelled) setActivityPage(p); })
@@ -100,8 +107,8 @@ export default function ProjectDetailPage() {
         return () => { cancelled = true; };
     }, [projectId, t.common.error, toast]);
 
-    const statusLabel = (s: string) => (t.tasks.status as Record<string, string>)[s.toLowerCase()] ?? s;
-    const priorityLabel = (p: string) => (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p;
+    const statusLabel = useCallback((s: string) => (t.tasks.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
+    const priorityLabel = useCallback((p: string) => (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p, [t]);
 
     // Group tasks by status for the board view.
     const tasksByStatus = useMemo(() => {
@@ -158,7 +165,7 @@ export default function ProjectDetailPage() {
             sortBy: r => r.dueDate,
             render: r => r.dueDate ? <span className={r.isOverdue ? styles.overdue : undefined}>{new Date(r.dueDate).toLocaleDateString()}</span> : '—',
         },
-    ], [t]);
+    ], [t, statusLabel, priorityLabel]);
 
     if (projectLoading) {
         return (

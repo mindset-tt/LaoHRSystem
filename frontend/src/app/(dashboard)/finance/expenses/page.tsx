@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -15,7 +16,6 @@ import type { PaginatedResponse } from '@/lib/types/pagination';
 import styles from '../page.module.css';
 
 const STATUS_OPTIONS = ['', ...EXPENSE_STATUSES] as const;
-const CURRENCY_OPTIONS = ['LAK', 'USD', 'THB'] as const;
 
 export default function ExpensesPage() {
     const { t } = useLanguage();
@@ -38,7 +38,9 @@ export default function ExpensesPage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         expensesApi.list({
             status: status || undefined,
             categoryId: categoryId ? Number(categoryId) : undefined,
@@ -56,8 +58,8 @@ export default function ExpensesPage() {
         return () => { cancelled = true; };
     }, [status, categoryId, mineOnly, search, page, pageSize, t.finance.expenses.messages.errorAction, toast]);
 
-    const statusLabel = (s: string) =>
-        (t.finance.expenses.status as Record<string, string>)?.[s.toLowerCase()] ?? s;
+    const statusLabel = useCallback((s: string) =>
+        (t.finance.expenses.status as Record<string, string>)?.[s.toLowerCase()] ?? s, [t]);
 
     const formatLak = (n: number) => new Intl.NumberFormat('en-US').format(n) + ' ₭';
 

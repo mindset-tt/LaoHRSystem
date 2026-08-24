@@ -16,11 +16,17 @@ public class EmployeesController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
     private readonly IOrganizationHierarchyService _hierarchy;
+    private readonly IDataScopeService _scope;
+    private readonly IWebHostEnvironment _environment;
+    private readonly IConfiguration _configuration;
 
-    public EmployeesController(LaoHRDbContext context, IOrganizationHierarchyService hierarchy)
+    public EmployeesController(LaoHRDbContext context, IOrganizationHierarchyService hierarchy, IDataScopeService scope, IWebHostEnvironment environment, IConfiguration configuration)
     {
         _context = context;
         _hierarchy = hierarchy;
+        _scope = scope;
+        _environment = environment;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -290,42 +296,92 @@ public class CreateEmployeeDto
         if (file == null || file.Length == 0)
             return BadRequest("No file uploaded");
 
-        // Validate file type
+        // Phase 4D — server-side size limit (5 MB for photos).
+        const long maxBytes = 5 * 1024 * 1024;
+        if (file.Length > maxBytes)
+            return RejectUpload("File exceeds the 5 MB size limit.", "too_large");
+
+        // Validate declared file type
         var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
-            return BadRequest("Invalid file type. Only JPG and PNG allowed.");
+            return RejectUpload("Invalid file type. Only JPG and PNG allowed.", "extension_denied");
 
-        // Ensure directory exists
-        var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "profiles");
+        // Phase 4D.1 — content-signature validation before writing to storage.
+        await using var content = file.OpenReadStream();
+        if (!FileSignatureValidator.ValidateOrRecord(extension, content))
+            return RejectUpload("File content does not match its declared type.");
+
+        // Phase 4D.1 — store OUTSIDE the web root; photos are served through
+        // the authorized GET {id}/photo endpoint (static files bypass authz).
+        var uploadsFolder = Path.Combine(
+            _configuration["Storage:DocumentsRoot"] ?? Path.Combine(_environment.ContentRootPath, "App_Data", "uploads"),
+            "profiles");
         Directory.CreateDirectory(uploadsFolder);
 
-        // Generate unique filename
+        // Generate unique filename (never derived from user input beyond the
+        // validated extension).
         var uniqueFileName = $"{employee.EmployeeCode}_{DateTime.Now.Ticks}{extension}";
         var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-        try 
+        try
         {
-            using (var stream = new FileStream(filePath, FileMode.Create))
+            await using (var stream = new FileStream(filePath, FileMode.Create))
             {
                 await file.CopyToAsync(stream);
             }
 
-            // Update employee record
-            // Delete old photo if exists/needed (optional)
-            
-            // Store relative path for frontend access
-            employee.ProfilePath = $"/uploads/profiles/{uniqueFileName}";
+            // Update employee record with the storage key (opaque reference).
+            employee.ProfilePath = $"profiles/{uniqueFileName}";
             employee.UpdatedAt = DateTime.UtcNow;
-            
+
             await _context.SaveChangesAsync();
 
-            return Ok(new { path = employee.ProfilePath });
+            return Ok(new { path = $"/api/employees/{id}/photo" });
         }
         catch (Exception ex)
         {
             return StatusCode(500, $"Internal server error: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Phase 4D.1 — authorized photo download from the protected storage root.
+    /// </summary>
+    [HttpGet("{id}/photo")]
+    public async Task<IActionResult> GetProfilePhoto(int id)
+    {
+        var employee = await _context.Employees.AsNoTracking().FirstOrDefaultAsync(e => e.EmployeeId == id);
+        if (employee == null) return NotFound();
+
+        // IDOR: same visibility policy as the employee read path.
+        if (!await _scope.CanViewEmployeeAsync(id))
+            return Forbid();
+
+        if (string.IsNullOrWhiteSpace(employee.ProfilePath)) return NotFound();
+
+        var normalized = employee.ProfilePath.Replace('\\', '/').TrimStart('/');
+        if (normalized.Contains("..") || normalized.StartsWith("/uploads/")) return NotFound();
+
+        var root = Path.GetFullPath(
+            _configuration["Storage:DocumentsRoot"] ?? Path.Combine(_environment.ContentRootPath, "App_Data", "uploads"));
+        var candidate = Path.GetFullPath(Path.Combine(root, normalized.Replace('/', Path.DirectorySeparatorChar)));
+        if (!candidate.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)) return NotFound();
+        if (!System.IO.File.Exists(candidate)) return NotFound();
+
+        var contentType = Path.GetExtension(candidate).ToLowerInvariant() switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+        return PhysicalFile(candidate, contentType);
+    }
+
+    private BadRequestObjectResult RejectUpload(string message, string reason = "signature_mismatch")
+    {
+        Metrics.AppMetrics.UploadsRejected.Add(1, new KeyValuePair<string, object?>("reason", reason));
+        return BadRequest(message);
     }
 }
 

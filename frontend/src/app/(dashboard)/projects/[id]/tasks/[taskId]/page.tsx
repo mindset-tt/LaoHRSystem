@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -32,7 +32,9 @@ export default function TaskDetailPage() {
     useEffect(() => {
         if (!projectId || !taskId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         projectTasksApi.getById(projectId, taskId)
             .then((tr) => {
                 if (!cancelled) {

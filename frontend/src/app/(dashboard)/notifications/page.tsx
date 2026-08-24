@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -34,7 +35,7 @@ export default function NotificationsPage() {
     };
 
     useEffect(() => {
-        load();
+        React.startTransition(() => { load(); });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

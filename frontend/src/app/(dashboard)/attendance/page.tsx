@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -69,7 +70,7 @@ export default function AttendancePage() {
     }, [currentMonth, currentYear, t.common.error, toast]);
 
     useEffect(() => {
-        loadData();
+        React.startTransition(() => { loadData(); });
     }, [loadData]);
 
     const handleClockIn = async () => {
@@ -276,7 +277,6 @@ export default function AttendancePage() {
                                 {/* Weekday headers */}
                                 <div className={styles.weekdays}>
                                     {Array.from({ length: 7 }).map((_, i) => {
-                                        const date = new Date(2024, 0, i); // Jan 2024 starts on Monday? No, Jan 1 2024 is Monday. I need Sunday start.
                                         // Jan 7 2024 is Sunday.
                                         const d = new Date(2024, 0, 7 + i);
                                         return (

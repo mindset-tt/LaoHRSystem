@@ -68,6 +68,7 @@ public class LeaveScheduledJobsService : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in Leave Scheduled Jobs Service");
+                Metrics.AppMetrics.BackgroundJobFailures.Add(1, new KeyValuePair<string, object?>("job", "leave-scheduled"));
             }
 
             // Wait before next check

@@ -13,7 +13,7 @@
  * Soft-deleted comments render as italicised "[deleted]" placeholders.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Button } from '@/components/ui/Button';
@@ -68,7 +68,7 @@ export function CommentThread({ entityType, entityId, title }: CommentThreadProp
 
     useEffect(() => {
         if (!entityType || !entityId) return;
-        load();
+        React.startTransition(() => { load(); });
     }, [entityType, entityId, load]);
 
     const submitDraft = async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ErrorState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
-import { expensesApi, EXPENSE_STATUSES, type ExpenseDetail } from '@/lib/endpoints';
+import { expensesApi, type ExpenseDetail } from '@/lib/endpoints';
 import styles from '../../page.module.css';
 
 export default function ExpenseDetailPage() {
@@ -24,7 +24,9 @@ export default function ExpenseDetailPage() {
     useEffect(() => {
         if (!expenseId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         expensesApi.get(expenseId)
             .then((d) => { if (!cancelled) setExpense(d); })
             .catch((err) => {

@@ -51,7 +51,7 @@ export default function EmployeeDetailPage() {
 
     // Phase 3B — no mock documents. Documents are not yet wired to the backend
     // API; show an empty state until the documents endpoint is integrated.
-    const [documents, setDocuments] = useState<any[]>([]);
+    const [documents, setDocuments] = useState<{ id: number; name: string; type: string; size: string; date: string; uploadedAt: string }[]>([]);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
     const handleUpload = () => {

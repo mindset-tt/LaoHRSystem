@@ -1,0 +1,3 @@
+
+laohr-clamav-probe cpu=0.01% mem=1.014GiB / 7.656GiB
+

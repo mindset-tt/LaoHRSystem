@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -19,7 +20,9 @@ export default function ArticleDetailPage() {
     useEffect(() => {
         if (!articleId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         knowledgeApi.get(articleId)
             .then((d) => { if (!cancelled) setArticle(d); })
             .catch(() => undefined)

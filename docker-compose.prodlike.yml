@@ -1,0 +1,130 @@
+# Phase 4D.1 — PRODUCTION-LIKE TEST TOPOLOGY (evidence harness, NOT the prod compose).
+#
+# Mirrors the canonical production topology of docker-compose.yml plus the one
+# piece an operator provisions manually: the TLS-terminating reverse proxy
+# (Caddy). Purpose: LIVE evidence for HTTPS/HSTS/headers/CSP/CORS, load/soak,
+# backup/restore DR drills and outage tests on this host.
+#
+# Disposable by design: dedicated project name + volumes; never touches dev DBs.
+# Only 80/443 are published. Postgres/API/web/metrics stay internal-only.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: laohr-prodlike-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: laohr
+      POSTGRES_USER: laohr
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      prodlike:
+        ipv4_address: 172.31.0.40
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U laohr -d laohr"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./Backend
+      dockerfile: LaoHR.API/Dockerfile
+    container_name: laohr-prodlike-api
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=laohr;Username=laohr;Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?JWT_KEY must be set (>=64 chars)}
+      Jwt__Issuer: LaoHRServer
+      Jwt__Audience: LaoHRClient
+      Cors__AllowedOrigins: https://localhost,https://127.0.0.1
+      ForwardedHeaders__KnownProxy: 172.31.0.10
+      Storage__DocumentsRoot: /data/documents
+      NPGSQL_LEGACY_TIMESTAMP: "1"
+      Serilog__WriteToFile: "true"
+      Retention__Enabled: "true"
+      Retention__AuditLogDays: "365"
+      Retention__RefreshTokenDays: "30"
+    volumes:
+      - documents:/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      prodlike:
+        ipv4_address: 172.31.0.20
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Same-origin through the TLS proxy in this topology.
+        NEXT_PUBLIC_API_URL: https://localhost
+    container_name: laohr-prodlike-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://localhost
+      # Bind all interfaces so localhost healthchecks work in containers.
+      HOSTNAME: 0.0.0.0
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      prodlike:
+        ipv4_address: 172.31.0.30
+    healthcheck:
+      # 127.0.0.1, not localhost: Node binds IPv4-only and busybox wget may
+      # resolve localhost to ::1 first (connection refused).
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: laohr-prodlike-caddy
+    restart: unless-stopped
+    volumes:
+      - ./deploy/prodlike/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - api
+      - web
+    networks:
+      prodlike:
+        ipv4_address: 172.31.0.10
+
+networks:
+  prodlike:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+          gateway: 172.31.0.1
+
+volumes:
+  postgres-data:
+    name: laohr-prodlike-pgdata
+  documents:
+    name: laohr-prodlike-documents
+  caddy-data:
+    name: laohr-prodlike-caddy-data
+  caddy-config:
+    name: laohr-prodlike-caddy-config

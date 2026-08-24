@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -72,7 +72,9 @@ export default function CurrencyRatesPage() {
     }, []);
 
     useEffect(() => {
-        loadRates();
+        React.startTransition(() => {
+            loadRates();
+        });
     }, [loadRates]);
 
     const handleRateChange = (currency: string, value: string) => {

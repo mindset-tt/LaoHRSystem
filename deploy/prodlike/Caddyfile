@@ -1,0 +1,32 @@
+# Phase 4D.1 — production-like TLS reverse proxy (Caddy).
+#
+# TEST DISTINCTION: `local_certs` issues LOCAL self-signed certificates from
+# Caddy's internal CA. This validates the HTTPS/HSTS/headers pipeline but is
+# NOT a public-CA (Let's Encrypt) validation — see 46-LIVE-TLS-EVIDENCE.md.
+# A real deployment swaps this for the operator's ACME/cert configuration.
+
+{
+	local_certs
+	skip_install_trust
+}
+
+# Canonical single-site block: Caddy automatically serves HTTPS on :443 and an
+# HTTP->HTTPS redirect on :80 for the same host.
+localhost {
+	tls internal
+
+	encode gzip
+
+	# HSTS at the TLS-terminating layer (browser-facing).
+	header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	# API + health go to the backend; everything else to Next.js.
+	@backend path /api/* /health/*
+	handle @backend {
+		reverse_proxy api:8080
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

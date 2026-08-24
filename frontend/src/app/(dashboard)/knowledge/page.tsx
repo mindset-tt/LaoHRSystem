@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -35,7 +36,9 @@ export default function KnowledgePage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         knowledgeApi.list({
             categoryId: activeCategory ?? undefined,
             search: search || undefined,

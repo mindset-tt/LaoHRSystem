@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -46,14 +46,16 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Hydrate from localStorage on mount.
     useEffect(() => {
         const stored = getStoredMode();
-        setModeState(stored);
-        setTheme(resolveTheme(stored));
+        React.startTransition(() => {
+            setModeState(stored);
+            setTheme(resolveTheme(stored));
+        });
     }, []);
 
     // Apply the resolved theme whenever mode changes.
     useEffect(() => {
         const resolved = resolveTheme(mode);
-        setTheme(resolved);
+        React.startTransition(() => setTheme(resolved));
         applyTheme(resolved);
     }, [mode]);
 

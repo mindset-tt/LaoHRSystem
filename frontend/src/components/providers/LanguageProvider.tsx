@@ -21,10 +21,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        // Load from localStorage if available
+        // Load from localStorage if available — use startTransition to avoid
+        // synchronous setState inside effect (react-hooks/set-state-in-effect).
         const saved = localStorage.getItem('language') as Language;
         if (saved && (saved === 'en' || saved === 'lo')) {
-            setLanguageState(saved);
+            React.startTransition(() => setLanguageState(saved));
         }
     }, []);
 

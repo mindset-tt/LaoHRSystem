@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -43,7 +43,9 @@ export function LeaveCalendar() {
     }, [year, month]);
 
     useEffect(() => {
-        loadLeaves();
+        React.startTransition(() => {
+            loadLeaves();
+        });
     }, [loadLeaves]);
 
     // Calendar days logic (same as attendance page)

@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserInfo, UserRole, LoginRequest, LoginResponse, Permission } from '@/lib/types';
-import { apiClient, setAccessToken, setRefreshToken, clearAccessToken, hasValidToken, getAccessToken, getRefreshToken } from '@/lib/apiClient';
+import { apiClient, setAccessToken, setRefreshToken, clearAccessToken, hasValidToken, getRefreshToken } from '@/lib/apiClient';
 import { hasPermission, getPermissions } from '@/lib/permissions';
 
 interface AuthContextType {
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     await apiClient.post('/api/auth/refresh', undefined, { noAuth: true });
                     const userInfo = await apiClient.get<UserInfo>('/api/auth/me');
                     setUser(userInfo);
-                } catch (e) {
+                } catch {
                     clearAccessToken();
                 } finally {
                     setLoading(false);
@@ -131,7 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
                 const userInfo = await apiClient.get<UserInfo>('/api/auth/me');
                 setUser(userInfo);
-            } catch (e) {
+            } catch {
                 // Token invalid, clear it
                 clearAccessToken();
             } finally {

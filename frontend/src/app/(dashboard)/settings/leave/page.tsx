@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -17,7 +17,7 @@ import styles from './page.module.css';
  */
 export default function LeavePolicySettingsPage() {
     const { role } = useAuth();
-    const { t, language } = useLanguage();
+    const { language } = useLanguage();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<number | null>(null);
     const [policies, setPolicies] = useState<LeavePolicy[]>([]);
@@ -41,7 +41,9 @@ export default function LeavePolicySettingsPage() {
     }, []);
 
     useEffect(() => {
-        loadPolicies();
+        React.startTransition(() => {
+            loadPolicies();
+        });
     }, [loadPolicies]);
 
     const handleChange = (policyId: number, field: keyof LeavePolicy, value: number | boolean) => {

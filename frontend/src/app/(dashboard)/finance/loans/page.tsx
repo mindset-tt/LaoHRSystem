@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
@@ -31,7 +32,9 @@ export default function LoansPage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         loansApi.list({
             status: status || undefined,
             mineOnly: mineOnly || undefined,
@@ -48,8 +51,8 @@ export default function LoansPage() {
         return () => { cancelled = true; };
     }, [status, mineOnly, search, page, pageSize, t.finance.loans.messages.errorAction, toast]);
 
-    const statusLabel = (s: string) =>
-        (t.finance.loans.status as Record<string, string>)[s.toLowerCase()] ?? s;
+    const statusLabel = useCallback((s: string) =>
+        (t.finance.loans.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
 
     const formatLak = (n: number) => new Intl.NumberFormat('en-US').format(n) + ' ₭';
 

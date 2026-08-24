@@ -1,0 +1,14 @@
+# Docker build context ignore for the Backend/ directory.
+# Host build artifacts leak machine-specific NuGet paths into the image and
+# break in-container restore/publish; never copy them.
+
+**/bin/
+**/obj/
+**/.git/
+**/*.user
+**/Logs/
+**/App_Data/
+**/Uploads/
+LaoHR.Tests/CoverageReport_Logic/
+LaoHR.Tests/TestResults/
+*.md

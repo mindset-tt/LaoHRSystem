@@ -22,8 +22,18 @@ RUN dotnet publish LaoHR.API/LaoHR.API.csproj -c Release -o /app/publish --no-re
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
-# Create non-root user for the API process.
-RUN useradd --create-home --shell /bin/bash appuser
+# Phase 4D.1 — pre-create the document storage path AND the log directory
+# with appuser ownership so the FIRST mount of an empty named volume inherits
+# it and the Serilog file sink can actually write/rotate.
+RUN useradd --create-home --shell /bin/bash appuser \
+    && mkdir -p /data/documents /app/Logs \
+    && chown -R appuser:appuser /data /app/Logs
+
+# Phase 4D.1 — the base image ships neither wget nor curl; the container
+# healthcheck needs one to probe /health endpoints.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy published output from the build stage.
 COPY --from=build /app/publish .
@@ -39,7 +49,7 @@ EXPOSE 8080
 USER appuser
 
 # Health-check uses the readiness endpoint added in Phase 6g.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD wget -qO- http://localhost:8080/health/live || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=5 \
+    CMD curl -fsS http://localhost:8080/health/ready || exit 1
 
 ENTRYPOINT ["dotnet", "LaoHR.API.dll"]

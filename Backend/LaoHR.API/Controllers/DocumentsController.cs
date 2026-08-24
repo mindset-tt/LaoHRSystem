@@ -15,13 +15,24 @@ public class DocumentsController : ControllerBase
     private readonly LaoHRDbContext _context;
     private readonly IWebHostEnvironment _environment;
     private readonly IDataScopeService _scope;
+    private readonly IConfiguration _configuration;
 
-    public DocumentsController(LaoHRDbContext context, IWebHostEnvironment environment, IDataScopeService scope)
+    public DocumentsController(LaoHRDbContext context, IWebHostEnvironment environment, IDataScopeService scope, IConfiguration configuration)
     {
         _context = context;
         _environment = environment;
         _scope = scope;
+        _configuration = configuration;
     }
+
+    /// <summary>
+    /// Phase 4D.1 — document storage lives OUTSIDE the web root so uploaded
+    /// files are never served by static-file middleware (which bypasses
+    /// authorization). Downloads go through the authorized GetDocumentFile
+    /// endpoint. Override via Storage:DocumentsRoot for volume mounts.
+    /// </summary>
+    private string StorageRoot => _configuration["Storage:DocumentsRoot"]
+        ?? Path.Combine(_environment.ContentRootPath, "App_Data", "uploads");
 
     [HttpGet("employee/{employeeId}")]
     public async Task<ActionResult<IEnumerable<EmployeeDocument>>> GetEmployeeDocuments(int employeeId)
@@ -36,6 +47,31 @@ public class DocumentsController : ControllerBase
             .ToListAsync();
     }
 
+    /// <summary>
+    /// Phase 4D.1 — authorized document download. Streams from the protected
+    /// storage root after an IDOR check. Attachment disposition prevents the
+    /// browser from executing active content inline.
+    /// </summary>
+    [HttpGet("{id}/file")]
+    public async Task<IActionResult> GetDocumentFile(int id)
+    {
+        var document = await _context.EmployeeDocuments.FindAsync(id);
+        if (document == null) return NotFound();
+
+        // Same IDOR policy as listing/deleting.
+        if (!await _scope.CanViewEmployeeAsync(document.EmployeeId))
+            return Forbid();
+
+        var fullPath = ResolveStoragePath(document.FilePath);
+        if (fullPath == null || !System.IO.File.Exists(fullPath)) return NotFound();
+
+        var contentType = ContentTypeFor(Path.GetExtension(document.FilePath));
+        return File(
+            new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.Read),
+            contentType,
+            fileDownloadName: SanitizeFileName(document.FileName));
+    }
+
     [HttpPost]
     public async Task<ActionResult<EmployeeDocument>> UploadDocument([FromForm] int employeeId, [FromForm] string documentType, [FromForm] IFormFile file)
     {
@@ -47,33 +83,39 @@ public class DocumentsController : ControllerBase
         if (employee == null) return NotFound("Employee not found");
 
         if (file == null || file.Length == 0)
-            return BadRequest("No file uploaded");
+            return RejectUpload("No file uploaded");
 
         // Phase 4D — server-side size limit (10 MB).
         const long maxBytes = 10 * 1024 * 1024;
         if (file.Length > maxBytes)
-            return BadRequest("File exceeds the 10 MB size limit.");
+            return RejectUpload("File exceeds the 10 MB size limit.", "too_large");
 
-        // Validate file type (PDF, Images, Word)
+        // Validate declared file type (PDF, Images, Word)
         var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".doc", ".docx" };
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
-            return BadRequest("Invalid file type. Only PDF, Images, and Word documents allowed.");
+            return RejectUpload("Invalid file type. Only PDF, Images, and Word documents allowed.", "extension_denied");
+
+        // Phase 4D.1 — content-signature validation: the bytes must match the
+        // declared extension before anything is written to storage.
+        await using var content = file.OpenReadStream();
+        if (!FileSignatureValidator.ValidateOrRecord(extension, content))
+            return RejectUpload("File content does not match its declared type.");
 
         // Phase 4D — sanitize the display filename (strip path separators and
         // control characters). The storage name is generated independently.
         var safeDisplayName = SanitizeFileName(file.FileName);
 
-        // Ensure directory exists
-        var uploadsFolder = Path.Combine(_environment.WebRootPath, "uploads", "documents", employeeId.ToString());
+        // Ensure directory exists (outside the web root).
+        var uploadsFolder = Path.Combine(StorageRoot, "documents", employeeId.ToString());
         Directory.CreateDirectory(uploadsFolder);
 
         // Generate a safe storage filename (never derived from user input).
         var storageName = $"{DateTime.Now.Ticks}_{Guid.NewGuid():N}{extension}";
         var filePath = Path.Combine(uploadsFolder, storageName);
-        var relativePath = $"/uploads/documents/{employeeId}/{storageName}";
+        var storageKey = $"documents/{employeeId}/{storageName}";
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        await using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await file.CopyToAsync(stream);
         }
@@ -83,7 +125,7 @@ public class DocumentsController : ControllerBase
             EmployeeId = employeeId,
             DocumentType = documentType,
             FileName = safeDisplayName,
-            FilePath = relativePath,
+            FilePath = storageKey,
             UploadedAt = DateTime.UtcNow
         };
 
@@ -106,6 +148,43 @@ public class DocumentsController : ControllerBase
         return string.IsNullOrWhiteSpace(name) ? "document" : name;
     }
 
+    private BadRequestObjectResult RejectUpload(string message, string reason = "signature_mismatch")
+    {
+        Metrics.AppMetrics.UploadsRejected.Add(1, new KeyValuePair<string, object?>("reason", reason));
+        return BadRequest(message);
+    }
+
+    /// <summary>
+    /// Resolves a stored relative key against the storage root, refusing any
+    /// value that escapes it (defense-in-depth against traversal).
+    /// </summary>
+    private string? ResolveStoragePath(string? storageKey)
+    {
+        if (string.IsNullOrWhiteSpace(storageKey)) return null;
+
+        // Legacy keys ("/uploads/...") were served from the web root; they no
+        // longer exist under the protected root.
+        var normalized = storageKey.Replace('\\', '/').TrimStart('/');
+        if (normalized.Contains("..")) return null;
+
+        var root = Path.GetFullPath(StorageRoot);
+        var candidate = Path.GetFullPath(Path.Combine(root, normalized.Replace('/', Path.DirectorySeparatorChar)));
+        return candidate.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+            || candidate.Equals(root, StringComparison.OrdinalIgnoreCase)
+            ? candidate
+            : null;
+    }
+
+    private static string ContentTypeFor(string? extension) => extension?.ToLowerInvariant() switch
+    {
+        ".pdf" => "application/pdf",
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".doc" => "application/msword",
+        ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        _ => "application/octet-stream"
+    };
+
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteDocument(int id)
     {
@@ -116,9 +195,9 @@ public class DocumentsController : ControllerBase
         if (!await _scope.CanViewEmployeeAsync(document.EmployeeId))
             return Forbid();
 
-        // Delete physical file
-        var fullPath = Path.Combine(_environment.WebRootPath, document.FilePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-        if (System.IO.File.Exists(fullPath))
+        // Delete physical file (protected storage root).
+        var fullPath = ResolveStoragePath(document.FilePath);
+        if (fullPath != null && System.IO.File.Exists(fullPath))
         {
             System.IO.File.Delete(fullPath);
         }

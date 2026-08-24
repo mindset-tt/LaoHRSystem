@@ -1,7 +1,8 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLanguage } from '@/components/providers/LanguageProvider';
 import { Card } from '@/components/ui/Card';
 import { Select } from '@/components/ui/Select';
@@ -29,7 +30,9 @@ export default function MyTasksPage() {
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         myTasksApi.getAll({ status: status || undefined, page, pageSize })
             .then(p => { if (!cancelled) setPageData(p); })
             .catch(err => { console.error(err); toast.error(t.common.error); })
@@ -37,8 +40,8 @@ export default function MyTasksPage() {
         return () => { cancelled = true; };
     }, [status, page, pageSize, t.common.error, toast]);
 
-    const statusLabel = (s: string) => (t.tasks.status as Record<string, string>)[s.toLowerCase()] ?? s;
-    const priorityLabel = (p: string) => (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p;
+    const statusLabel = useCallback((s: string) => (t.tasks.status as Record<string, string>)[s.toLowerCase()] ?? s, [t]);
+    const priorityLabel = useCallback((p: string) => (t.tasks.priority as Record<string, string>)[p.toLowerCase()] ?? p, [t]);
 
     const columns: DataTableColumn<TaskListItem>[] = useMemo(() => [
         {
@@ -77,7 +80,7 @@ export default function MyTasksPage() {
             sortBy: r => r.dueDate,
             render: r => r.dueDate ? <span className={r.isOverdue ? styles.overdue : undefined}>{new Date(r.dueDate).toLocaleDateString()}</span> : '—',
         },
-    ], [t]);
+    ], [t, statusLabel, priorityLabel]);
 
     return (
         <div className={styles.page}>

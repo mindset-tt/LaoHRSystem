@@ -4,7 +4,6 @@
  */
 
 import { apiClient } from '../apiClient';
-import type { Employee } from '../types';
 
 export interface DepartmentNode {
     departmentId: number;

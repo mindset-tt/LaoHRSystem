@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useLanguage } from '@/components/providers/LanguageProvider';
@@ -19,7 +20,9 @@ export default function AnnouncementDetailPage() {
     useEffect(() => {
         if (!announcementId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         announcementsApi.get(announcementId)
             .then((d) => {
                 if (cancelled) return;

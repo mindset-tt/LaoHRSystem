@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
@@ -31,7 +32,9 @@ export default function IssueDetailPage() {
     useEffect(() => {
         if (!projectId || !issueId) return;
         let cancelled = false;
-        setLoading(true);
+        React.startTransition(() => {
+            setLoading(true);
+        });
         issuesApi
             .getById(projectId, issueId)
             .then((tr) => { if (!cancelled) setIssue(tr); })

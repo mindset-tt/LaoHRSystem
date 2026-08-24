@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@/test/renderWithProviders';
 import MyTeamPage from '@/app/(dashboard)/my-team/page';
-import { organizationApi, teamApi } from '@/lib/endpoints';
+import { organizationApi } from '@/lib/endpoints';
 
 vi.mock('@/lib/endpoints', () => ({
     organizationApi: { getMyTeam: vi.fn() },
