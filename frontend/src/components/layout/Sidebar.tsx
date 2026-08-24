@@ -29,9 +29,24 @@ export function Sidebar() {
             icon: <DashboardIcon />,
         },
         {
+            label: t.sidebar.backOffice,
+            href: '/backoffice',
+            icon: <DashboardIcon />,
+        },
+        {
             label: t.sidebar.employees,
             href: '/employees',
             icon: <UsersIcon />,
+        },
+        {
+            label: t.sidebar.recruitment,
+            href: '/recruitment',
+            icon: <UsersIcon />,
+        },
+        {
+            label: t.sidebar.performance,
+            href: '/performance',
+            icon: <ChartIcon />,
         },
         {
             label: t.sidebar.attendance,
@@ -55,15 +70,139 @@ export function Sidebar() {
             icon: <ProjectsIcon />,
         },
         {
+            label: t.sidebar.portfolio,
+            href: '/portfolio',
+            icon: <ChartIcon />,
+        },
+        {
+            label: t.sidebar.capacity,
+            href: '/capacity',
+            icon: <UsersIcon />,
+        },
+        {
             label: t.sidebar.myTasks,
             href: '/my-tasks',
             icon: <TasksIcon />,
+        },
+        {
+            label: t.sidebar.myProfile,
+            href: '/my-profile',
+            icon: <UserIcon />,
+        },
+        {
+            label: t.sidebar.myApprovals,
+            href: '/my-approvals',
+            icon: <CheckIcon />,
+        },
+        {
+            label: t.sidebar.notifications,
+            href: '/notifications',
+            icon: <BellIcon />,
+        },
+        {
+            label: t.sidebar.finance,
+            href: '/finance/expenses',
+            icon: <WalletIcon />,
+            subItems: [
+                { label: t.sidebar.financeDashboard, href: '/finance/dashboard' },
+                { label: t.finance.expenses.title, href: '/finance/expenses' },
+                { label: t.finance.loans.title, href: '/finance/loans' },
+                { label: t.sidebar.supplierInvoices, href: '/finance/invoices' },
+                { label: t.sidebar.payments, href: '/finance/payments' },
+                { label: t.sidebar.chartOfAccounts, href: '/finance/accounts' },
+                { label: t.sidebar.journals, href: '/finance/journals' },
+                { label: t.sidebar.financeSettings, href: '/finance/settings' },
+            ],
+        },
+        {
+            label: t.sidebar.procurement,
+            href: '/procurement',
+            icon: <CartIcon />,
+            permission: 'procurement.view',
+            subItems: [
+                { label: t.sidebar.purchaseRequests, href: '/procurement/requests' },
+                { label: t.sidebar.purchaseOrders, href: '/procurement/orders' },
+                { label: t.sidebar.goodsReceipts, href: '/procurement/receipts' },
+                { label: t.sidebar.suppliers, href: '/procurement/suppliers' },
+            ],
+        },
+        {
+            label: t.sidebar.inventory,
+            href: '/inventory',
+            icon: <BoxIcon />,
+            permission: 'inventory.view',
+            subItems: [
+                { label: t.sidebar.items, href: '/inventory/items' },
+                { label: t.sidebar.warehouses, href: '/inventory/warehouses' },
+                { label: t.sidebar.stock, href: '/inventory/stock' },
+            ],
+        },
+        {
+            label: t.sidebar.assets,
+            href: '/assets',
+            icon: <BoxIcon />,
+            permission: 'assets.view',
+        },
+        {
+            label: t.sidebar.contracts,
+            href: '/contracts',
+            icon: <FileIcon />,
+            permission: 'contracts.view',
+        },
+        {
+            label: t.sidebar.serviceRequests,
+            href: '/service-requests',
+            icon: <TicketIcon />,
+        },
+        {
+            label: t.sidebar.budgets,
+            href: '/budgets',
+            icon: <WalletIcon />,
+            permission: 'finance.view',
+        },
+        {
+            label: t.sidebar.corporate,
+            href: '/corporate',
+            icon: <BuildingIcon />,
+            permission: 'corporate.view',
+            subItems: [
+                { label: t.sidebar.corporateDashboard, href: '/corporate' },
+                { label: t.sidebar.documents, href: '/corporate/documents' },
+                { label: t.sidebar.contracts, href: '/corporate/contracts' },
+                { label: t.sidebar.serviceRequests, href: '/corporate/service-desk' },
+                { label: t.sidebar.facilities, href: '/corporate/facilities' },
+                { label: t.sidebar.rooms, href: '/corporate/facilities/rooms' },
+                { label: t.sidebar.maintenance, href: '/corporate/maintenance' },
+                { label: t.sidebar.fleet, href: '/corporate/fleet' },
+                { label: t.sidebar.travel, href: '/corporate/travel' },
+                { label: t.sidebar.visitors, href: '/corporate/visitors' },
+            ],
+        },
+        {
+            label: t.sidebar.knowledge,
+            href: '/knowledge',
+            icon: <BooksIcon />,
+            subItems: [
+                { label: t.knowledge.articles.title, href: '/knowledge' },
+                { label: t.knowledge.announcements.title, href: '/knowledge/announcements' },
+            ],
         },
         {
             label: t.sidebar.reports,
             href: '/reports',
             icon: <ChartIcon />,
             permission: 'payroll.view',
+        },
+        {
+            label: t.sidebar.analytics,
+            href: '/analytics/executive',
+            icon: <ChartIcon />,
+            permission: 'payroll.view',
+            subItems: [
+                { label: t.sidebar.executive, href: '/analytics/executive' },
+                { label: t.sidebar.hr, href: '/analytics/hr' },
+                { label: t.sidebar.myTeam, href: '/analytics/my-team' },
+            ],
         },
         {
             label: t.sidebar.settings,
@@ -251,6 +390,32 @@ function UsersIcon() {
     );
 }
 
+function UserIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+        </svg>
+    );
+}
+
+function CheckIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+        </svg>
+    );
+}
+
+function BellIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+        </svg>
+    );
+}
+
 function ClockIcon() {
     return (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -342,6 +507,65 @@ function TasksIcon() {
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="9 11 12 14 22 4" />
             <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+    );
+}
+
+function BooksIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+    );
+}
+
+function CartIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+        </svg>
+    );
+}
+
+function BoxIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+            <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+    );
+}
+
+function FileIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+        </svg>
+    );
+}
+
+function TicketIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2z" />
+            <path d="M13 5v2" />
+            <path d="M13 17v2" />
+            <path d="M13 11v2" />
+        </svg>
+    );
+}
+
+function BuildingIcon() {
+    return (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2" />
+            <path d="M9 22v-4h6v4" />
+            <path d="M8 6h.01M16 6h.01M12 6h.01M8 10h.01M16 10h.01M12 10h.01M8 14h.01M16 14h.01M12 14h.01" />
         </svg>
     );
 }

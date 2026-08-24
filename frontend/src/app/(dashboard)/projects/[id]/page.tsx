@@ -12,11 +12,12 @@ import { Pagination } from '@/components/ui/Pagination';
 import { EmptyState, ErrorState } from '@/components/ui/EmptyState';
 import { useToast } from '@/components/ui/Toast';
 import { projectsApi, projectTasksApi } from '@/lib/endpoints';
+import { CommentThread } from '@/components/ui/CommentThread';
 import type { ProjectDetail, TaskListItem, ActivityListItem } from '@/lib/endpoints/projects';
 import type { PaginatedResponse } from '@/lib/types/pagination';
 import styles from './page.module.css';
 
-type Tab = 'board' | 'list' | 'activity';
+type Tab = 'board' | 'list' | 'activity' | 'discussion';
 
 const STATUS_COLUMNS: Array<{ key: string; labelKey: string }> = [
     { key: 'TODO', labelKey: 'todo' },
@@ -222,6 +223,9 @@ export default function ProjectDetailPage() {
                 <button className={`${styles.tab} ${tab === 'activity' ? styles.tabActive : ''}`} onClick={() => setTab('activity')}>
                     {t.projects.detail.tabs.timeline} ({activityPage.totalItems})
                 </button>
+                <button className={`${styles.tab} ${tab === 'discussion' ? styles.tabActive : ''}`} onClick={() => setTab('discussion')}>
+                    {t.knowledge.comments.title}
+                </button>
             </div>
 
             {/* Sub-navigation for project workspace slices */}
@@ -318,6 +322,12 @@ export default function ProjectDetailPage() {
                             ))}
                         </ul>
                     )}
+                </Card>
+            )}
+
+            {tab === 'discussion' && (
+                <Card>
+                    <CommentThread entityType="PROJECT" entityId={projectId} title={t.knowledge.comments.title} />
                 </Card>
             )}
         </div>

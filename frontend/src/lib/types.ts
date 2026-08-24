@@ -12,6 +12,39 @@ export interface Department {
     departmentCode?: string;
     isActive: boolean;
     createdAt: string;
+    parentDepartmentId?: number;
+    managerEmployeeId?: number;
+    sortOrder?: number;
+}
+
+// -----------------------------------------------------------------------------
+// Position
+// -----------------------------------------------------------------------------
+export interface Position {
+    positionId: number;
+    title: string;
+    titleLao?: string;
+    jobCode?: string;
+    departmentId?: number;
+    isActive: boolean;
+    createdAt: string;
+}
+
+// -----------------------------------------------------------------------------
+// WorkLocation
+// -----------------------------------------------------------------------------
+export interface WorkLocation {
+    workLocationId: number;
+    code: string;
+    name: string;
+    nameLao?: string;
+    address?: string;
+    provinceId?: number;
+    districtId?: number;
+    villageId?: number;
+    timezone?: string;
+    isActive: boolean;
+    createdAt: string;
 }
 
 // -----------------------------------------------------------------------------
@@ -34,6 +67,12 @@ export interface Employee {
     departmentId?: number;
     department?: Department;
     jobTitle?: string;
+    managerId?: number;
+    manager?: Employee;
+    positionId?: number;
+    position?: Position;
+    workLocationId?: number;
+    workLocation?: WorkLocation;
     hireDate?: string;
     baseSalary: number;
     bankName?: string;
@@ -312,10 +351,14 @@ export interface LoginRequest {
 
 export interface LoginResponse {
     token: string;
+    /** Phase 6c — server-issued refresh token, persisted + rotated together with the access token. */
+    refreshToken?: string;
     username: string;
     role: UserRole;
     displayName: string;
     expiresAt: string;
+    /** Phase 6c — when the refresh token expires; null when not issued. */
+    refreshExpiresAt?: string;
 }
 
 export interface UserInfo {
@@ -324,7 +367,7 @@ export interface UserInfo {
     displayName: string;
 }
 
-export type UserRole = 'Admin' | 'HR' | 'Employee';
+export type UserRole = 'Admin' | 'HR' | 'Employee' | 'Finance';
 
 // -----------------------------------------------------------------------------
 // Permissions
@@ -341,7 +384,13 @@ export type Permission =
     | 'payroll.run'
     | 'payroll.export'
     | 'audit.view'
-    | 'settings.edit';
+    | 'settings.edit'
+    | 'procurement.view'
+    | 'inventory.view'
+    | 'assets.view'
+    | 'contracts.view'
+    | 'finance.view'
+    | 'corporate.view';
 
 // -----------------------------------------------------------------------------
 // API Response Types

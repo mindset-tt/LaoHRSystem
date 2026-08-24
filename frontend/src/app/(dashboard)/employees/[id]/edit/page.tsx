@@ -35,27 +35,6 @@ export default function EditEmployeePage() {
             } catch (err) {
                 console.error('Failed to load employee:', err);
                 setError('Failed to load employee data');
-                // Fallback to mock data for demo
-                setEmployee({
-                    employeeId: parseInt(employeeId),
-                    employeeCode: 'EMP0001',
-                    laoName: 'ສົມສັກ ສີສະຫວັດ',
-                    englishName: 'Somsak Sisavad',
-                    email: 'somsak@laohr.com',
-                    phone: '+856 20 5555 1234',
-                    dateOfBirth: '1990-05-15',
-                    gender: 'Male',
-                    departmentId: 1,
-                    jobTitle: 'Senior Developer',
-                    hireDate: '2020-03-01',
-                    baseSalary: 15000000,
-                    salaryCurrency: 'LAK',
-                    bankName: 'BCEL',
-                    bankAccount: '0102030405060708',
-                    dependentCount: 2,
-                    isActive: true,
-                    createdAt: '',
-                });
             } finally {
                 setLoading(false);
             }

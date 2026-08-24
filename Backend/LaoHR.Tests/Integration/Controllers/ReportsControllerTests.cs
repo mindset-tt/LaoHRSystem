@@ -12,6 +12,9 @@ public class ReportsControllerTests : TestBase
     [Fact]
     public async Task DownloadNssf_InvalidPeriod_ReturnsBadRequest()
     {
+        // Arrange
+        await AuthenticateAsync();
+
         // Act
         var response = await _client.GetAsync("/api/reports/nssf/999"); // Non-existent period
 

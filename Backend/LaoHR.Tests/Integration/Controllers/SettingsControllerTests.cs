@@ -12,6 +12,9 @@ public class SettingsControllerTests : TestBase
     [Fact]
     public async Task GetSettings_ReturnsOk()
     {
+        // Arrange
+        await AuthenticateAsync();
+
         // Act
         var response = await _client.GetAsync("/api/settings");
 

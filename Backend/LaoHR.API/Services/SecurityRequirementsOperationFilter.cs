@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace LaoHR.API.Services;
@@ -21,17 +21,7 @@ public class SecurityRequirementsOperationFilter : IOperationFilter
             {
                 new OpenApiSecurityRequirement
                 {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        new string[] {}
-                    }
+                    [new OpenApiSecuritySchemeReference("Bearer", null, null)] = new List<string>()
                 }
             };
         }

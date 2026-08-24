@@ -1,5 +1,6 @@
 using FluentAssertions;
 using LaoHR.API.Middleware;
+using LaoHR.API.Services;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
 using Microsoft.AspNetCore.Http;
@@ -15,12 +16,16 @@ public class LicenseMiddlewareTests
 {
     private readonly Mock<RequestDelegate> _next;
     private readonly Mock<ILogger<LicenseMiddleware>> _logger;
+    private readonly Mock<ILicenseKeyCache> _cache;
     private readonly LaoHRDbContext _dbContext;
 
     public LicenseMiddlewareTests()
     {
         _next = new Mock<RequestDelegate>();
         _logger = new Mock<ILogger<LicenseMiddleware>>();
+        _cache = new Mock<ILicenseKeyCache>();
+        _cache.Setup(x => x.GetOrLoadAsync(It.IsAny<Func<Task<LicenseCacheEntry?>>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((LicenseCacheEntry?)null);
         
         var options = new DbContextOptionsBuilder<LaoHRDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -65,7 +70,7 @@ public class LicenseMiddlewareTests
     public async Task InvokeAsync_BypassEndpoints_ShouldCallNext(string path)
     {
         // Arrange
-        var middleware = new LicenseMiddleware(_next.Object, _logger.Object);
+        var middleware = new LicenseMiddleware(_next.Object, _logger.Object, _cache.Object);
         var context = CreateContext(path);
         
         // Act
@@ -80,7 +85,7 @@ public class LicenseMiddlewareTests
     public async Task InvokeAsync_ProtectedEndpoint_NoLicense_ShouldReturn402()
     {
         // Arrange
-        var middleware = new LicenseMiddleware(_next.Object, _logger.Object);
+        var middleware = new LicenseMiddleware(_next.Object, _logger.Object, _cache.Object);
         var context = CreateContext("/api/employees");
         
         // Act

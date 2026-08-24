@@ -17,12 +17,12 @@ namespace LaoHR.API.Data;
 public class AuditLogInterceptor : SaveChangesInterceptor
 {
     private readonly IHttpContextAccessor _httpContextAccessor;
-    private readonly Channel<AuditLog> _channel;
+    private readonly IAuditLogChannel _channel;
 
     public AuditLogInterceptor(IHttpContextAccessor httpContextAccessor, IAuditLogChannel channel)
     {
         _httpContextAccessor = httpContextAccessor;
-        _channel = channel.Writer;
+        _channel = channel;
     }
 
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
@@ -66,23 +66,29 @@ public class AuditLogInterceptor : SaveChangesInterceptor
                     keyValues[propertyName] = property.CurrentValue!;
                 }
 
+                // Secret exclusion: never persist sensitive values into audit JSON.
+                // This covers passwords, tokens, secrets, and full bank account
+                // numbers / SWIFT codes. The audit still records that the field
+                // changed (via the redacted marker) without leaking the value.
+                var isSensitive = IsSensitiveProperty(propertyName);
+
                 switch (entry.State)
                 {
                     case EntityState.Added:
                         if (property.CurrentValue != null)
-                            newValues[propertyName] = property.CurrentValue;
+                            newValues[propertyName] = isSensitive ? Redacted : property.CurrentValue;
                         break;
                     case EntityState.Deleted:
                         if (property.OriginalValue != null)
-                            oldValues[propertyName] = property.OriginalValue;
+                            oldValues[propertyName] = isSensitive ? Redacted : property.OriginalValue;
                         break;
                     case EntityState.Modified:
                         if (property.IsModified)
                         {
                             if (property.OriginalValue != null)
-                                oldValues[propertyName] = property.OriginalValue;
+                                oldValues[propertyName] = isSensitive ? Redacted : property.OriginalValue;
                             if (property.CurrentValue != null)
-                                newValues[propertyName] = property.CurrentValue;
+                                newValues[propertyName] = isSensitive ? Redacted : property.CurrentValue;
                         }
                         break;
                 }
@@ -104,6 +110,36 @@ public class AuditLogInterceptor : SaveChangesInterceptor
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
+
+    /// <summary>Marker written in place of a sensitive value in audit JSON.</summary>
+    private const string Redacted = "[REDACTED]";
+
+    /// <summary>
+    /// Property names whose values must never be persisted into audit JSON.
+    /// Covers credentials, tokens, secrets, and full banking identifiers.
+    /// </summary>
+    private static readonly HashSet<string> SensitiveProperties = new(StringComparer.OrdinalIgnoreCase)
+    {
+        // Credentials / tokens / secrets
+        "PasswordHash",
+        "Password",
+        "TokenHash",
+        "ReplacedByHash",
+        "RefreshToken",
+        "AccessToken",
+        "Jwt",
+        "Secret",
+        "ApiKey",
+        "ConnectionString",
+        // Banking identifiers (full values are sensitive)
+        "AccountNumber",
+        "BankAccount",
+        "Swift",
+        "Iban",
+    };
+
+    private static bool IsSensitiveProperty(string propertyName)
+        => SensitiveProperties.Contains(propertyName);
 }
 
 /// <summary>

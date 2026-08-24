@@ -12,7 +12,7 @@ namespace LaoHR.Tests.Integration.Data;
 public class AuditLogTests
 {
     [Fact]
-    public async Task SaveChanges_WithAddedEntity_CreatesAuditLog()
+    public async Task SaveChanges_WithAddedEntity_QueuesAuditLog()
     {
         // Arrange
         var mockHttp = new Mock<IHttpContextAccessor>();
@@ -22,7 +22,12 @@ public class AuditLogTests
         
         mockHttp.Setup(x => x.HttpContext).Returns(new DefaultHttpContext { User = contextUser });
         
-        var interceptor = new AuditLogInterceptor(mockHttp.Object);
+        var auditEntries = new System.Collections.Concurrent.ConcurrentQueue<AuditLog>();
+        var mockChannel = new Moq.Mock<IAuditLogChannel>();
+        mockChannel.Setup(x => x.TryWrite(It.IsAny<AuditLog>()))
+            .Callback<AuditLog>(entry => auditEntries.Enqueue(entry))
+            .Returns(true);
+        var interceptor = new AuditLogInterceptor(mockHttp.Object, mockChannel.Object);
         
         var options = new DbContextOptionsBuilder<LaoHRDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
@@ -35,9 +40,9 @@ public class AuditLogTests
         context.Departments.Add(new Department { DepartmentName = "AuditTest", DepartmentCode = "AT" });
         await context.SaveChangesAsync();
         
-        // Assert
-        var log = await context.AuditLogs.FirstOrDefaultAsync();
-        log.Should().NotBeNull();
+        // Assert — verify the interceptor queued the audit entry to the channel
+        auditEntries.Should().HaveCount(1);
+        var log = auditEntries.First();
         log.Action.Should().Be("ADDED");
         log.UserId.Should().Be("TestUser");
         log.EntityName.Should().Be("Department");
@@ -45,13 +50,18 @@ public class AuditLogTests
     }
 
     [Fact]
-    public async Task SaveChanges_WithModifiedEntity_CreatesAuditLog_TrackingChanges()
+    public async Task SaveChanges_WithModifiedEntity_QueuesAuditLog_TrackingChanges()
     {
         // Arrange
         var mockHttp = new Mock<IHttpContextAccessor>();
         mockHttp.Setup(x => x.HttpContext.User.Identity.Name).Returns("EditorUser");
         
-        var interceptor = new AuditLogInterceptor(mockHttp.Object);
+        var auditEntries = new System.Collections.Concurrent.ConcurrentQueue<AuditLog>();
+        var mockChannel2 = new Moq.Mock<IAuditLogChannel>();
+        mockChannel2.Setup(x => x.TryWrite(It.IsAny<AuditLog>()))
+            .Callback<AuditLog>(entry => auditEntries.Enqueue(entry))
+            .Returns(true);
+        var interceptor = new AuditLogInterceptor(mockHttp.Object, mockChannel2.Object);
         var dbName = Guid.NewGuid().ToString();
         var options = new DbContextOptionsBuilder<LaoHRDbContext>()
             .UseInMemoryDatabase(dbName)
@@ -73,18 +83,14 @@ public class AuditLogTests
             await context.SaveChangesAsync();
         }
         
-        // Assert
-        using (var verifyContext = new LaoHRDbContext(options))
-        {
-            var logs = await verifyContext.AuditLogs.ToListAsync();
-            // Should have 1 Insert (from seed) and 1 Update
-            logs.Count.Should().Be(2);
-            
-            var updateLog = logs.Last();
-            updateLog.Action.Should().Be("MODIFIED");
-            updateLog.EntityName.Should().Be("Department");
-            updateLog.OldValues.Should().Contain("Original");
-            updateLog.NewValues.Should().Contain("Modified");
-        }
+        // Assert — verify the interceptor queued audit entries to the channel
+        // Should have 1 Insert (from seed) and 1 Update
+        auditEntries.Should().HaveCount(2);
+        
+        var updateLog = auditEntries.Last();
+        updateLog.Action.Should().Be("MODIFIED");
+        updateLog.EntityName.Should().Be("Department");
+        updateLog.OldValues.Should().Contain("Original");
+        updateLog.NewValues.Should().Contain("Modified");
     }
 }

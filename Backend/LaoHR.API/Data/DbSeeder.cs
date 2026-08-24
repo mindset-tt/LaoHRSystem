@@ -12,6 +12,9 @@ public static class DbSeeder
         // Schema is created by Program.cs (Migrate or EnsureCreated). The
         // seeder only fills missing reference data.
 
+        // 0. Seed versioned statutory compliance rules (Phase 3B).
+        SeedComplianceRules(context);
+
         // 1. Seed Departments
         if (!context.Departments.Any())
         {
@@ -280,10 +283,15 @@ public static class DbSeeder
         // IsDevelopment || IsTesting — Program.cs enforces this.
         if (!context.Users.Any())
         {
+            // Link the "employee" demo user to the first employee record so
+            // attendance clock-in/out (which resolves EmployeeId from the JWT
+            // "EmployeeId" claim) works for the demo employee account.
+            var firstEmployeeId = context.Employees.OrderBy(e => e.EmployeeId).Select(e => (int?)e.EmployeeId).FirstOrDefault();
+
             context.Users.AddRange(
-                new AppUser { Username = "admin", PasswordHash = PasswordHasher.HashPassword("admin123"), Role = "Admin", DisplayName = "System Administrator", IsActive = true, CreatedAt = DateTime.UtcNow },
-                new AppUser { Username = "hr", PasswordHash = PasswordHasher.HashPassword("hr123"), Role = "HR", DisplayName = "HR Manager", IsActive = true, CreatedAt = DateTime.UtcNow },
-                new AppUser { Username = "employee", PasswordHash = PasswordHasher.HashPassword("emp123"), Role = "Employee", DisplayName = "Demo Employee", IsActive = true, CreatedAt = DateTime.UtcNow }
+                new AppUser { Username = "admin", PasswordHash = PasswordHasher.HashPassword("admin123"), PasswordHashVersion = 2, Role = "Admin", DisplayName = "System Administrator", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new AppUser { Username = "hradmin", PasswordHash = PasswordHasher.HashPassword("hr123"), PasswordHashVersion = 2, Role = "HR", DisplayName = "HR Manager", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new AppUser { Username = "employee", PasswordHash = PasswordHasher.HashPassword("emp123"), PasswordHashVersion = 2, Role = "Employee", DisplayName = "Demo Employee", EmployeeId = firstEmployeeId, IsActive = true, CreatedAt = DateTime.UtcNow }
             );
             context.SaveChanges();
         }
@@ -512,5 +520,66 @@ public static class DbSeeder
         {
             Console.WriteLine($"Error seeding address data: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Phase 3B — seed the VERIFIED Lao statutory compliance rules (from Phase 2C
+    /// research). Each rule is effective-dated and carries source metadata.
+    /// BLOCKED rules (unresolved values) are NOT seeded as production rules.
+    /// </summary>
+    private static void SeedComplianceRules(LaoHRDbContext context)
+    {
+        if (context.ComplianceRules.Any())
+            return;
+
+        var verified = DateTime.UtcNow;
+        var rules = new List<ComplianceRule>
+        {
+            // ---- PIT brackets (Amended Income Tax Law No. 88/NA, 25 June 2025, eff. July 2026) ----
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-01", Category = "PIT", Name = "PIT bracket 1 (tax-free)", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":0,\"max\":2500000,\"rate\":0.00}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-02", Category = "PIT", Name = "PIT bracket 2", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":2500001,\"max\":5000000,\"rate\":0.05}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-03", Category = "PIT", Name = "PIT bracket 3", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":5000001,\"max\":15000000,\"rate\":0.10}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-04", Category = "PIT", Name = "PIT bracket 4", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":15000001,\"max\":25000000,\"rate\":0.15}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-05", Category = "PIT", Name = "PIT bracket 5", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":25000001,\"max\":65000000,\"rate\":0.20}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-2026-BRACKET-06", Category = "PIT", Name = "PIT bracket 6", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"min\":65000001,\"max\":null,\"rate\":0.25}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-PIT-DEPENDENT", Category = "PIT", Name = "Dependant deduction", EffectiveFrom = new DateTime(2026, 7, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"perDependentYear\":5000000,\"maxDependents\":3,\"maxYear\":15000000}", SourceTitle = "Amended Income Tax Law No. 88/NA", Authority = "Ministry of Finance", LawNumber = "88/NA", VerifiedDate = verified },
+
+            // ---- NSSF (Notification No. 0824/NSSFO, MOLSW) ----
+            new ComplianceRule { RuleId = "LAO-NSSF-EMPLOYEE-RATE", Category = "NSSF", Name = "NSSF employee contribution rate", EffectiveFrom = new DateTime(2016, 1, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"rate\":0.055}", SourceTitle = "Notification No. 0824/NSSFO", Authority = "Ministry of Labour and Social Welfare", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-NSSF-EMPLOYER-RATE", Category = "NSSF", Name = "NSSF employer contribution rate", EffectiveFrom = new DateTime(2016, 1, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"rate\":0.060}", SourceTitle = "Notification No. 0824/NSSFO", Authority = "Ministry of Labour and Social Welfare", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-NSSF-CEILING", Category = "NSSF", Name = "NSSF contribution ceiling", EffectiveFrom = new DateTime(2016, 1, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"ceiling\":4500000}", SourceTitle = "Notification No. 0824/NSSFO", Authority = "Ministry of Labour and Social Welfare", VerifiedDate = verified },
+
+            // ---- Minimum wage (MOLSW decree, 1 Oct 2024) ----
+            new ComplianceRule { RuleId = "LAO-MIN-WAGE", Category = "MINIMUM_WAGE", Name = "National minimum wage", EffectiveFrom = new DateTime(2024, 10, 1), Version = 1, Status = "VERIFIED", ParametersJson = "{\"monthly\":2500000}", SourceTitle = "MOLSW decree (Oct 2024)", Authority = "Ministry of Labour and Social Welfare", VerifiedDate = verified },
+
+            // ---- Overtime multipliers (Labour Law No. 06/NA, Art. 48) ----
+            new ComplianceRule { RuleId = "LAO-OT-WEEKDAY-DAY", Category = "OVERTIME", Name = "OT weekday daytime multiplier", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"multiplier\":1.5}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "48", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-WEEKDAY-NIGHT", Category = "OVERTIME", Name = "OT weekday night multiplier", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"multiplier\":2.0}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "48", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-RESTDAY-DAY", Category = "OVERTIME", Name = "OT rest-day daytime multiplier", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"multiplier\":2.5}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "48", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-RESTDAY-NIGHT", Category = "OVERTIME", Name = "OT rest-day night multiplier", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"multiplier\":3.0}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "48", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-NIGHT-BONUS", Category = "OVERTIME", Name = "Night shift bonus", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"bonus\":0.15}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "48", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-MAX-DAY", Category = "OVERTIME", Name = "Max OT per day (hours)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"hours\":3}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "18", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-OT-MAX-MONTH", Category = "OVERTIME", Name = "Max OT per month (hours)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"hours\":45}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "18", VerifiedDate = verified },
+
+            // ---- Leave statutory minimums (Labour Law No. 06/NA) ----
+            new ComplianceRule { RuleId = "LAO-LEAVE-ANNUAL", Category = "LEAVE", Name = "Annual leave (days/year)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"days\":15}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "21", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-LEAVE-ANNUAL-HAZARD", Category = "LEAVE", Name = "Annual leave hazardous work (days/year)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"days\":18}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "21", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-LEAVE-SICK", Category = "LEAVE", Name = "Sick leave (days/year)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"days\":30}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "20", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-LEAVE-MATERNITY", Category = "LEAVE", Name = "Maternity leave (days)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"days\":90}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "39", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-LEAVE-MATERNITY-ALLOW", Category = "LEAVE", Name = "Maternity allowance (% of min wage)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":60}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "40", VerifiedDate = verified },
+
+            // ---- Severance (Labour Law No. 06/NA, Art. 29/33) ----
+            new ComplianceRule { RuleId = "LAO-SEVERANCE-DISMISS-LT3", Category = "SEVERANCE", Name = "Severance dismissal <3yr (% per month)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":10}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "29", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-SEVERANCE-DISMISS-GT3", Category = "SEVERANCE", Name = "Severance dismissal >3yr (% per month)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":15}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "29", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-SEVERANCE-UNJUST-LT3", Category = "SEVERANCE", Name = "Severance unjustified <3yr (% per month)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":15}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "33", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-SEVERANCE-UNJUST-GT3", Category = "SEVERANCE", Name = "Severance unjustified >3yr (% per month)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":20}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "33", VerifiedDate = verified },
+
+            // ---- Foreign worker quota (Labour Law No. 06/NA, Art. 25) ----
+            new ComplianceRule { RuleId = "LAO-FOREIGN-QUOTA-PHYSICAL", Category = "FOREIGN_WORKER", Name = "Foreign physical labour quota (%)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":10}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "25", VerifiedDate = verified },
+            new ComplianceRule { RuleId = "LAO-FOREIGN-QUOTA-INTELLECTUAL", Category = "FOREIGN_WORKER", Name = "Foreign intellectual quota (%)", EffectiveFrom = new DateTime(2006, 12, 27), Version = 1, Status = "VERIFIED", ParametersJson = "{\"percent\":20}", SourceTitle = "Labour Law No. 06/NA", Authority = "National Assembly", LawNumber = "06/NA", Article = "25", VerifiedDate = verified },
+        };
+
+        context.ComplianceRules.AddRange(rules);
+        context.SaveChanges();
     }
 }

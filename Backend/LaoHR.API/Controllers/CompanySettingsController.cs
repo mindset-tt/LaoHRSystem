@@ -7,6 +7,7 @@ namespace LaoHR.API.Controllers;
 
 [ApiController]
 [Route("api/company-settings")]
+[Authorize] // Phase 3A — explicit auth (fallback policy covers, but be explicit for clarity)
 public class CompanySettingsController : ControllerBase
 {
     private readonly ICompanySettingsService _service;
@@ -24,7 +25,7 @@ public class CompanySettingsController : ControllerBase
     }
 
     [HttpPut]
-    [Authorize] // Require login to change company settings
+    [Authorize(Roles = "Admin,HR")] // Phase 3A — only Admin/HR can change company settings
     public async Task<IActionResult> UpdateSettings([FromBody] CompanySetting settings)
     {
         var updated = await _service.UpdateSettingsAsync(settings);

@@ -1,0 +1,26 @@
+.page {
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.sectionTitle {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.error {
+    color: var(--color-error, #dc2626);
+    padding: 16px;
+}

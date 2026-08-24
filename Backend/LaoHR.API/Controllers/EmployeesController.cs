@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using LaoHR.API.Data;
+using LaoHR.API.Services;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
 using LaoHR.Shared.Pagination;
@@ -14,10 +15,12 @@ namespace LaoHR.API.Controllers;
 public class EmployeesController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
+    private readonly IOrganizationHierarchyService _hierarchy;
 
-    public EmployeesController(LaoHRDbContext context)
+    public EmployeesController(LaoHRDbContext context, IOrganizationHierarchyService hierarchy)
     {
         _context = context;
+        _hierarchy = hierarchy;
     }
 
     /// <summary>
@@ -98,6 +101,27 @@ public class EmployeesController : ControllerBase
         if (employee == null) return NotFound();
         return employee;
     }
+
+    /// <summary>
+    /// Phase 3C2 ESS — get the current user's own employee profile.
+    /// </summary>
+    [HttpGet("me")]
+    public async Task<ActionResult<Employee>> GetMyProfile()
+    {
+        var empIdStr = User.FindFirst("EmployeeId")?.Value;
+        if (!int.TryParse(empIdStr, out var empId))
+            return Unauthorized("No linked employee profile.");
+
+        var employee = await _context.Employees
+            .Include(e => e.Department)
+            .Include(e => e.Position)
+            .Include(e => e.WorkLocation)
+            .Include(e => e.Manager)
+            .FirstOrDefaultAsync(e => e.EmployeeId == empId);
+
+        if (employee == null) return NotFound();
+        return employee;
+    }
     
     /// <summary>
     /// Create new employee
@@ -168,6 +192,9 @@ public class CreateEmployeeDto
     public string? SalaryCurrency { get; set; }
     public int? DepartmentId { get; set; }
     public string? JobTitle { get; set; }
+    public int? ManagerId { get; set; }
+    public int? PositionId { get; set; }
+    public int? WorkLocationId { get; set; }
     public DateTime? HireDate { get; set; }
     public decimal BaseSalary { get; set; }
     public string? BankName { get; set; }
@@ -201,6 +228,19 @@ public class CreateEmployeeDto
         employee.BaseSalary = request.BaseSalary;
         employee.BankName = request.BankName;
         employee.BankAccount = request.BankAccount;
+
+        // Phase 3C1 — organizational assignment with cycle prevention.
+        if (request.ManagerId.HasValue)
+        {
+            if (request.ManagerId.Value == id)
+                return BadRequest("An employee cannot be their own manager.");
+            var wouldCycle = await _hierarchy.WouldCreateReportingCycleAsync(id, request.ManagerId);
+            if (wouldCycle)
+                return BadRequest("Assigning this manager would create a reporting cycle.");
+        }
+        employee.ManagerId = request.ManagerId;
+        employee.PositionId = request.PositionId;
+        employee.WorkLocationId = request.WorkLocationId;
         
         employee.UpdatedAt = DateTime.UtcNow;
         // EmployeeCode is generally not updated, but could be if needed. keeping it as is for now.
@@ -295,10 +335,12 @@ public class CreateEmployeeDto
 public class DepartmentsController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
+    private readonly IOrganizationHierarchyService _hierarchy;
     
-    public DepartmentsController(LaoHRDbContext context)
+    public DepartmentsController(LaoHRDbContext context, IOrganizationHierarchyService hierarchy)
     {
         _context = context;
+        _hierarchy = hierarchy;
     }
     
     [HttpGet]
@@ -322,9 +364,47 @@ public class DepartmentsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Department>> CreateDepartment(Department department)
     {
+        // Phase 3C1 — validate parent does not create a cycle.
+        if (department.ParentDepartmentId.HasValue)
+        {
+            var parentExists = await _context.Departments.AnyAsync(d => d.DepartmentId == department.ParentDepartmentId.Value);
+            if (!parentExists)
+                return BadRequest("Parent department does not exist.");
+        }
+
         _context.Departments.Add(department);
         await _context.SaveChangesAsync();
         return CreatedAtAction(nameof(GetDepartment), new { id = department.DepartmentId }, department);
+    }
+
+    [Authorize(Roles = "Admin,HR")]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<Department>> UpdateDepartment(int id, Department department)
+    {
+        var existing = await _context.Departments.FindAsync(id);
+        if (existing == null) return NotFound();
+
+        // Phase 3C1 — cycle prevention on reparenting.
+        if (department.ParentDepartmentId.HasValue)
+        {
+            if (department.ParentDepartmentId.Value == id)
+                return BadRequest("A department cannot be its own parent.");
+
+            var wouldCycle = await _hierarchy.WouldCreateDepartmentCycleAsync(id, department.ParentDepartmentId);
+            if (wouldCycle)
+                return BadRequest("Reparenting would create a department hierarchy cycle.");
+        }
+
+        existing.DepartmentName = department.DepartmentName;
+        existing.DepartmentNameEn = department.DepartmentNameEn;
+        existing.DepartmentCode = department.DepartmentCode;
+        existing.ParentDepartmentId = department.ParentDepartmentId;
+        existing.ManagerEmployeeId = department.ManagerEmployeeId;
+        existing.SortOrder = department.SortOrder;
+        existing.IsActive = department.IsActive;
+
+        await _context.SaveChangesAsync();
+        return existing;
     }
 }
 

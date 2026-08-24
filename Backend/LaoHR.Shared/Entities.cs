@@ -24,8 +24,111 @@ public class Department
     public bool IsActive { get; set; } = true;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    // Phase 3C1 — department hierarchy + accountable head.
+    /// <summary>Parent department (null = top-level unit).</summary>
+    public int? ParentDepartmentId { get; set; }
+
+    /// <summary>Accountable head of the department (distinct from an employee's direct manager).</summary>
+    public int? ManagerEmployeeId { get; set; }
+
+    /// <summary>Display order within siblings.</summary>
+    public int SortOrder { get; set; } = 0;
     
     // Navigation
+    [ForeignKey("ParentDepartmentId")]
+    [JsonIgnore]
+    public virtual Department? ParentDepartment { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<Department> ChildDepartments { get; set; } = new List<Department>();
+
+    [ForeignKey("ManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+
+    public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
+}
+
+/// <summary>
+/// Phase 3C1 — organizational position/slot. A position is a named role within
+/// a department (e.g. "HR Officer"), distinct from an employee's free-text
+/// JobTitle. Lightweight: no compensation bands yet.
+/// </summary>
+public class Position
+{
+    [Key]
+    public int PositionId { get; set; }
+
+    [Required, MaxLength(100)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? TitleLao { get; set; }
+
+    [MaxLength(20)]
+    public string? JobCode { get; set; }
+
+    public int? DepartmentId { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("DepartmentId")]
+    [JsonIgnore]
+    public virtual Department? Department { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
+}
+
+/// <summary>
+/// Phase 3C1 — work location / branch. Organizations may operate across
+/// locations. Uses the Lao province/district/village address structure.
+/// </summary>
+public class WorkLocation
+{
+    [Key]
+    public int WorkLocationId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? NameLao { get; set; }
+
+    [MaxLength(500)]
+    public string? Address { get; set; }
+
+    public int? ProvinceId { get; set; }
+    public int? DistrictId { get; set; }
+    public int? VillageId { get; set; }
+
+    /// <summary>IANA timezone, e.g. "Asia/Vientiane".</summary>
+    [MaxLength(50)]
+    public string? Timezone { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ProvinceId")]
+    [JsonIgnore]
+    public virtual Province? Province { get; set; }
+
+    [ForeignKey("DistrictId")]
+    [JsonIgnore]
+    public virtual District? District { get; set; }
+
+    [ForeignKey("VillageId")]
+    [JsonIgnore]
+    public virtual Village? Village { get; set; }
+
+    [JsonIgnore]
     public virtual ICollection<Employee> Employees { get; set; } = new List<Employee>();
 }
 
@@ -73,6 +176,16 @@ public class Employee
     
     [MaxLength(100)]
     public string? JobTitle { get; set; }
+
+    // Phase 3C1 — organizational assignment.
+    /// <summary>Direct reporting manager (null = top-level executive).</summary>
+    public int? ManagerId { get; set; }
+
+    /// <summary>Organizational position/slot (optional).</summary>
+    public int? PositionId { get; set; }
+
+    /// <summary>Work location/branch (optional).</summary>
+    public int? WorkLocationId { get; set; }
     
     public DateTime? HireDate { get; set; }
     
@@ -94,6 +207,21 @@ public class Employee
     // Navigation
     [ForeignKey("DepartmentId")]
     public virtual Department? Department { get; set; }
+
+    [ForeignKey("ManagerId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<Employee> DirectReports { get; set; } = new List<Employee>();
+
+    [ForeignKey("PositionId")]
+    [JsonIgnore]
+    public virtual Position? Position { get; set; }
+
+    [ForeignKey("WorkLocationId")]
+    [JsonIgnore]
+    public virtual WorkLocation? WorkLocation { get; set; }
     
     public virtual ICollection<Attendance> AttendanceRecords { get; set; } = new List<Attendance>();
     public virtual ICollection<SalarySlip> SalarySlips { get; set; } = new List<SalarySlip>();
@@ -836,6 +964,12 @@ public class AppUser
     
     [Required, MaxLength(255)]
     public string PasswordHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Password hash algorithm version: 1 = legacy SHA-256 (unsalted), 2 = PBKDF2-HMAC-SHA256 (salted, 600k iterations).
+    /// Phase 3A — enables rehash-on-login migration from SHA-256 to PBKDF2.
+    /// </summary>
+    public int PasswordHashVersion { get; set; } = 1;
     
     [Required, MaxLength(20)]
     public string Role { get; set; } = "Employee"; // Admin, HR, Employee
@@ -855,6 +989,46 @@ public class AppUser
     // Navigation
     [ForeignKey("EmployeeId")]
     public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// Phase 6c — Server-side refresh token record.
+/// We store the SHA-256 hash, not the raw token, so a database leak
+/// doesn't yield usable tokens. Tokens are rotated on every use
+/// (one-time use) and revoked on logout.
+/// </summary>
+public class RefreshToken
+{
+    [Key]
+    public int RefreshTokenId { get; set; }
+
+    public int UserId { get; set; }
+
+    /// <summary>SHA-256 hash of the raw token (lowercase hex).</summary>
+    [Required, MaxLength(128)]
+    public string TokenHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional: the parent token's hash. Populated on rotation so we can
+    /// detect replay of a stolen (already-used) refresh token.
+    /// </summary>
+    [MaxLength(128)]
+    public string? ReplacedByHash { get; set; }
+
+    public DateTime IssuedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ExpiresAt { get; set; }
+
+    /// <summary>Set when the token is rotated, replaced, or explicitly revoked.</summary>
+    public DateTime? RevokedAt { get; set; }
+
+    [MaxLength(64)]
+    public string? RevokedReason { get; set; }
+
+    [MaxLength(64)]
+    public string? CreatedByIp { get; set; }
+
+    [ForeignKey("UserId")]
+    public virtual AppUser? User { get; set; }
 }
 
 // =============================================================================
@@ -990,6 +1164,12 @@ public class ProjectTask
 
     public int? MilestoneId { get; set; }
 
+    /// <summary>
+    /// Phase 3C4 — optional parent task for a simple two-level hierarchy
+    /// (summary → subtask). Self-referencing; cycles are prevented server-side.
+    /// </summary>
+    public int? ParentTaskId { get; set; }
+
     /// <summary>e.g. PRJ-1-3 (project, sequence).</summary>
     [MaxLength(20)]
     public string? TaskNumber { get; set; }
@@ -1041,8 +1221,53 @@ public class ProjectTask
     [JsonIgnore]
     public virtual Employee? Reporter { get; set; }
 
+    [ForeignKey("ParentTaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? ParentTask { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<ProjectTask> ChildTasks { get; set; } = new List<ProjectTask>();
+
     public virtual ICollection<TaskAssignee> Assignees { get; set; } = new List<TaskAssignee>();
     public virtual ICollection<TaskComment> Comments { get; set; } = new List<TaskComment>();
+}
+
+/// <summary>
+/// Phase 3C4 — a finish-to-start dependency between two tasks in the same project.
+/// </summary>
+public class TaskDependency
+{
+    [Key]
+    public int TaskDependencyId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    /// <summary>The task that must finish first.</summary>
+    [Required]
+    public int PredecessorTaskId { get; set; }
+
+    /// <summary>The task that starts after the predecessor finishes.</summary>
+    [Required]
+    public int SuccessorTaskId { get; set; }
+
+    /// <summary>FS (finish-to-start) only for now.</summary>
+    [Required, MaxLength(10)]
+    public string Type { get; set; } = "FS";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("PredecessorTaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Predecessor { get; set; }
+
+    [ForeignKey("SuccessorTaskId")]
+    [JsonIgnore]
+    public virtual ProjectTask? Successor { get; set; }
 }
 
 /// <summary>
@@ -1348,6 +1573,1939 @@ public class Resource
     [ForeignKey("ProjectId")]
     [JsonIgnore]
     public virtual Project? Project { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// Phase 3C4 — RAID: a project assumption to be validated.
+/// </summary>
+public class ProjectAssumption
+{
+    [Key]
+    public int AssumptionId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required, MaxLength(500)]
+    public string Description { get; set; } = string.Empty;
+
+    public int? OwnerId { get; set; }
+
+    /// <summary>OPEN, VALIDATED, INVALIDATED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "OPEN";
+
+    public DateTime? ValidationDate { get; set; }
+
+    [MaxLength(1000)]
+    public string? Outcome { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("OwnerId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+}
+
+/// <summary>
+/// Phase 3C4 — RAID: a project decision log entry.
+/// </summary>
+public class ProjectDecision
+{
+    [Key]
+    public int DecisionId { get; set; }
+
+    [Required]
+    public int ProjectId { get; set; }
+
+    [Required, MaxLength(500)]
+    public string Decision { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Context { get; set; }
+
+    public int? OwnerId { get; set; }
+
+    public DateTime? DecisionDate { get; set; }
+
+    [MaxLength(1000)]
+    public string? Outcome { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ProjectId")]
+    [JsonIgnore]
+    public virtual Project? Project { get; set; }
+
+    [ForeignKey("OwnerId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+}
+
+// =============================================================================
+// Phase 4 — Finance Extension
+// -----------------------------------------------------------------------------
+// Lightweight finance: expense claims + employee loans/advances. Both share a
+// small status workflow. Amounts stored in original currency; converted to LAK
+// at submission time using the current conversion rate.
+// =============================================================================
+
+/// <summary>
+/// Lookup for expense categories. Seeded with common types.
+/// </summary>
+public class ExpenseCategory
+{
+    [Key]
+    public int ExpenseCategoryId { get; set; }
+
+    [Required, MaxLength(50)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? NameLao { get; set; }
+
+    [MaxLength(500)]
+    public string? Description { get; set; }
+
+    public bool RequiresReceipt { get; set; } = true;
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? DefaultLimit { get; set; }
+
+    /// <summary>Phase 4B.1 — optional GL expense account for auto-posting.</summary>
+    public int? AccountId { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    [ForeignKey("AccountId")]
+    [JsonIgnore]
+    public virtual Account? Account { get; set; }
+}
+
+/// <summary>
+/// An employee-submitted expense claim. Goes through a simple approval workflow.
+/// </summary>
+public class Expense
+{
+    [Key]
+    public int ExpenseId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string ExpenseNumber { get; set; } = string.Empty;
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Required]
+    public int CategoryId { get; set; }
+
+    public int? PayrollPeriodId { get; set; }
+
+    /// <summary>Phase 4C — optional link to a business travel request.</summary>
+    public int? TravelRequestId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    [Required]
+    public DateTime ExpenseDate { get; set; }
+
+    [Required, MaxLength(3)]
+    public string Currency { get; set; } = "LAK";
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Amount { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal ExchangeRateUsed { get; set; } = 1;
+
+    /// <summary>LAK-converted amount for reporting / payroll netting.</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal AmountLak { get; set; }
+
+    [MaxLength(500)]
+    public string? ReceiptPath { get; set; }
+
+    /// <summary>DRAFT, SUBMITTED, APPROVED, REJECTED, PAID.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public int? ApproverId { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+
+    [MaxLength(500)]
+    public string? ApproverNotes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("CategoryId")]
+    [JsonIgnore]
+    public virtual ExpenseCategory? Category { get; set; }
+
+    [ForeignKey("PayrollPeriodId")]
+    [JsonIgnore]
+    public virtual PayrollPeriod? PayrollPeriod { get; set; }
+
+    [ForeignKey("ApproverId")]
+    [JsonIgnore]
+    public virtual Employee? Approver { get; set; }
+
+    [ForeignKey("TravelRequestId")]
+    [JsonIgnore]
+    public virtual TravelRequest? TravelRequest { get; set; }
+}
+
+/// <summary>
+/// Employee loan or advance. Has a principal amount + simple installment plan
+/// that can be deducted across future payroll periods.
+/// </summary>
+public class EmployeeLoan
+{
+    [Key]
+    public int LoanId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string LoanNumber { get; set; } = string.Empty;
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>LOAN, ADVANCE.</summary>
+    [Required, MaxLength(20)]
+    public string LoanType { get; set; } = "LOAN";
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal Principal { get; set; }
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal InterestRate { get; set; } = 0;
+
+    [Required, MaxLength(3)]
+    public string Currency { get; set; } = "LAK";
+
+    [Column(TypeName = "decimal(18,4)")]
+    public decimal ExchangeRateUsed { get; set; } = 1;
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal PrincipalLak { get; set; }
+
+    [Required]
+    public DateTime StartDate { get; set; }
+
+    public DateTime? EndDate { get; set; }
+
+    /// <summary>Number of installments the loan is divided over.</summary>
+    public int Installments { get; set; } = 1;
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal InstallmentAmount { get; set; }
+
+    /// <summary>Total repaid so far (LAK).</summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal RepaidAmount { get; set; } = 0;
+
+    [MaxLength(500)]
+    public string? Purpose { get; set; }
+
+    /// <summary>DRAFT, APPROVED, ACTIVE, SETTLED, REJECTED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public int? ApproverId { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+
+    [MaxLength(500)]
+    public string? ApproverNotes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("ApproverId")]
+    [JsonIgnore]
+    public virtual Employee? Approver { get; set; }
+
+    public virtual ICollection<LoanRepayment> Repayments { get; set; } = new List<LoanRepayment>();
+}
+
+/// <summary>
+/// One repayment row per payroll period that deducted from this loan.
+/// </summary>
+public class LoanRepayment
+{
+    [Key]
+    public int RepaymentId { get; set; }
+
+    [Required]
+    public int LoanId { get; set; }
+
+    public int? PayrollPeriodId { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal AmountLak { get; set; }
+
+    public DateTime RepaidAt { get; set; } = DateTime.UtcNow;
+
+    [MaxLength(500)]
+    public string? Notes { get; set; }
+
+    // Navigation
+    [ForeignKey("LoanId")]
+    [JsonIgnore]
+    public virtual EmployeeLoan? Loan { get; set; }
+
+    [ForeignKey("PayrollPeriodId")]
+    [JsonIgnore]
+    public virtual PayrollPeriod? PayrollPeriod { get; set; }
+}
+
+// ============================================================================
+// Phase 5 — Knowledge & Collaboration
+// Lightweight slices: announcements, knowledge articles, polymorphic comments.
+// Designed to be cheap to operate and small to render — no rich-text editor,
+// no notifications fan-out, no threaded nesting beyond one reply level.
+// ============================================================================
+
+/// <summary>
+/// Company-wide announcement (news, policy update, holiday reminder).
+/// Pinned items always show first; PublishFrom/PublishUntil bound the window.
+/// </summary>
+public class Announcement
+{
+    [Key]
+    public int AnnouncementId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string? TitleLao { get; set; }
+
+    [Required]
+    public string Body { get; set; } = string.Empty;
+
+    public string? BodyLao { get; set; }
+
+    /// <summary>INFO, WARNING, URGENT — drives the visual chip.</summary>
+    [Required, MaxLength(20)]
+    public string Severity { get; set; } = "INFO";
+
+    /// <summary>ALL, ROLE, DEPARTMENT — scope of audience.</summary>
+    [Required, MaxLength(20)]
+    public string Audience { get; set; } = "ALL";
+
+    public int? AudienceRoleId { get; set; }
+    public int? AudienceDepartmentId { get; set; }
+
+    public bool IsPinned { get; set; } = false;
+
+    public DateTime? PublishFrom { get; set; }
+    public DateTime? PublishUntil { get; set; }
+
+    public int AuthorId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("AuthorId")]
+    [JsonIgnore]
+    public virtual Employee? Author { get; set; }
+}
+
+/// <summary>Tracks per-user read state of an announcement (idempotent).</summary>
+public class AnnouncementRead
+{
+    [Key]
+    public int AnnouncementReadId { get; set; }
+
+    [Required]
+    public int AnnouncementId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    public DateTime ReadAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("AnnouncementId")]
+    [JsonIgnore]
+    public virtual Announcement? Announcement { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>Knowledge-base category (e.g., HR Policies, IT, Benefits).</summary>
+public class KnowledgeCategory
+{
+    [Key]
+    public int KnowledgeCategoryId { get; set; }
+
+    [Required, MaxLength(50)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    public string? NameLao { get; set; }
+
+    public string? Description { get; set; }
+
+    public int SortOrder { get; set; } = 0;
+
+    public bool IsActive { get; set; } = true;
+}
+
+/// <summary>
+/// A self-contained knowledge-base article. Body is plain markdown
+/// (rendered server-side would be heavier — render client-side instead).
+/// </summary>
+public class KnowledgeArticle
+{
+    [Key]
+    public int KnowledgeArticleId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    public string? TitleLao { get; set; }
+
+    [Required, MaxLength(500)]
+    public string Summary { get; set; } = string.Empty;
+
+    [Required]
+    public string Body { get; set; } = string.Empty;
+
+    public string? BodyLao { get; set; }
+
+    [Required]
+    public int CategoryId { get; set; }
+
+    /// <summary>DRAFT, PUBLISHED, ARCHIVED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public int ViewCount { get; set; } = 0;
+
+    public int AuthorId { get; set; }
+
+    public DateTime? PublishedAt { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("CategoryId")]
+    [JsonIgnore]
+    public virtual KnowledgeCategory? Category { get; set; }
+
+    [ForeignKey("AuthorId")]
+    [JsonIgnore]
+    public virtual Employee? Author { get; set; }
+}
+
+/// <summary>
+/// Polymorphic comment thread. Attaches to any entity via (EntityType, EntityId)
+/// to avoid duplicating comment tables per feature. One-level threading via
+/// optional ParentCommentId.
+/// </summary>
+public class EntityComment
+{
+    [Key]
+    public int EntityCommentId { get; set; }
+
+    /// <summary>e.g. PROJECT, TASK, ISSUE, EXPENSE, LOAN.</summary>
+    [Required, MaxLength(30)]
+    public string EntityType { get; set; } = string.Empty;
+
+    [Required]
+    public int EntityId { get; set; }
+
+    public int? ParentCommentId { get; set; }
+
+    [Required]
+    public int AuthorId { get; set; }
+
+    [Required, MaxLength(4000)]
+    public string Body { get; set; } = string.Empty;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public DateTime? UpdatedAt { get; set; }
+    public DateTime? DeletedAt { get; set; }
+
+    [ForeignKey("ParentCommentId")]
+    [JsonIgnore]
+    public virtual EntityComment? Parent { get; set; }
+
+    [ForeignKey("AuthorId")]
+    [JsonIgnore]
+    public virtual Employee? Author { get; set; }
+}
+
+// =============================================================================
+// Phase 3B — Versioned Lao statutory compliance rules.
+// -----------------------------------------------------------------------------
+// Lightweight domain model for statutory parameters that change over time
+// (PIT brackets, NSSF rates/ceiling, minimum wage, overtime multipliers, leave
+// floors). NOT a generic rules engine. Each rule is effective-dated and carries
+// source/verification metadata for auditability and historical reproducibility.
+// =============================================================================
+
+/// <summary>
+/// A versioned statutory compliance rule for Lao PDR.
+/// </summary>
+public class ComplianceRule
+{
+    [Key]
+    public int ComplianceRuleId { get; set; }
+
+    /// <summary>Stable rule identifier, e.g. "LAO-PIT-2026-BRACKET-01".</summary>
+    [Required, MaxLength(100)]
+    public string RuleId { get; set; } = string.Empty;
+
+    /// <summary>Jurisdiction code, e.g. "LA" (Lao PDR).</summary>
+    [Required, MaxLength(10)]
+    public string Jurisdiction { get; set; } = "LA";
+
+    /// <summary>Category: PIT, NSSF, MINIMUM_WAGE, OVERTIME, LEAVE, HOLIDAY.</summary>
+    [Required, MaxLength(30)]
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>Human-readable name.</summary>
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Effective from (inclusive).</summary>
+    public DateTime EffectiveFrom { get; set; }
+
+    /// <summary>Effective to (exclusive). Null = currently effective.</summary>
+    public DateTime? EffectiveTo { get; set; }
+
+    /// <summary>Monotonic version number for this RuleId.</summary>
+    public int Version { get; set; } = 1;
+
+    /// <summary>VERIFIED, PROVISIONAL, BLOCKED, SUPERSEDED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PROVISIONAL";
+
+    /// <summary>Calculation parameters as JSON (brackets, rates, ceilings, etc.).</summary>
+    public string? ParametersJson { get; set; }
+
+    // ---- Source / legal traceability metadata ----
+    [MaxLength(200)]
+    public string? SourceTitle { get; set; }
+
+    [MaxLength(200)]
+    public string? Authority { get; set; }
+
+    [MaxLength(100)]
+    public string? LawNumber { get; set; }
+
+    [MaxLength(100)]
+    public string? Article { get; set; }
+
+    [MaxLength(500)]
+    public string? SourceUrl { get; set; }
+
+    public DateTime? VerifiedDate { get; set; }
+
+    [MaxLength(1000)]
+    public string? Notes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Immutable snapshot of the compliance rules used for a specific payroll run.
+/// Preserves historical reproducibility: a later rule change must not alter an
+/// already-finalized payroll result.
+/// </summary>
+public class PayrollRuleSnapshot
+{
+    [Key]
+    public int PayrollRuleSnapshotId { get; set; }
+
+    /// <summary>The payroll period this snapshot belongs to.</summary>
+    [Required]
+    public int PeriodId { get; set; }
+
+    /// <summary>JSON array of the ComplianceRule values in effect at calculation time.</summary>
+    [Required]
+    public string RulesJson { get; set; } = string.Empty;
+
+    /// <summary>Exchange rates in effect (JSON).</summary>
+    public string? ExchangeRatesJson { get; set; }
+
+    public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("PeriodId")]
+    [JsonIgnore]
+    public virtual PayrollPeriod? PayrollPeriod { get; set; }
+}
+
+// =============================================================================
+// Phase 3C1 — Approval engine foundation.
+// -----------------------------------------------------------------------------
+// Lightweight, database-backed approval requests with sequential steps. NOT a
+// generic BPM engine. Supports Leave/Expense/Loan/Attendance/Overtime via a
+// polymorphic RequestType + EntityId. Approver identity is resolved server-side
+// (never trusted from the client).
+// =============================================================================
+
+/// <summary>
+/// A reusable approval request for a business entity (leave, expense, loan, etc.).
+/// </summary>
+public class ApprovalRequest
+{
+    [Key]
+    public int ApprovalRequestId { get; set; }
+
+    /// <summary>LEAVE, EXPENSE, LOAN, ATTENDANCE_CORRECTION, OVERTIME.</summary>
+    [Required, MaxLength(30)]
+    public string RequestType { get; set; } = string.Empty;
+
+    /// <summary>The business entity id (e.g. LeaveId, ExpenseId).</summary>
+    [Required]
+    public int EntityId { get; set; }
+
+    /// <summary>The employee who submitted the request.</summary>
+    [Required]
+    public int RequesterEmployeeId { get; set; }
+
+    /// <summary>DRAFT, PENDING, APPROVED, REJECTED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PENDING";
+
+    /// <summary>Index of the current step (0-based).</summary>
+    public int CurrentStepIndex { get; set; } = 0;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? CompletedAt { get; set; }
+
+    [ForeignKey("RequesterEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Requester { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<ApprovalStep> Steps { get; set; } = new List<ApprovalStep>();
+}
+
+/// <summary>
+/// A single sequential step in an approval request.
+/// </summary>
+public class ApprovalStep
+{
+    [Key]
+    public int ApprovalStepId { get; set; }
+
+    [Required]
+    public int ApprovalRequestId { get; set; }
+
+    /// <summary>Order of this step (0-based).</summary>
+    public int StepOrder { get; set; }
+
+    /// <summary>Resolver type: DIRECT_MANAGER, DEPARTMENT_MANAGER, ROLE, EMPLOYEE.</summary>
+    [Required, MaxLength(30)]
+    public string ResolverType { get; set; } = "DIRECT_MANAGER";
+
+    /// <summary>Resolved approver employee id (set at request creation).</summary>
+    public int? ApproverEmployeeId { get; set; }
+
+    /// <summary>For ROLE resolver: the role name (e.g. "HR").</summary>
+    [MaxLength(20)]
+    public string? RoleName { get; set; }
+
+    /// <summary>PENDING, APPROVED, REJECTED, SKIPPED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PENDING";
+
+    public DateTime? ActedAt { get; set; }
+
+    [MaxLength(1000)]
+    public string? Comment { get; set; }
+
+    [ForeignKey("ApprovalRequestId")]
+    [JsonIgnore]
+    public virtual ApprovalRequest? ApprovalRequest { get; set; }
+
+    [ForeignKey("ApproverEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Approver { get; set; }
+}
+
+/// <summary>
+/// Immutable history of every approval action.
+/// </summary>
+public class ApprovalAction
+{
+    [Key]
+    public int ApprovalActionId { get; set; }
+
+    [Required]
+    public int ApprovalRequestId { get; set; }
+
+    [Required]
+    public int ActorEmployeeId { get; set; }
+
+    /// <summary>APPROVED, REJECTED, CANCELLED, SUBMITTED.</summary>
+    [Required, MaxLength(20)]
+    public string Action { get; set; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Comment { get; set; }
+
+    public DateTime ActedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ApprovalRequestId")]
+    [JsonIgnore]
+    public virtual ApprovalRequest? ApprovalRequest { get; set; }
+}
+
+// =============================================================================
+// Phase 3C2 — In-app notification domain.
+// -----------------------------------------------------------------------------
+// Lightweight internal notification system. In-app only (no email/SMS yet).
+// Recipient is an AppUser (UserId); notifications are created server-side and
+// link to a domain entity via EntityType + EntityId.
+// =============================================================================
+
+/// <summary>
+/// An in-app notification for a user.
+/// </summary>
+public class Notification
+{
+    [Key]
+    public int NotificationId { get; set; }
+
+    /// <summary>Recipient AppUser id.</summary>
+    [Required]
+    public int UserId { get; set; }
+
+    /// <summary>APPROVAL_REQUESTED, APPROVAL_APPROVED, APPROVAL_REJECTED, LEAVE_UPDATED, EXPENSE_UPDATED, LOAN_UPDATED, ATTENDANCE_CORRECTION_UPDATED, MANAGER_CHANGED.</summary>
+    [Required, MaxLength(50)]
+    public string Type { get; set; } = string.Empty;
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Message { get; set; }
+
+    /// <summary>Domain entity type for deep-linking (e.g. LEAVE, EXPENSE, LOAN, APPROVAL).</summary>
+    [MaxLength(30)]
+    public string? EntityType { get; set; }
+
+    /// <summary>Domain entity id for deep-linking.</summary>
+    public int? EntityId { get; set; }
+
+    public bool IsRead { get; set; } = false;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? ReadAt { get; set; }
+
+    [ForeignKey("UserId")]
+    [JsonIgnore]
+    public virtual AppUser? User { get; set; }
+}
+
+/// <summary>
+/// Phase 3C2 — attendance correction request. An employee requests a correction
+/// to a clock-in/out record; it flows through the approval engine.
+/// </summary>
+public class AttendanceCorrection
+{
+    [Key]
+    public int CorrectionId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Required]
+    public int AttendanceId { get; set; }
+
+    [Required]
+    public DateTime AttendanceDate { get; set; }
+
+    /// <summary>Proposed corrected clock-in (nullable = no change).</summary>
+    public DateTime? CorrectedClockIn { get; set; }
+
+    /// <summary>Proposed corrected clock-out (nullable = no change).</summary>
+    public DateTime? CorrectedClockOut { get; set; }
+
+    [Required, MaxLength(500)]
+    public string Reason { get; set; } = string.Empty;
+
+    /// <summary>PENDING, APPROVED, REJECTED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PENDING";
+
+    public int? ApprovedById { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+
+    [MaxLength(500)]
+    public string? ApproverNotes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("AttendanceId")]
+    [JsonIgnore]
+    public virtual Attendance? Attendance { get; set; }
+}
+
+// =============================================================================
+// Phase 3C5 — Recruitment + ATS + Onboarding
+// -----------------------------------------------------------------------------
+// Connects workforce need → requisition → opening → candidate → application →
+// pipeline → interview → offer → hire → employee → onboarding.
+// Candidate is the person-level identity BEFORE hire; Employee is the canonical
+// worker identity AFTER hire. No duplicate master data.
+// =============================================================================
+
+/// <summary>
+/// A job requisition — approval to recruit for a Position.
+/// </summary>
+public class JobRequisition
+{
+    [Key]
+    public int RequisitionId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string RequisitionNumber { get; set; } = string.Empty;
+
+    [Required]
+    public int PositionId { get; set; }
+
+    public int? DepartmentId { get; set; }
+
+    public int? WorkLocationId { get; set; }
+
+    /// <summary>Employee who requested the requisition.</summary>
+    public int RequestedByEmployeeId { get; set; }
+
+    /// <summary>Hiring manager for this requisition.</summary>
+    public int? HiringManagerEmployeeId { get; set; }
+
+    /// <summary>Number of hires authorized.</summary>
+    public int Headcount { get; set; } = 1;
+
+    /// <summary>Replacement, Growth, Temporary, Other.</summary>
+    [MaxLength(20)]
+    public string Reason { get; set; } = "Growth";
+
+    [MaxLength(1000)]
+    public string? Justification { get; set; }
+
+    public DateTime? TargetStartDate { get; set; }
+
+    /// <summary>LOW, MEDIUM, HIGH, CRITICAL.</summary>
+    [MaxLength(10)]
+    public string Priority { get; set; } = "MEDIUM";
+
+    /// <summary>DRAFT, PENDING_APPROVAL, APPROVED, OPEN, ON_HOLD, FILLED, CANCELLED, CLOSED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("PositionId")]
+    [JsonIgnore]
+    public virtual Position? Position { get; set; }
+
+    [ForeignKey("DepartmentId")]
+    [JsonIgnore]
+    public virtual Department? Department { get; set; }
+
+    [ForeignKey("WorkLocationId")]
+    [JsonIgnore]
+    public virtual WorkLocation? WorkLocation { get; set; }
+
+    [ForeignKey("RequestedByEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? RequestedBy { get; set; }
+
+    [ForeignKey("HiringManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? HiringManager { get; set; }
+}
+
+/// <summary>
+/// A job opening (vacancy) derived from an approved requisition.
+/// </summary>
+public class JobOpening
+{
+    [Key]
+    public int OpeningId { get; set; }
+
+    [Required]
+    public int RequisitionId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string? TitleLao { get; set; }
+
+    /// <summary>Public-safe summary (no internal notes).</summary>
+    [MaxLength(4000)]
+    public string? Summary { get; set; }
+
+    [MaxLength(4000)]
+    public string? Responsibilities { get; set; }
+
+    [MaxLength(4000)]
+    public string? Requirements { get; set; }
+
+    /// <summary>DRAFT, OPEN, PAUSED, CLOSED, FILLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("RequisitionId")]
+    [JsonIgnore]
+    public virtual JobRequisition? Requisition { get; set; }
+}
+
+/// <summary>
+/// A candidate — person-level recruitment identity (before hire).
+/// </summary>
+public class Candidate
+{
+    [Key]
+    public int CandidateId { get; set; }
+
+    [Required, MaxLength(100)]
+    public string FirstName { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string LastName { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? FirstNameLao { get; set; }
+
+    [MaxLength(100)]
+    public string? LastNameLao { get; set; }
+
+    [MaxLength(100)]
+    public string? Email { get; set; }
+
+    [MaxLength(20)]
+    public string? Phone { get; set; }
+
+    [MaxLength(200)]
+    public string? CurrentLocation { get; set; }
+
+    [MaxLength(200)]
+    public string? CurrentCompany { get; set; }
+
+    [MaxLength(200)]
+    public string? CurrentTitle { get; set; }
+
+    [MaxLength(4000)]
+    public string? Summary { get; set; }
+
+    /// <summary>CareerPage, Referral, Agency, Direct, Other.</summary>
+    [MaxLength(20)]
+    public string? Source { get; set; }
+
+    /// <summary>ACTIVE, HIRED, REJECTED, ARCHIVED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "ACTIVE";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A candidate's application to a specific job opening.
+/// </summary>
+public class Application
+{
+    [Key]
+    public int ApplicationId { get; set; }
+
+    [Required]
+    public int CandidateId { get; set; }
+
+    [Required]
+    public int OpeningId { get; set; }
+
+    public DateTime AppliedAt { get; set; } = DateTime.UtcNow;
+
+    [MaxLength(20)]
+    public string? Source { get; set; }
+
+    /// <summary>Current pipeline stage (see ATS pipeline).</summary>
+    [Required, MaxLength(30)]
+    public string CurrentStage { get; set; } = "APPLIED";
+
+    /// <summary>ACTIVE, HIRED, REJECTED, WITHDRAWN.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "ACTIVE";
+
+    [MaxLength(50)]
+    public string? RejectionReason { get; set; }
+
+    [MaxLength(1000)]
+    public string? RejectionComment { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("CandidateId")]
+    [JsonIgnore]
+    public virtual Candidate? Candidate { get; set; }
+
+    [ForeignKey("OpeningId")]
+    [JsonIgnore]
+    public virtual JobOpening? Opening { get; set; }
+}
+
+/// <summary>
+/// Immutable history of an application's pipeline stage movement.
+/// </summary>
+public class ApplicationStageHistory
+{
+    [Key]
+    public int StageHistoryId { get; set; }
+
+    [Required]
+    public int ApplicationId { get; set; }
+
+    [Required, MaxLength(30)]
+    public string FromStage { get; set; } = string.Empty;
+
+    [Required, MaxLength(30)]
+    public string ToStage { get; set; } = string.Empty;
+
+    public int? ActorEmployeeId { get; set; }
+
+    [MaxLength(1000)]
+    public string? Comment { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ApplicationId")]
+    [JsonIgnore]
+    public virtual Application? Application { get; set; }
+}
+
+/// <summary>
+/// A candidate document (CV, cover letter, certificate, etc.).
+/// </summary>
+public class CandidateDocument
+{
+    [Key]
+    public int CandidateDocumentId { get; set; }
+
+    [Required]
+    public int CandidateId { get; set; }
+
+    /// <summary>Resume, CoverLetter, Certificate, Portfolio, Other.</summary>
+    [Required, MaxLength(30)]
+    public string DocumentType { get; set; } = "Resume";
+
+    [Required, MaxLength(200)]
+    public string FileName { get; set; } = string.Empty;
+
+    [Required, MaxLength(500)]
+    public string FilePath { get; set; } = string.Empty;
+
+    public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("CandidateId")]
+    [JsonIgnore]
+    public virtual Candidate? Candidate { get; set; }
+}
+
+/// <summary>
+/// An interview scheduled for an application.
+/// </summary>
+public class Interview
+{
+    [Key]
+    public int InterviewId { get; set; }
+
+    [Required]
+    public int ApplicationId { get; set; }
+
+    /// <summary>Phone, HR, HiringManager, Technical, Panel, Final.</summary>
+    [Required, MaxLength(30)]
+    public string InterviewType { get; set; } = "HR";
+
+    public DateTime? ScheduledStart { get; set; }
+    public DateTime? ScheduledEnd { get; set; }
+
+    [MaxLength(500)]
+    public string? Location { get; set; }
+
+    /// <summary>SCHEDULED, COMPLETED, CANCELLED, NO_SHOW.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "SCHEDULED";
+
+    public int? OrganizerEmployeeId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ApplicationId")]
+    [JsonIgnore]
+    public virtual Application? Application { get; set; }
+
+    [ForeignKey("OrganizerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Organizer { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<InterviewParticipant> Participants { get; set; } = new List<InterviewParticipant>();
+}
+
+/// <summary>
+/// An interviewer on an interview panel.
+/// </summary>
+public class InterviewParticipant
+{
+    [Key]
+    public int ParticipantId { get; set; }
+
+    [Required]
+    public int InterviewId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>INTERVIEWER, OBSERVER.</summary>
+    [Required, MaxLength(20)]
+    public string Role { get; set; } = "INTERVIEWER";
+
+    [ForeignKey("InterviewId")]
+    [JsonIgnore]
+    public virtual Interview? Interview { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// An interviewer's structured evaluation (scorecard) for an interview.
+/// </summary>
+public class InterviewEvaluation
+{
+    [Key]
+    public int EvaluationId { get; set; }
+
+    [Required]
+    public int InterviewId { get; set; }
+
+    [Required]
+    public int EvaluatorEmployeeId { get; set; }
+
+    /// <summary>1-5 score for communication.</summary>
+    [Range(1, 5)]
+    public int CommunicationScore { get; set; } = 3;
+
+    /// <summary>1-5 score for relevant experience.</summary>
+    [Range(1, 5)]
+    public int ExperienceScore { get; set; } = 3;
+
+    /// <summary>1-5 score for role fit.</summary>
+    [Range(1, 5)]
+    public int RoleFitScore { get; set; } = 3;
+
+    /// <summary>Recommend, Neutral, DoNotRecommend.</summary>
+    [Required, MaxLength(20)]
+    public string Recommendation { get; set; } = "Neutral";
+
+    [MaxLength(4000)]
+    public string? Comments { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("InterviewId")]
+    [JsonIgnore]
+    public virtual Interview? Interview { get; set; }
+
+    [ForeignKey("EvaluatorEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Evaluator { get; set; }
+}
+
+/// <summary>
+/// An offer made to a candidate for an application.
+/// </summary>
+public class Offer
+{
+    [Key]
+    public int OfferId { get; set; }
+
+    [Required]
+    public int ApplicationId { get; set; }
+
+    [Required]
+    public int PositionId { get; set; }
+
+    public DateTime? ProposedStartDate { get; set; }
+
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? Salary { get; set; }
+
+    [MaxLength(3)]
+    public string? Currency { get; set; }
+
+    /// <summary>FullTime, PartTime, Contract, Temporary.</summary>
+    [MaxLength(20)]
+    public string? EmploymentType { get; set; }
+
+    /// <summary>DRAFT, PENDING_APPROVAL, APPROVED, SENT, ACCEPTED, DECLINED, EXPIRED, WITHDRAWN.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public int? CreatedByEmployeeId { get; set; }
+
+    public DateTime? ExpiresAt { get; set; }
+    public DateTime? AcceptedAt { get; set; }
+    public DateTime? DeclinedAt { get; set; }
+
+    [MaxLength(1000)]
+    public string? DeclineReason { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ApplicationId")]
+    [JsonIgnore]
+    public virtual Application? Application { get; set; }
+
+    [ForeignKey("PositionId")]
+    [JsonIgnore]
+    public virtual Position? Position { get; set; }
+
+    [ForeignKey("CreatedByEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? CreatedBy { get; set; }
+}
+
+/// <summary>
+/// An onboarding process linked to a hired Employee.
+/// </summary>
+public class OnboardingProcess
+{
+    [Key]
+    public int OnboardingProcessId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>Source traceability: the application that produced this hire.</summary>
+    public int? ApplicationId { get; set; }
+
+    public int? CandidateId { get; set; }
+
+    public DateTime? StartDate { get; set; }
+
+    public int? OwnerEmployeeId { get; set; }
+
+    /// <summary>NOT_STARTED, IN_PROGRESS, COMPLETED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "NOT_STARTED";
+
+    public DateTime? CompletedAt { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("OwnerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+
+    [JsonIgnore]
+    public virtual ICollection<OnboardingTask> Tasks { get; set; } = new List<OnboardingTask>();
+}
+
+/// <summary>
+/// A single onboarding checklist task.
+/// </summary>
+public class OnboardingTask
+{
+    [Key]
+    public int OnboardingTaskId { get; set; }
+
+    [Required]
+    public int OnboardingProcessId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(1000)]
+    public string? Description { get; set; }
+
+    public int? OwnerEmployeeId { get; set; }
+
+    public DateTime? DueDate { get; set; }
+
+    public DateTime? CompletedAt { get; set; }
+
+    /// <summary>HR, IT, Manager, Facilities, Employee.</summary>
+    [MaxLength(20)]
+    public string Category { get; set; } = "HR";
+
+    public int SortOrder { get; set; } = 0;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("OnboardingProcessId")]
+    [JsonIgnore]
+    public virtual OnboardingProcess? OnboardingProcess { get; set; }
+
+    [ForeignKey("OwnerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Owner { get; set; }
+}
+
+// =============================================================================
+// Phase 3C6 — Performance Management + Talent + Learning
+// -----------------------------------------------------------------------------
+// Post-hire employee growth lifecycle: goals → performance → competencies →
+// development → learning → career. Reuses Employee/Position/ManagerId.
+// No AI scoring/ranking. Human-governed.
+// =============================================================================
+
+/// <summary>
+/// An individual/team goal with an accountable owner.
+/// </summary>
+public class Goal
+{
+    [Key]
+    public int GoalId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    public int? ManagerEmployeeId { get; set; }
+
+    /// <summary>Optional parent goal for alignment (org → dept → employee).</summary>
+    public int? ParentGoalId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    /// <summary>Individual, Team, Organization.</summary>
+    [Required, MaxLength(20)]
+    public string GoalType { get; set; } = "Individual";
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? DueDate { get; set; }
+
+    /// <summary>0-100 manual progress.</summary>
+    [Range(0, 100)]
+    public int ProgressPercent { get; set; } = 0;
+
+    /// <summary>DRAFT, ACTIVE, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public int? CreatedByEmployeeId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("ManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+
+    [ForeignKey("ParentGoalId")]
+    [JsonIgnore]
+    public virtual Goal? ParentGoal { get; set; }
+}
+
+/// <summary>
+/// A lightweight progress check-in on a goal (preserves history).
+/// </summary>
+public class GoalCheckIn
+{
+    [Key]
+    public int CheckInId { get; set; }
+
+    [Required]
+    public int GoalId { get; set; }
+
+    [Range(0, 100)]
+    public int ProgressPercent { get; set; }
+
+    [MaxLength(20)]
+    public string? Status { get; set; }
+
+    [MaxLength(2000)]
+    public string? Comment { get; set; }
+
+    public int? CreatedByEmployeeId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("GoalId")]
+    [JsonIgnore]
+    public virtual Goal? Goal { get; set; }
+}
+
+/// <summary>
+/// A formal performance review cycle.
+/// </summary>
+public class PerformanceCycle
+{
+    [Key]
+    public int CycleId { get; set; }
+
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    public DateTime? StartDate { get; set; }
+    public DateTime? EndDate { get; set; }
+    public DateTime? ReviewDueDate { get; set; }
+
+    /// <summary>DRAFT, ACTIVE, REVIEW_OPEN, CLOSED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A performance review for an employee within a cycle. Manager is snapshotted
+/// at creation (does not change if Employee.ManagerId changes later).
+/// </summary>
+public class PerformanceReview
+{
+    [Key]
+    public int ReviewId { get; set; }
+
+    [Required]
+    public int CycleId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>Snapshotted reviewer (manager at review creation).</summary>
+    public int? ManagerEmployeeId { get; set; }
+
+    /// <summary>Snapshotted position/department for review context.</summary>
+    public int? PositionId { get; set; }
+    public int? DepartmentId { get; set; }
+
+    /// <summary>NOT_STARTED, SELF_REVIEW, MANAGER_REVIEW, FINALIZED, ACKNOWLEDGED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "NOT_STARTED";
+
+    /// <summary>1-5 manager rating (documented scale).</summary>
+    [Range(1, 5)]
+    public int? OverallRating { get; set; }
+
+    [MaxLength(4000)]
+    public string? SelfAchievements { get; set; }
+
+    [MaxLength(4000)]
+    public string? SelfChallenges { get; set; }
+
+    [MaxLength(4000)]
+    public string? ManagerComments { get; set; }
+
+    [MaxLength(4000)]
+    public string? DevelopmentNeeds { get; set; }
+
+    public DateTime? EmployeeSubmittedAt { get; set; }
+    public DateTime? ManagerSubmittedAt { get; set; }
+    public DateTime? FinalizedAt { get; set; }
+    public DateTime? AcknowledgedAt { get; set; }
+
+    [MaxLength(2000)]
+    public string? AcknowledgementComment { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("CycleId")]
+    [JsonIgnore]
+    public virtual PerformanceCycle? Cycle { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("ManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+}
+
+/// <summary>
+/// Continuous feedback / recognition between employees.
+/// </summary>
+public class Feedback
+{
+    [Key]
+    public int FeedbackId { get; set; }
+
+    [Required]
+    public int FromEmployeeId { get; set; }
+
+    [Required]
+    public int ToEmployeeId { get; set; }
+
+    /// <summary>Feedback, Recognition.</summary>
+    [Required, MaxLength(20)]
+    public string Type { get; set; } = "Feedback";
+
+    [Required, MaxLength(4000)]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>Private, RecipientAndManager.</summary>
+    [Required, MaxLength(30)]
+    public string Visibility { get; set; } = "Private";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("FromEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? FromEmployee { get; set; }
+
+    [ForeignKey("ToEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? ToEmployee { get; set; }
+}
+
+/// <summary>
+/// A 1:1 meeting between a manager and a direct report.
+/// </summary>
+public class OneOnOne
+{
+    [Key]
+    public int OneOnOneId { get; set; }
+
+    [Required]
+    public int ManagerEmployeeId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    public DateTime? ScheduledAt { get; set; }
+
+    /// <summary>SCHEDULED, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "SCHEDULED";
+
+    [MaxLength(4000)]
+    public string? SharedNotes { get; set; }
+
+    [MaxLength(4000)]
+    public string? ManagerPrivateNotes { get; set; }
+
+    [MaxLength(4000)]
+    public string? EmployeeNotes { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("ManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// A competency in the framework.
+/// </summary>
+public class Competency
+{
+    [Key]
+    public int CompetencyId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(100)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(100)]
+    public string? NameLao { get; set; }
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    /// <summary>Core, Leadership, Functional, Technical.</summary>
+    [MaxLength(20)]
+    public string Category { get; set; } = "Core";
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A position's required competency level (role expectation).
+/// </summary>
+public class PositionCompetency
+{
+    [Key]
+    public int PositionCompetencyId { get; set; }
+
+    [Required]
+    public int PositionId { get; set; }
+
+    [Required]
+    public int CompetencyId { get; set; }
+
+    /// <summary>1-5 required proficiency level.</summary>
+    [Range(1, 5)]
+    public int RequiredLevel { get; set; } = 3;
+
+    public bool IsRequired { get; set; } = true;
+
+    [ForeignKey("PositionId")]
+    [JsonIgnore]
+    public virtual Position? Position { get; set; }
+
+    [ForeignKey("CompetencyId")]
+    [JsonIgnore]
+    public virtual Competency? Competency { get; set; }
+}
+
+/// <summary>
+/// An employee's competency assessment (with provenance).
+/// </summary>
+public class CompetencyAssessment
+{
+    [Key]
+    public int AssessmentId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Required]
+    public int CompetencyId { get; set; }
+
+    [Required]
+    public int AssessorEmployeeId { get; set; }
+
+    /// <summary>Self, Manager.</summary>
+    [Required, MaxLength(20)]
+    public string AssessmentType { get; set; } = "Manager";
+
+    /// <summary>1-5 assessed proficiency level.</summary>
+    [Range(1, 5)]
+    public int Level { get; set; } = 3;
+
+    public int? CycleId { get; set; }
+
+    public DateTime AssessedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("CompetencyId")]
+    [JsonIgnore]
+    public virtual Competency? Competency { get; set; }
+
+    [ForeignKey("AssessorEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Assessor { get; set; }
+}
+
+/// <summary>
+/// An individual development plan.
+/// </summary>
+public class DevelopmentPlan
+{
+    [Key]
+    public int DevelopmentPlanId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    public int? ManagerEmployeeId { get; set; }
+
+    public DateTime? PeriodStart { get; set; }
+    public DateTime? PeriodEnd { get; set; }
+
+    /// <summary>DRAFT, ACTIVE, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "DRAFT";
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+
+    [ForeignKey("ManagerEmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Manager { get; set; }
+}
+
+/// <summary>
+/// A development goal within a plan (optionally linked to a competency gap).
+/// </summary>
+public class DevelopmentGoal
+{
+    [Key]
+    public int DevelopmentGoalId { get; set; }
+
+    [Required]
+    public int DevelopmentPlanId { get; set; }
+
+    public int? CompetencyId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(2000)]
+    public string? DesiredOutcome { get; set; }
+
+    public DateTime? TargetDate { get; set; }
+
+    /// <summary>PLANNED, IN_PROGRESS, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "PLANNED";
+
+    [ForeignKey("DevelopmentPlanId")]
+    [JsonIgnore]
+    public virtual DevelopmentPlan? DevelopmentPlan { get; set; }
+
+    [ForeignKey("CompetencyId")]
+    [JsonIgnore]
+    public virtual Competency? Competency { get; set; }
+}
+
+/// <summary>
+/// A learning course in the catalog.
+/// </summary>
+public class LearningCourse
+{
+    [Key]
+    public int CourseId { get; set; }
+
+    [Required, MaxLength(20)]
+    public string Code { get; set; } = string.Empty;
+
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string? TitleLao { get; set; }
+
+    [MaxLength(2000)]
+    public string? Description { get; set; }
+
+    [MaxLength(50)]
+    public string? Category { get; set; }
+
+    /// <summary>Classroom, Online, Workshop, External, SelfStudy.</summary>
+    [MaxLength(20)]
+    public string DeliveryType { get; set; } = "Classroom";
+
+    public bool IsActive { get; set; } = true;
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// A scheduled training session for a course.
+/// </summary>
+public class TrainingSession
+{
+    [Key]
+    public int SessionId { get; set; }
+
+    [Required]
+    public int CourseId { get; set; }
+
+    public DateTime? Start { get; set; }
+    public DateTime? End { get; set; }
+
+    [MaxLength(200)]
+    public string? Location { get; set; }
+
+    [MaxLength(100)]
+    public string? Instructor { get; set; }
+
+    public int? Capacity { get; set; }
+
+    /// <summary>SCHEDULED, COMPLETED, CANCELLED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "SCHEDULED";
+
+    [ForeignKey("CourseId")]
+    [JsonIgnore]
+    public virtual LearningCourse? Course { get; set; }
+}
+
+/// <summary>
+/// An employee's enrollment in a training session.
+/// </summary>
+public class TrainingEnrollment
+{
+    [Key]
+    public int EnrollmentId { get; set; }
+
+    [Required]
+    public int SessionId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    /// <summary>ASSIGNED, ENROLLED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "ASSIGNED";
+
+    public int? AssignedByEmployeeId { get; set; }
+
+    public DateTime? EnrolledAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+
+    [MaxLength(50)]
+    public string? Result { get; set; }
+
+    [ForeignKey("SessionId")]
+    [JsonIgnore]
+    public virtual TrainingSession? Session { get; set; }
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// An employee certification.
+/// </summary>
+public class EmployeeCertification
+{
+    [Key]
+    public int CertificationId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [Required, MaxLength(200)]
+    public string Name { get; set; } = string.Empty;
+
+    [MaxLength(200)]
+    public string? Issuer { get; set; }
+
+    public DateTime? IssuedDate { get; set; }
+    public DateTime? ExpiryDate { get; set; }
+
+    /// <summary>ACTIVE, EXPIRED, REVOKED.</summary>
+    [Required, MaxLength(20)]
+    public string Status { get; set; } = "ACTIVE";
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// An employee's career interest/aspiration (not a promotion commitment).
+/// </summary>
+public class CareerInterest
+{
+    [Key]
+    public int CareerInterestId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    [MaxLength(2000)]
+    public string? Interests { get; set; }
+
+    [MaxLength(2000)]
+    public string? FutureRoles { get; set; }
+
+    [MaxLength(2000)]
+    public string? DevelopmentInterests { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    [ForeignKey("EmployeeId")]
+    [JsonIgnore]
+    public virtual Employee? Employee { get; set; }
+}
+
+/// <summary>
+/// A talent review entry (human-entered performance × potential).
+/// </summary>
+public class TalentReview
+{
+    [Key]
+    public int TalentReviewId { get; set; }
+
+    [Required]
+    public int EmployeeId { get; set; }
+
+    public int? CycleId { get; set; }
+
+    /// <summary>LOW, MEDIUM, HIGH (human-entered potential).</summary>
+    [MaxLength(10)]
+    public string? Potential { get; set; }
+
+    /// <summary>LOW, MEDIUM, HIGH (human-entered performance).</summary>
+    [MaxLength(10)]
+    public string? Performance { get; set; }
+
+    /// <summary>READY_NOW, READY_1_2_YEARS, DEVELOPING, NOT_ASSESSED.</summary>
+    [MaxLength(20)]
+    public string? Readiness { get; set; }
+
+    [MaxLength(2000)]
+    public string? Notes { get; set; }
+
+    public int? ReviewedByEmployeeId { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [ForeignKey("EmployeeId")]
     [JsonIgnore]

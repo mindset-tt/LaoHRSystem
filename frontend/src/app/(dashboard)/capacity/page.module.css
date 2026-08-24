@@ -1,0 +1,57 @@
+.page {
+    padding: 24px;
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table th,
+.table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.over {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+}
+
+.ok {
+    background: rgba(22, 163, 74, 0.12);
+    color: #16a34a;
+}
+
+.error {
+    color: var(--color-error, #dc2626);
+    padding: 16px;
+}
+
+.empty {
+    color: var(--text-secondary);
+    padding: 16px;
+    text-align: center;
+}

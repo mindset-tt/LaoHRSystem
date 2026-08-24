@@ -149,7 +149,7 @@ export default function PayrollPage() {
                 await payrollApi.approveSlip(slip.slipId);
             }
             const data = await payrollApi.getSlips(selectedPeriod.periodId);
-            setSlips(data);
+            setSlips(data.items ?? []);
         } catch (err) {
             console.error('Failed to approve all:', err);
             setError(err instanceof Error ? err.message : 'Failed to approve all');

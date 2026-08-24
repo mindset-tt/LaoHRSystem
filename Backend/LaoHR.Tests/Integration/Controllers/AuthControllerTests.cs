@@ -42,4 +42,23 @@ public class AuthControllerTests : TestBase
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Theory]
+    [InlineData("admin", "admin123", "Admin")]
+    [InlineData("hradmin", "hr123", "HR")]
+    [InlineData("employee", "emp123", "Employee")]
+    public async Task Login_SeededAccounts_AllAuthenticate(string username, string password, string expectedRole)
+    {
+        // Phase 3C2B — every seeded demo account must pass the login validator
+        // and authenticate successfully. This guards against the "hr" (2-char)
+        // username defect where a seeded account could never log in.
+        var request = new LoginRequest { Username = username, Password = password };
+
+        var response = await _client.PostAsJsonAsync("/api/auth/login", request);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+        result.Should().NotBeNull();
+        result!.Role.Should().Be(expectedRole);
+    }
 }

@@ -13,6 +13,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 // Token storage
 let accessToken: string | null = null;
 let tokenExpiresAt: Date | null = null;
+let refreshToken: string | null = null;
+let refreshTokenExpiresAt: Date | null = null;
 
 // Initialize from localStorage if available (client-side only)
 if (typeof window !== 'undefined') {
@@ -30,13 +32,27 @@ if (typeof window !== 'undefined') {
             localStorage.removeItem('tokenExpiresAt');
         }
     }
+
+    const storedRefresh = localStorage.getItem('refreshToken');
+    const storedRefreshExpiry = localStorage.getItem('refreshTokenExpiresAt');
+    if (storedRefresh && storedRefreshExpiry) {
+        const expiryDate = new Date(storedRefreshExpiry);
+        if (expiryDate > new Date()) {
+            refreshToken = storedRefresh;
+            refreshTokenExpiresAt = expiryDate;
+        } else {
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('refreshTokenExpiresAt');
+        }
+    }
 }
 
 // Refresh promise to prevent multiple simultaneous refreshes
 let refreshPromise: Promise<void> | null = null;
 
 /**
- * Set the access token (called after login)
+ * Set the access + refresh tokens (called after login or rotation).
+ * Phase 6c — both tokens are persisted to localStorage and rotated together.
  */
 export function setAccessToken(token: string, expiresAt: Date): void {
     accessToken = token;
@@ -48,17 +64,35 @@ export function setAccessToken(token: string, expiresAt: Date): void {
     }
 }
 
+export function setRefreshToken(token: string, expiresAt: Date): void {
+    refreshToken = token;
+    refreshTokenExpiresAt = expiresAt;
+
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('refreshToken', token);
+        localStorage.setItem('refreshTokenExpiresAt', expiresAt.toISOString());
+    }
+}
+
 /**
- * Clear the access token (called on logout)
+ * Clear all tokens (called on logout / refresh-failure).
  */
 export function clearAccessToken(): void {
     accessToken = null;
     tokenExpiresAt = null;
+    refreshToken = null;
+    refreshTokenExpiresAt = null;
 
     if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('tokenExpiresAt');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('refreshTokenExpiresAt');
     }
+}
+
+export function getRefreshToken(): string | null {
+    return refreshToken;
 }
 
 /**
@@ -70,25 +104,24 @@ export function hasValidToken(): boolean {
     return tokenExpiresAt.getTime() - Date.now() > 60000;
 }
 
-/**
- * Get current access token
- */
 export function getAccessToken(): string | null {
     return accessToken;
 }
 
 /**
- * Refresh the access token
- * Uses httpOnly cookie for refresh token (handled by browser automatically)
+ * Refresh the access + refresh tokens by presenting the current refresh
+ * token. Server rotates the refresh token on every use (Phase 6c).
  */
 async function refreshAccessToken(): Promise<void> {
     try {
+        if (!refreshToken) {
+            throw new Error('No refresh token available');
+        }
         const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
             method: 'POST',
-            credentials: 'include', // Include cookies for refresh token
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken }),
         });
 
         if (!response.ok) {
@@ -97,9 +130,11 @@ async function refreshAccessToken(): Promise<void> {
 
         const data = await response.json();
         setAccessToken(data.token, new Date(data.expiresAt));
+        if (data.refreshToken && data.refreshExpiresAt) {
+            setRefreshToken(data.refreshToken, new Date(data.refreshExpiresAt));
+        }
     } catch {
         clearAccessToken();
-        // Redirect to login
         if (typeof window !== 'undefined') {
             window.location.href = '/login?expired=true';
         }

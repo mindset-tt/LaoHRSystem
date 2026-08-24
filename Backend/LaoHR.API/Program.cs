@@ -1,6 +1,7 @@
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -11,16 +12,109 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using LaoHR.API.Services;
 using QuestPDF.Infrastructure;
+using Serilog;
+using Serilog.Events;
+using Serilog.Formatting.Compact;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
+// Phase 6a — Serilog as the host logger.
+// Configuration is sourced from `Serilog` section in appsettings; a fallback
+// in-code setup guarantees structured logs even when configuration is missing
+// (e.g. first boot, mis-configured env). File sink writes daily rolling JSON
+// files under `Logs/` and is opt-in for non-Development via the
+// `Serilog:WriteToFile` flag.
+// Phase 3B — use CreateLogger() (not CreateBootstrapLogger()) so the static
+// Log.Logger is a plain Logger, not a frozen ReloadableLogger. This avoids
+// "The logger is already frozen" when WebApplicationFactory re-runs the entry
+// point during integration testing.
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
+try
+{
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog((ctx, services, lc) =>
+{
+    lc
+        .ReadFrom.Configuration(ctx.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .Enrich.WithEnvironmentName()
+        .Enrich.WithMachineName()
+        .Enrich.WithThreadId()
+        .Enrich.WithProperty("Application", "LaoHR.API")
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+        .WriteTo.Console(new RenderedCompactJsonFormatter());
+
+    // Optional file sink — daily rolling JSON, lightweight (no Seq / no Elasticsearch
+    // dependency). Operators can tail `Logs/laohr-*.json` or ship via Filebeat.
+    if (ctx.Configuration.GetValue("Serilog:WriteToFile", false))
+    {
+        lc.WriteTo.File(
+            formatter: new CompactJsonFormatter(),
+            path: "Logs/laohr-.json",
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14,
+            shared: true);
+    }
+
+    // OTLP exporter — opt-in. When `OpenTelemetry:Otlp:Endpoint` is set, traces
+    // ship there. When unset, the OTel SDK is still wired but only exports to
+    // the console for local debugging.
+    var otlpEndpoint = ctx.Configuration["OpenTelemetry:Otlp:Endpoint"];
+    if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+    {
+        // Traces are exported via the OpenTelemetry pipeline; Serilog stays
+        // focused on logs. Keep this branch lightweight and side-effect free.
+    }
+});
 
 // QuestPDF License
 QuestPDF.Settings.License = LicenseType.Community;
 
 // JWT Configuration
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "LaoHRSystemSecretKey2024VeryLongKeyForSecurity!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "LaoHRSystem";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "LaoHRFrontend";
+// Phase 3A — fail-fast: in Production, the JWT key MUST be supplied via configuration.
+// The hardcoded fallback is only acceptable in Development/Testing.
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "LaoHRServer";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "LaoHRClient";
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
+    {
+        throw new InvalidOperationException(
+            "JWT signing key (Jwt:Key) is missing. " +
+            "Set it via environment variable 'Jwt__Key' (minimum 64 characters). " +
+            "Production/Staging MUST NOT use the hardcoded fallback key.");
+    }
+    // Development/Testing fallback only — never use in production
+    jwtKey = "LaoHRSystemSecretKey2024VeryLongKeyForSecurity!";
+}
+
+// Phase 4D — production startup config validation (fail fast).
+if (builder.Environment.IsProduction() || builder.Environment.IsStaging())
+{
+    if (jwtKey.Length < 64)
+        throw new InvalidOperationException(
+            "JWT signing key (Jwt:Key) must be at least 64 characters in Production/Staging.");
+
+    var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+    if (string.IsNullOrWhiteSpace(conn))
+        throw new InvalidOperationException(
+            "ConnectionStrings:DefaultConnection is missing. Set it via environment variable 'ConnectionStrings__DefaultConnection'.");
+
+    var origins = builder.Configuration["Cors:AllowedOrigins"];
+    if (string.IsNullOrWhiteSpace(origins))
+        throw new InvalidOperationException(
+            "Cors:AllowedOrigins is missing. Set it to a comma-separated allow-list of trusted origins.");
+}
 
 // Add services
 builder.Services.AddControllers()
@@ -62,44 +156,94 @@ builder.Services.AddAuthorization(options =>
 });
 
 // Rate limiter on /api/auth/login: 5 attempts per 60 seconds per IP, sliding window.
-builder.Services.AddRateLimiter(options =>
+// Disabled in Testing so integration tests (which share one IP) are not throttled.
+if (!builder.Environment.IsEnvironment("Testing"))
 {
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("auth-login", context =>
+    builder.Services.AddRateLimiter(options =>
     {
-        var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-        return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Login: 5 attempts / 60s per IP (sliding window).
+        options.AddPolicy("auth-login", context =>
         {
-            PermitLimit = 5,
-            Window = TimeSpan.FromSeconds(60),
-            SegmentsPerWindow = 6,
-            QueueLimit = 0,
-            QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-            AutoReplenishment = true
+            var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromSeconds(60),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                AutoReplenishment = true
+            });
+        });
+
+        // Refresh: 30 attempts / 60s per IP (higher than login; rotation is frequent).
+        options.AddPolicy("auth-refresh", context =>
+        {
+            var partitionKey = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+            {
+                PermitLimit = 30,
+                Window = TimeSpan.FromSeconds(60),
+                SegmentsPerWindow = 6,
+                QueueLimit = 0,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                AutoReplenishment = true
+            });
         });
     });
-});
+}
 
 // License key cache (5 minutes) — the license middleware reads this instead of
 // hitting the DB on every request.
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<LaoHR.API.Services.ILicenseKeyCache, LaoHR.API.Services.LicenseKeyCache>();
 
-// Health checks for liveness/readiness probes.
-builder.Services.AddHealthChecks();
+// Phase 6g — Health checks for liveness/readiness probes.
+// /health/live  = process is up (no dependencies)
+// /health/ready = DB connection is usable (Postgres)
+builder.Services.AddHealthChecks()
+    .AddNpgSql(
+        connectionStringFactory: _ => builder.Configuration.GetConnectionString("DefaultConnection") ?? string.Empty,
+        name: "postgres",
+        failureStatus: Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+        tags: new[] { "db", "ready" });
+
+// Phase 6b — OpenTelemetry tracing.
+// ASP.NET Core + EF Core + outbound HttpClient instrumented. Exporter:
+// OTLP when `OpenTelemetry:Otlp:Endpoint` is configured; console otherwise.
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(rb => rb.AddService("LaoHR.API"))
+    .WithTracing(tb =>
+    {
+        tb.AddAspNetCoreInstrumentation(opts =>
+            {
+                // Don't trace health checks — high-frequency, low-value.
+                opts.Filter = ctx => !ctx.Request.Path.StartsWithSegments("/health");
+            })
+          .AddHttpClientInstrumentation()
+          .AddEntityFrameworkCoreInstrumentation();
+
+        var otlpEndpoint = builder.Configuration["OpenTelemetry:Otlp:Endpoint"];
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            tb.AddOtlpExporter(o => o.Endpoint = new Uri(otlpEndpoint));
+        }
+    });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "Lao HR API", Version = "v1" });
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo { Title = "Lao HR API", Version = "v1" });
     
     // Authorization
-    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.OpenApiSecurityScheme
     {
-        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        In = Microsoft.OpenApi.ParameterLocation.Header,
         Description = "Please enter token",
         Name = "Authorization",
-        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
         BearerFormat = "JWT",
         Scheme = "bearer"
     });
@@ -130,6 +274,18 @@ else
 
 // Custom services
 builder.Services.AddScoped<PayrollService>();
+builder.Services.AddScoped<IComplianceRuleService, ComplianceRuleService>();
+builder.Services.AddScoped<IOrganizationHierarchyService, OrganizationHierarchyService>();
+builder.Services.AddScoped<IApprovalService, ApprovalService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<ICurrentEmployeeService, CurrentEmployeeService>();
+builder.Services.AddScoped<IDataScopeService, DataScopeService>();
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
+builder.Services.AddScoped<IProjectAccessService, ProjectAccessService>();
+builder.Services.AddScoped<IPmPlanningService, PmPlanningService>();
+builder.Services.AddScoped<IRecruitmentAccessService, RecruitmentAccessService>();
+builder.Services.AddScoped<IHireConversionService, HireConversionService>();
+builder.Services.AddScoped<IPerformanceAccessService, PerformanceAccessService>();
 builder.Services.AddScoped<PayslipPdfService>();
 builder.Services.AddScoped<IBankTransferService, BankTransferService>();
 builder.Services.AddScoped<NssfReportService>();
@@ -140,8 +296,38 @@ builder.Services.AddScoped<IAddressService, AddressService>();
 builder.Services.AddScoped<ILeaveService, LeaveService>();
 builder.Services.AddScoped<IWorkDayService, WorkDayService>();
 
+// Phase 4A — Back Office services
+builder.Services.AddScoped<INumberSequenceService, NumberSequenceService>();
+builder.Services.AddScoped<IBackOfficeAccessService, BackOfficeAccessService>();
+builder.Services.AddScoped<IInventoryService, InventoryService>();
+builder.Services.AddScoped<IBudgetService, BudgetService>();
+
+// Phase 4B — Finance + Accounting services
+builder.Services.AddScoped<IFinanceAccessService, FinanceAccessService>();
+builder.Services.AddScoped<IAccountingService, AccountingService>();
+builder.Services.AddScoped<IAccountsPayableService, AccountsPayableService>();
+
+// Phase 4B.1 — Accounting configuration + posting
+builder.Services.AddScoped<IAccountingConfigurationService, AccountingConfigurationService>();
+builder.Services.AddScoped<IPostingService, PostingService>();
+builder.Services.AddScoped<ISegregationOfDutiesService, SegregationOfDutiesService>();
+
+// Phase 4B.2 — Finance report export (CSV + Excel)
+builder.Services.AddScoped<IFinanceExportService, FinanceExportService>();
+
+// Phase 4C — Corporate Operations
+builder.Services.AddScoped<ICorporateOperationsAccessService, CorporateOperationsAccessService>();
+builder.Services.AddScoped<IDocumentService, DocumentService>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IContractLifecycleService, ContractLifecycleService>();
+builder.Services.AddScoped<IFleetService, FleetService>();
+
+// Phase 6c — Refresh-token rotation service.
+builder.Services.AddScoped<LaoHR.API.Services.IRefreshTokenService, LaoHR.API.Services.RefreshTokenService>();
+
 // Background Jobs
 builder.Services.AddHostedService<LaoHR.API.Jobs.LeaveScheduledJobsService>();
+builder.Services.AddHostedService<LaoHR.API.Jobs.RetentionService>();
 
 
 // CORS for frontend — locked to a known-origin allow-list.
@@ -181,9 +367,39 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Phase 3A — global exception handling with RFC 7807 ProblemDetails
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<LaoHR.API.Middleware.GlobalExceptionHandler>();
+
 var app = builder.Build();
 
 // Configure pipeline
+// Phase 3A — global exception handler (must be early in pipeline)
+app.UseExceptionHandler();
+
+// Phase 4D — forwarded headers (behind a TLS-terminating reverse proxy).
+// Only trust the configured known proxy/network; do not blindly trust arbitrary
+// X-Forwarded-* headers from any client.
+var knownProxy = builder.Configuration["ForwardedHeaders:KnownProxy"];
+if (!string.IsNullOrWhiteSpace(knownProxy))
+{
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+        KnownProxies = { System.Net.IPAddress.Parse(knownProxy) },
+    });
+}
+
+// Phase 4D — HTTPS redirection (only meaningful when not already behind a proxy
+// that terminates TLS; harmless otherwise).
+if (!builder.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// Phase 4D — security headers.
+app.UseMiddleware<LaoHR.API.Middleware.SecurityHeadersMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -195,7 +411,25 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowFrontend");
-app.UseRateLimiter();
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    app.UseRateLimiter();
+}
+
+// Phase 6a — Serilog request logging with structured enrichment.
+// One log line per HTTP request; never logs Authorization headers.
+app.UseSerilogRequestLogging(opts =>
+{
+    opts.MessageTemplate =
+        "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+    opts.EnrichDiagnosticContext = (diag, http) =>
+    {
+        diag.Set("RequestHost", http.Request.Host.Value);
+        diag.Set("RequestScheme", http.Request.Scheme);
+        diag.Set("UserAgent", http.Request.Headers.UserAgent.ToString());
+        diag.Set("ClientIP", http.Connection.RemoteIpAddress?.ToString() ?? "unknown");
+    };
+});
 
 // License check BEFORE authentication: an expired/invalid license should not
 // let a request get a JWT issued.
@@ -209,7 +443,16 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
+// Phase 6g — liveness vs readiness split.
+// Liveness: process is up (no deps). Readiness: DB reachable.
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false, // no checks → always healthy if the process is alive
+}).AllowAnonymous();
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+}).AllowAnonymous();
 
 // Seed / migrate database on startup
 using (var scope = app.Services.CreateScope())
@@ -220,26 +463,18 @@ using (var scope = app.Services.CreateScope())
 
     if (isTesting)
     {
+        // Testing uses InMemory — EnsureCreated builds the schema from the model.
         db.Database.EnsureCreated();
     }
     else
     {
-        // Try Migrate() first. If it fails (e.g. on a fresh DB where the
-        // migration history table doesn't exist yet, or against a provider
-        // mismatch), fall back to EnsureCreated. Once the bootstrap has run
-        // and the schema is in place, future boots will succeed with Migrate().
-        try
-        {
-            db.Database.Migrate();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠️  Migrate() failed: {ex.Message}. Falling back to EnsureCreated().");
-            db.Database.EnsureCreated();
-        }
+        // Phase 3B — production/development use EF Core migrations (Npgsql).
+        // No EnsureCreated fallback: a migration failure must surface loudly,
+        // not silently rebuild the schema and risk data loss.
+        db.Database.Migrate();
     }
 
-    // Demo users (admin/admin123, hr/hr123, employee/emp123) and other sample
+    // Demo users (admin/admin123, hradmin/hr123, employee/emp123) and other sample
     // data are seeded only in Development or Testing — never in Production.
     if (isDevelopment || isTesting)
     {
@@ -261,9 +496,19 @@ Console.WriteLine("🚀 Lao HR System API running at http://localhost:5000");
 if (builder.Environment.IsDevelopment())
 {
     Console.WriteLine("� Swagger UI: http://localhost:5000");
-    Console.WriteLine("🔐 Default users: admin/admin123, hr/hr123, employee/emp123 (Development only)");
+    Console.WriteLine("🔐 Default users: admin/admin123, hradmin/hr123, employee/emp123 (Development only)");
 }
 
 app.Run();
+}
+catch (Exception ex)
+{
+    // Phase 6a — fatal-startup log: emitted before the host logger takes over.
+    Log.Fatal(ex, "LaoHR.API host terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 public partial class Program { }

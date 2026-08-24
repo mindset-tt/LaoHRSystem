@@ -38,6 +38,13 @@ export const employeesApi = {
     },
 
     /**
+     * Phase 3C2 ESS — get the current user's own employee profile.
+     */
+    getMe: async (): Promise<Employee> => {
+        return apiClient.get<Employee>('/api/employees/me');
+    },
+
+    /**
      * Create new employee
      */
     create: async (employee: CreateEmployeeRequest): Promise<Employee> => {

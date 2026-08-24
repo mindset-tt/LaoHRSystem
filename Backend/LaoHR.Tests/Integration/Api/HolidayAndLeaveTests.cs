@@ -97,6 +97,13 @@ public class HolidayAndLeaveTests : IClassFixture<CustomWebApplicationFactory>
             if (emp2 == null) db.Employees.Add(new Employee { EmployeeId = approverId, EmployeeCode = "HR001", LaoName = "Approver", IsActive = true });
             else { emp2.IsActive = true; }
 
+            // Phase 3C2 — approval is server-side. The requester reports to the
+            // approver, and the "admin" user is linked to the approver employee so
+            // the approval engine can resolve the approver from the JWT.
+            emp1.ManagerId = approverId;
+            var approverUser = await db.Users.FirstOrDefaultAsync(u => u.Username == "admin");
+            if (approverUser != null) approverUser.EmployeeId = approverId;
+
             await db.SaveChangesAsync();
 
             // 2. NUCLEAR CLEANUP
@@ -165,14 +172,18 @@ public class HolidayAndLeaveTests : IClassFixture<CustomWebApplicationFactory>
              leaveId = myLeave.LeaveId;
         }
 
-        // STEP 2: ADMIN APPROVES LEAVE
+        // STEP 2: ADMIN (linked to approver employee) APPROVES LEAVE
         var hrLogin = await client.PostAsJsonAsync("/api/auth/login", new { Username = "admin", Password = "admin123" });
-        hrLogin.EnsureSuccessStatusCode();
+        if (!hrLogin.IsSuccessStatusCode)
+        {
+            var hrErr = await hrLogin.Content.ReadAsStringAsync();
+            throw new Exception($"Admin Login Failed: {hrLogin.StatusCode} - {hrErr}");
+        }
         var hrToken = (await hrLogin.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString();
 
         client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", hrToken);
 
-        var approval = new { ApprovedById = approverId, Notes = "Approved by Test" };
+        var approval = new { Notes = "Approved by Test" };
         var approveResp = await client.PostAsJsonAsync($"/api/leave/{leaveId}/approve", approval);
         
         if (!approveResp.IsSuccessStatusCode)

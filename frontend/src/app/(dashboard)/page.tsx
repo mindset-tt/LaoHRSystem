@@ -126,21 +126,10 @@ export default function DashboardPage() {
                             <CardTitle>{t.dashboardPage.activity.title}</CardTitle>
                             <CardDescription>{t.dashboardPage.activity.subtitle}</CardDescription>
                             <div className={styles.activityList}>
-                                <ActivityItem
-                                    title={t.dashboardPage.activity.mock.leave.title}
-                                    description={t.dashboardPage.activity.mock.leave.desc}
-                                    time="2 hours ago"
-                                />
-                                <ActivityItem
-                                    title={t.dashboardPage.activity.mock.employee.title}
-                                    description={t.dashboardPage.activity.mock.employee.desc}
-                                    time="Yesterday"
-                                />
-                                <ActivityItem
-                                    title={t.dashboardPage.activity.mock.payroll.title}
-                                    description={t.dashboardPage.activity.mock.payroll.desc}
-                                    time="3 days ago"
-                                />
+                                {/* Phase 3A — mock data removed. Replace with real activity feed when backend supports it. */}
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '14px', padding: '16px 0' }}>
+                                    No recent activity.
+                                </p>
                             </div>
                         </div>
                     </Card>

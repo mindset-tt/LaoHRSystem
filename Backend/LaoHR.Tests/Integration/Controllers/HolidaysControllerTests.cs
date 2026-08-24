@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using FluentAssertions;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 using LaoHR.Tests.Helpers;
 using Xunit;
 
@@ -14,12 +15,15 @@ public class HolidaysControllerTests : TestBase
     [Fact]
     public async Task GetHolidays_ReturnsList()
     {
+        // Arrange
+        await AuthenticateAsync();
+
         // Act
         var response = await _client.GetAsync("/api/holidays");
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var list = await response.Content.ReadFromJsonAsync<List<Holiday>>();
-        list.Should().NotBeNull();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<Holiday>>();
+        result.Should().NotBeNull();
     }
 }

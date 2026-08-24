@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
 using LaoHR.Shared.Pagination;
+using LaoHR.API.Services;
 
 namespace LaoHR.API.Controllers;
 
@@ -13,10 +14,20 @@ namespace LaoHR.API.Controllers;
 public class AttendanceController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
+    private readonly ICurrentEmployeeService _currentEmployee;
+    private readonly IApprovalService _approval;
+    private readonly INotificationService _notifications;
 
-    public AttendanceController(LaoHRDbContext context)
+    public AttendanceController(
+        LaoHRDbContext context,
+        ICurrentEmployeeService currentEmployee,
+        IApprovalService approval,
+        INotificationService notifications)
     {
         _context = context;
+        _currentEmployee = currentEmployee;
+        _approval = approval;
+        _notifications = notifications;
     }
 
     /// <summary>
@@ -237,6 +248,168 @@ public class AttendanceController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(existing ?? attendance);
     }
+
+    #region Attendance Corrections (Phase 3C2)
+
+    /// <summary>
+    /// Request a correction to an attendance record. Flows through the approval engine.
+    /// </summary>
+    [HttpPost("corrections")]
+    public async Task<ActionResult<AttendanceCorrection>> RequestCorrection([FromBody] CreateCorrectionRequest request)
+    {
+        var requesterEmployeeId = _currentEmployee.GetCurrentEmployeeId();
+        if (requesterEmployeeId == null)
+            return Unauthorized("No linked employee profile.");
+
+        var attendance = await _context.Attendances
+            .FirstOrDefaultAsync(a => a.AttendanceId == request.AttendanceId && a.EmployeeId == requesterEmployeeId.Value);
+        if (attendance == null)
+            return NotFound("Attendance record not found.");
+
+        var correction = new AttendanceCorrection
+        {
+            EmployeeId = requesterEmployeeId.Value,
+            AttendanceId = request.AttendanceId,
+            AttendanceDate = attendance.AttendanceDate,
+            CorrectedClockIn = request.CorrectedClockIn,
+            CorrectedClockOut = request.CorrectedClockOut,
+            Reason = request.Reason,
+            Status = "PENDING",
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.AttendanceCorrections.Add(correction);
+        await _context.SaveChangesAsync();
+
+        var requester = await _context.Employees.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.EmployeeId == requesterEmployeeId.Value);
+        var steps = new List<ApprovalStepDefinition>();
+        if (requester?.ManagerId != null)
+            steps.Add(new ApprovalStepDefinition { ResolverType = "DIRECT_MANAGER" });
+        else
+            steps.Add(new ApprovalStepDefinition { ResolverType = "ROLE", RoleName = "HR" });
+        await _approval.CreateRequestAsync("ATTENDANCE_CORRECTION", correction.CorrectionId, requesterEmployeeId.Value, steps);
+
+        if (requester?.ManagerId != null)
+        {
+            await _notifications.NotifyEmployeeAsync(
+                requester.ManagerId.Value,
+                "APPROVAL_REQUESTED",
+                "New attendance correction request",
+                $"{requester.EnglishName ?? requester.LaoName} requested an attendance correction.",
+                "ATTENDANCE_CORRECTION",
+                correction.CorrectionId);
+        }
+
+        return CreatedAtAction(nameof(GetCorrection), new { id = correction.CorrectionId }, correction);
+    }
+
+    /// <summary>Get a single correction request.</summary>
+    [HttpGet("corrections/{id:int}")]
+    public async Task<ActionResult<AttendanceCorrection>> GetCorrection(int id)
+    {
+        var correction = await _context.AttendanceCorrections
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.CorrectionId == id);
+        if (correction == null) return NotFound();
+        return Ok(correction);
+    }
+
+    /// <summary>Approve a correction (server-side identity).</summary>
+    [HttpPost("corrections/{id:int}/approve")]
+    public async Task<IActionResult> ApproveCorrection(int id, [FromBody] ApproveActionRequest? body = null)
+    {
+        return await SetCorrectionState(id, "APPROVED", body?.Notes);
+    }
+
+    /// <summary>Reject a correction (server-side identity).</summary>
+    [HttpPost("corrections/{id:int}/reject")]
+    public async Task<IActionResult> RejectCorrection(int id, [FromBody] ApproveActionRequest? body = null)
+    {
+        return await SetCorrectionState(id, "REJECTED", body?.Notes);
+    }
+
+    private async Task<IActionResult> SetCorrectionState(int id, string newStatus, string? notes)
+    {
+        var actorEmployeeId = _currentEmployee.GetCurrentEmployeeId();
+        if (actorEmployeeId == null)
+            return Unauthorized("No linked employee profile.");
+
+        var correction = await _context.AttendanceCorrections
+            .FirstOrDefaultAsync(c => c.CorrectionId == id);
+        if (correction == null) return NotFound();
+        if (correction.Status != "PENDING")
+            return BadRequest($"Only PENDING corrections can be {newStatus.ToLower()}.");
+
+        var approval = await _context.ApprovalRequests
+            .FirstOrDefaultAsync(r => r.RequestType == "ATTENDANCE_CORRECTION" && r.EntityId == id && r.Status == "PENDING");
+        if (approval == null)
+            return BadRequest("No pending approval for this correction.");
+
+        try
+        {
+            if (newStatus == "APPROVED")
+            {
+                var result = await _approval.ApproveAsync(approval.ApprovalRequestId, actorEmployeeId.Value, notes);
+                if (result.Status == "APPROVED")
+                {
+                    correction.Status = "APPROVED";
+                    correction.ApprovedById = actorEmployeeId.Value;
+                    correction.ApprovedAt = DateTime.UtcNow;
+                    correction.ApproverNotes = notes;
+                    await _context.SaveChangesAsync();
+
+                    // Apply the correction to the attendance record.
+                    var attendance = await _context.Attendances
+                        .FirstOrDefaultAsync(a => a.AttendanceId == correction.AttendanceId);
+                    if (attendance != null)
+                    {
+                        if (correction.CorrectedClockIn.HasValue) attendance.ClockIn = correction.CorrectedClockIn;
+                        if (correction.CorrectedClockOut.HasValue) attendance.ClockOut = correction.CorrectedClockOut;
+                        if (attendance.ClockIn != null && attendance.ClockOut != null)
+                            attendance.WorkHours = Math.Round((decimal)(attendance.ClockOut.Value - attendance.ClockIn.Value).TotalHours, 2);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    await _notifications.NotifyEmployeeAsync(
+                        correction.EmployeeId,
+                        "APPROVAL_APPROVED",
+                        "Attendance correction approved",
+                        "Your attendance correction was approved.",
+                        "ATTENDANCE_CORRECTION",
+                        correction.CorrectionId);
+                }
+            }
+            else
+            {
+                await _approval.RejectAsync(approval.ApprovalRequestId, actorEmployeeId.Value, notes);
+                correction.Status = "REJECTED";
+                correction.ApprovedById = actorEmployeeId.Value;
+                correction.ApprovedAt = DateTime.UtcNow;
+                correction.ApproverNotes = notes;
+                await _context.SaveChangesAsync();
+
+                await _notifications.NotifyEmployeeAsync(
+                    correction.EmployeeId,
+                    "APPROVAL_REJECTED",
+                    "Attendance correction rejected",
+                    "Your attendance correction was rejected.",
+                    "ATTENDANCE_CORRECTION",
+                    correction.CorrectionId);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+
+        return NoContent();
+    }
+
+    #endregion
 }
 
 public class ClockRequest
@@ -245,6 +418,14 @@ public class ClockRequest
     public decimal? Latitude { get; set; }
     public decimal? Longitude { get; set; }
     public string? Method { get; set; }
+}
+
+public class CreateCorrectionRequest
+{
+    public int AttendanceId { get; set; }
+    public DateTime? CorrectedClockIn { get; set; }
+    public DateTime? CorrectedClockOut { get; set; }
+    public string Reason { get; set; } = string.Empty;
 }
 
 public sealed class AttendanceListItem

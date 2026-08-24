@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
@@ -34,15 +35,15 @@ public class PayrollService
         var settings = await _context.SystemSettings.ToDictionaryAsync(s => s.SettingKey, s => s.SettingValue);
         
         if (settings.TryGetValue("NSSF_CEILING_BASE", out var ceiling))
-            _nssfCeilingBase = decimal.Parse(ceiling);
+            _nssfCeilingBase = decimal.Parse(ceiling, CultureInfo.InvariantCulture);
         if (settings.TryGetValue("NSSF_EMPLOYEE_RATE", out var empRate))
-            _nssfEmployeeRate = decimal.Parse(empRate);
+            _nssfEmployeeRate = decimal.Parse(empRate, CultureInfo.InvariantCulture);
         if (settings.TryGetValue("NSSF_EMPLOYER_RATE", out var erRate))
-            _nssfEmployerRate = decimal.Parse(erRate);
+            _nssfEmployerRate = decimal.Parse(erRate, CultureInfo.InvariantCulture);
         if (settings.TryGetValue("EX_RATE_USD", out var usd))
-            _exRateUsd = decimal.Parse(usd);
+            _exRateUsd = decimal.Parse(usd, CultureInfo.InvariantCulture);
         if (settings.TryGetValue("EX_RATE_THB", out var thb))
-            _exRateThb = decimal.Parse(thb);
+            _exRateThb = decimal.Parse(thb, CultureInfo.InvariantCulture);
         
         _taxBrackets = await _context.TaxBrackets
             .Where(t => t.IsActive)

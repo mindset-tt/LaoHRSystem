@@ -1,0 +1,158 @@
+.thread {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border);
+}
+
+.header {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-2);
+}
+
+.title {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+}
+
+.count {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.muted {
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.item {
+    /* nested items handled by .replies */
+}
+
+.comment {
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.comment.deleted {
+    opacity: 0.6;
+}
+
+.commentHeader {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-2);
+}
+
+.author {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--text);
+}
+
+.time {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+}
+
+.body {
+    margin: 0;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-size: var(--font-size-sm);
+    color: var(--text);
+}
+
+.comment.deleted .body {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.actions {
+    display: flex;
+    gap: var(--space-2);
+    align-items: center;
+}
+
+.actionBtn {
+    background: transparent;
+    border: none;
+    padding: 2px 4px;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+.actionBtn:hover {
+    color: var(--primary);
+}
+
+.editArea,
+.replyComposer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.textarea {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    font: inherit;
+    resize: vertical;
+    min-height: 60px;
+    box-sizing: border-box;
+}
+
+.textarea:focus {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.inlineActions,
+.composerActions {
+    display: flex;
+    gap: var(--space-2);
+    justify-content: flex-end;
+}
+
+.replies {
+    list-style: none;
+    margin: var(--space-2) 0 0 0;
+    padding: 0 0 0 var(--space-3);
+    border-left: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.composer {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+}

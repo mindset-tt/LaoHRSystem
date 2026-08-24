@@ -24,6 +24,12 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         'payroll.export',
         'audit.view',
         'settings.edit',
+        'procurement.view',
+        'inventory.view',
+        'assets.view',
+        'contracts.view',
+        'finance.view',
+        'corporate.view',
     ],
     HR: [
         'employees.view',
@@ -36,6 +42,11 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         'payroll.view',
         'payroll.run',
         'payroll.export',
+        'procurement.view',
+        'inventory.view',
+        'assets.view',
+        'contracts.view',
+        'corporate.view',
     ],
     Employee: [
         'employees.view', // Self only - enforced by backend
@@ -43,6 +54,15 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
         'leave.view', // Self only
         'payroll.view', // Self only
         'payroll.export', // Self only
+        'corporate.view', // Self-service (book rooms/vehicles, own travel)
+    ],
+    Finance: [
+        'finance.view',
+        'procurement.view',
+        'inventory.view',
+        'assets.view',
+        'contracts.view',
+        'corporate.view',
     ],
 };
 
@@ -108,4 +128,11 @@ export function isAdmin(role: UserRole | undefined): boolean {
  */
 export function isHROrAdmin(role: UserRole | undefined): boolean {
     return role === 'Admin' || role === 'HR';
+}
+
+/**
+ * Check if user is Finance or Admin (finance access)
+ */
+export function isFinance(role: UserRole | undefined): boolean {
+    return role === 'Admin' || role === 'Finance';
 }

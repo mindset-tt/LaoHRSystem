@@ -386,8 +386,3 @@ public class IssuesController : ControllerBase
 
     private static string Escape(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"");
 }
-
-public class AddCommentRequest
-{
-    public string Body { get; set; } = string.Empty;
-}

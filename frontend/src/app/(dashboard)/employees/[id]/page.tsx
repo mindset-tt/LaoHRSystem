@@ -49,32 +49,14 @@ export default function EmployeeDetailPage() {
         loadEmployee();
     }, [employeeId]);
 
-    const [documents, setDocuments] = useState<any[]>([
-        { id: 1, name: 'Employment Connect.pdf', size: '2.4 MB', date: '2024-01-15', type: 'pdf' },
-        { id: 2, name: 'ID Card.jpg', size: '1.8 MB', date: '2024-01-10', type: 'image' },
-    ]);
+    // Phase 3B — no mock documents. Documents are not yet wired to the backend
+    // API; show an empty state until the documents endpoint is integrated.
+    const [documents, setDocuments] = useState<any[]>([]);
     const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
 
     const handleUpload = () => {
-        // Mock upload
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.onchange = (e) => {
-            const file = (e.target as HTMLInputElement).files?.[0];
-            if (file) {
-                setDocuments([
-                    ...documents,
-                    {
-                        id: Date.now(),
-                        name: file.name,
-                        size: `${(file.size / 1024 / 1024).toFixed(1)} MB`,
-                        date: new Date().toISOString().split('T')[0],
-                        type: file.type.includes('image') ? 'image' : 'pdf'
-                    }
-                ]);
-            }
-        };
-        input.click();
+        // Phase 3B — document upload is not yet wired to the backend API.
+        // Intentionally no-op until the documents endpoint is integrated.
     };
 
     const handleDelete = () => {

@@ -9,6 +9,7 @@ using LaoHR.API.Data;
 using LaoHR.Tests.Helpers;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
+using LaoHR.Shared.Pagination;
 using Xunit;
 
 namespace LaoHR.Tests.Integration.Controllers;
@@ -50,8 +51,9 @@ public class EmployeesControllerTests : TestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        var employees = await response.Content.ReadFromJsonAsync<List<Employee>>();
-        employees.Should().NotBeNullOrEmpty();
+        var result = await response.Content.ReadFromJsonAsync<PaginatedResponse<EmployeeListItem>>();
+        result.Should().NotBeNull();
+        result!.Items.Should().NotBeNullOrEmpty();
     }
     
     [Fact]

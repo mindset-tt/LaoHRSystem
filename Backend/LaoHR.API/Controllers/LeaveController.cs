@@ -19,17 +19,29 @@ public class LeaveController : ControllerBase
     private readonly IEmailService _emailService;
     private readonly IConfiguration _configuration;
     private readonly IWebHostEnvironment _environment;
+    private readonly ICurrentEmployeeService _currentEmployee;
+    private readonly IApprovalService _approval;
+    private readonly INotificationService _notifications;
+    private readonly IDataScopeService _scope;
     
     public LeaveController(
         LaoHRDbContext context, 
         IEmailService emailService, 
         IConfiguration configuration,
-        IWebHostEnvironment environment)
+        IWebHostEnvironment environment,
+        ICurrentEmployeeService currentEmployee,
+        IApprovalService approval,
+        INotificationService notifications,
+        IDataScopeService scope)
     {
         _context = context;
         _emailService = emailService;
         _configuration = configuration;
         _environment = environment;
+        _currentEmployee = currentEmployee;
+        _approval = approval;
+        _notifications = notifications;
+        _scope = scope;
     }
     
     #region Leave Requests
@@ -49,8 +61,14 @@ public class LeaveController : ControllerBase
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, PaginatedQuery.MaxPageSize);
 
+        // Phase 3C3 — read-path authorization: intersect the requested filter
+        // with the current user's visible employee scope. A non-privileged user
+        // can only see their own (and, for managers, direct reports') leave.
+        var visibleIds = await _scope.GetVisibleEmployeeIdsAsync();
+
         var query = _context.LeaveRequests
             .AsNoTracking()
+            .Where(l => visibleIds.Contains(l.EmployeeId))
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -73,7 +91,7 @@ public class LeaveController : ControllerBase
             .Take(pageSize)
             .Select(l => new LeaveRequestListItem
             {
-                LeaveRequestId = l.LeaveRequestId,
+                LeaveRequestId = l.LeaveId,
                 EmployeeId = l.EmployeeId,
                 LeaveType = l.LeaveType,
                 StartDate = l.StartDate,
@@ -105,6 +123,14 @@ public class LeaveController : ControllerBase
     public async Task<ActionResult<IEnumerable<LeaveBalanceDto>>> GetLeaveBalance([FromQuery] int? employeeId = null)
     {
         var currentYear = DateTime.UtcNow.Year;
+
+        // Phase 3C3 — non-privileged users may only see their own balance.
+        if (!_scope.IsPrivileged())
+        {
+            var selfId = _scope.GetCurrentEmployeeId();
+            if (selfId == null) return Ok(new List<LeaveBalanceDto>());
+            employeeId = selfId.Value;
+        }
         
         // Get all leave policies
         var policies = await _context.LeavePolicies.Where(p => p.IsActive).ToListAsync();
@@ -149,10 +175,14 @@ public class LeaveController : ControllerBase
     {
         var startDate = new DateTime(year, month, 1);
         var endDate = startDate.AddMonths(1).AddDays(-1);
+
+        // Phase 3C3 — scope calendar to the current user's visible employees.
+        var visibleIds = await _scope.GetVisibleEmployeeIdsAsync();
         
         var leaves = await _context.LeaveRequests
             .Include(l => l.Employee)
-            .Where(l => (l.Status == "APPROVED" || l.Status == "PENDING") &&
+            .Where(l => visibleIds.Contains(l.EmployeeId) &&
+                        (l.Status == "APPROVED" || l.Status == "PENDING") &&
                         l.StartDate <= endDate && l.EndDate >= startDate)
             .Select(l => new LeaveCalendarItem
             {
@@ -178,6 +208,13 @@ public class LeaveController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<LeaveRequest>> CreateLeaveRequest([FromForm] CreateLeaveRequestDto request)
     {
+        // Phase 3C2 — resolve the requester from the authenticated user, never
+        // from the client. This closes the IDOR where any user could submit a
+        // leave request on behalf of another employee.
+        var requesterEmployeeId = _currentEmployee.GetCurrentEmployeeId();
+        if (requesterEmployeeId == null)
+            return Unauthorized("No linked employee profile.");
+
         // Get policy for this leave type
         var policy = await _context.LeavePolicies.FirstOrDefaultAsync(p => p.LeaveType == request.LeaveType);
         if (policy == null)
@@ -185,7 +222,7 @@ public class LeaveController : ControllerBase
         
         var leaveRequest = new LeaveRequest
         {
-            EmployeeId = request.EmployeeId,
+            EmployeeId = requesterEmployeeId.Value,
             LeaveType = request.LeaveType,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
@@ -237,7 +274,7 @@ public class LeaveController : ControllerBase
         // Validate leave balance
         var currentYear = DateTime.UtcNow.Year;
         var usedDays = await _context.LeaveRequests
-            .Where(l => l.EmployeeId == request.EmployeeId 
+            .Where(l => l.EmployeeId == requesterEmployeeId.Value 
                      && l.LeaveType == request.LeaveType
                      && (l.Status == "APPROVED" || l.Status == "PENDING")
                      && l.StartDate.Year == currentYear)
@@ -252,8 +289,36 @@ public class LeaveController : ControllerBase
         _context.LeaveRequests.Add(leaveRequest);
         await _context.SaveChangesAsync();
         
+        // Phase 3C2 — create the approval request (DIRECT_MANAGER step).
+        // If the employee has no manager, fall back to an HR role step.
+        var requester = await _context.Employees.AsNoTracking()
+            .FirstOrDefaultAsync(e => e.EmployeeId == requesterEmployeeId.Value);
+        var steps = new List<ApprovalStepDefinition>();
+        if (requester?.ManagerId != null)
+        {
+            steps.Add(new ApprovalStepDefinition { ResolverType = "DIRECT_MANAGER" });
+        }
+        else
+        {
+            steps.Add(new ApprovalStepDefinition { ResolverType = "ROLE", RoleName = "HR" });
+        }
+        await _approval.CreateRequestAsync("LEAVE", leaveRequest.LeaveId, requesterEmployeeId.Value, steps);
+
+        // Notify the approver (best-effort).
+        var approverEmployeeId = requester?.ManagerId;
+        if (approverEmployeeId != null)
+        {
+            await _notifications.NotifyEmployeeAsync(
+                approverEmployeeId.Value,
+                "APPROVAL_REQUESTED",
+                "New leave request",
+                $"{requester?.EnglishName ?? requester?.LaoName} requested {leaveRequest.TotalDays} day(s) of {leaveRequest.LeaveType} leave.",
+                "LEAVE",
+                leaveRequest.LeaveId);
+        }
+
         // Notify HR
-        var employee = await _context.Employees.FindAsync(request.EmployeeId);
+        var employee = await _context.Employees.FindAsync(requesterEmployeeId.Value);
         var hrEmail = _configuration["SmtpSettings:HrEmail"];
         if (!string.IsNullOrEmpty(hrEmail) && employee != null)
         {
@@ -274,33 +339,60 @@ public class LeaveController : ControllerBase
     }
     
     /// <summary>
-    /// Approve leave request
+    /// Approve leave request (Phase 3C2 — routed through the approval engine).
+    /// Approver identity is resolved server-side; the client-supplied
+    /// <c>ApprovedById</c> is ignored.
     /// </summary>
     [HttpPost("{id}/approve")]
     public async Task<IActionResult> ApproveLeave(int id, [FromBody] ApproveRequest request)
     {
+        var actorEmployeeId = _currentEmployee.GetCurrentEmployeeId();
+        if (actorEmployeeId == null)
+            return Unauthorized("No linked employee profile.");
+
         var leave = await _context.LeaveRequests
             .Include(l => l.Employee)
             .FirstOrDefaultAsync(l => l.LeaveId == id);
             
         if (leave == null) return NotFound();
-        
-        // Validate state transition: only PENDING leaves can be approved
-        if (leave.Status != "PENDING")
-            return BadRequest($"Cannot approve leave in '{leave.Status}' status. Only PENDING leaves can be approved.");
-        
-        // Prevent self-approval
-        if (request.ApprovedById == leave.EmployeeId)
-            return BadRequest("Employees cannot approve their own leave requests.");
-        
-        leave.Status = "APPROVED";
-        leave.ApprovedById = request.ApprovedById;
-        leave.ApprovedAt = DateTime.UtcNow;
-        leave.ApproverNotes = request.Notes;
-        
-        await _context.SaveChangesAsync();
-        
-        // Notify Employee
+
+        var approval = await _context.ApprovalRequests
+            .FirstOrDefaultAsync(r => r.RequestType == "LEAVE" && r.EntityId == id && r.Status == "PENDING");
+        if (approval == null)
+            return BadRequest("No pending approval for this leave request.");
+
+        try
+        {
+            var result = await _approval.ApproveAsync(approval.ApprovalRequestId, actorEmployeeId.Value, request.Notes);
+
+            // Only finalize the leave when the whole chain is approved.
+            if (result.Status == "APPROVED")
+            {
+                leave.Status = "APPROVED";
+                leave.ApprovedById = actorEmployeeId.Value;
+                leave.ApprovedAt = DateTime.UtcNow;
+                leave.ApproverNotes = request.Notes;
+                await _context.SaveChangesAsync();
+
+                await _notifications.NotifyEmployeeAsync(
+                    leave.EmployeeId,
+                    "APPROVAL_APPROVED",
+                    "Leave request approved",
+                    $"Your {leave.LeaveType} leave request was approved.",
+                    "LEAVE",
+                    leave.LeaveId);
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+
+        // Notify Employee (email, best-effort)
         if (!string.IsNullOrEmpty(leave.Employee?.Email))
         {
             var subject = "Leave Request Approved";
@@ -316,29 +408,54 @@ public class LeaveController : ControllerBase
     }
     
     /// <summary>
-    /// Reject leave request
+    /// Reject leave request (Phase 3C2 — routed through the approval engine).
     /// </summary>
     [HttpPost("{id}/reject")]
     public async Task<IActionResult> RejectLeave(int id, [FromBody] ApproveRequest request)
     {
+        var actorEmployeeId = _currentEmployee.GetCurrentEmployeeId();
+        if (actorEmployeeId == null)
+            return Unauthorized("No linked employee profile.");
+
         var leave = await _context.LeaveRequests
             .Include(l => l.Employee)
             .FirstOrDefaultAsync(l => l.LeaveId == id);
             
         if (leave == null) return NotFound();
-        
-        // Validate state transition: only PENDING leaves can be rejected
-        if (leave.Status != "PENDING")
-            return BadRequest($"Cannot reject leave in '{leave.Status}' status. Only PENDING leaves can be rejected.");
-        
-        leave.Status = "REJECTED";
-        leave.ApprovedById = request.ApprovedById;
-        leave.ApprovedAt = DateTime.UtcNow;
-        leave.ApproverNotes = request.Notes;
-        
-        await _context.SaveChangesAsync();
-        
-        // Notify Employee
+
+        var approval = await _context.ApprovalRequests
+            .FirstOrDefaultAsync(r => r.RequestType == "LEAVE" && r.EntityId == id && r.Status == "PENDING");
+        if (approval == null)
+            return BadRequest("No pending approval for this leave request.");
+
+        try
+        {
+            await _approval.RejectAsync(approval.ApprovalRequestId, actorEmployeeId.Value, request.Notes);
+
+            leave.Status = "REJECTED";
+            leave.ApprovedById = actorEmployeeId.Value;
+            leave.ApprovedAt = DateTime.UtcNow;
+            leave.ApproverNotes = request.Notes;
+            await _context.SaveChangesAsync();
+
+            await _notifications.NotifyEmployeeAsync(
+                leave.EmployeeId,
+                "APPROVAL_REJECTED",
+                "Leave request rejected",
+                $"Your {leave.LeaveType} leave request was rejected.",
+                "LEAVE",
+                leave.LeaveId);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
+        }
+
+        // Notify Employee (email, best-effort)
         if (!string.IsNullOrEmpty(leave.Employee?.Email))
         {
             var subject = "Leave Request Rejected";
@@ -400,10 +517,13 @@ public class LeaveController : ControllerBase
         [FromQuery] int? employeeId = null)
     {
         var targetYear = year ?? DateTime.UtcNow.Year;
+
+        // Phase 3C3 — export must use the same scope as the dashboard/list.
+        var visibleIds = await _scope.GetVisibleEmployeeIdsAsync();
         
         var query = _context.LeaveRequests
             .Include(l => l.Employee)
-            .Where(l => l.StartDate.Year == targetYear);
+            .Where(l => visibleIds.Contains(l.EmployeeId) && l.StartDate.Year == targetYear);
         
         if (employeeId.HasValue)
             query = query.Where(l => l.EmployeeId == employeeId.Value);
@@ -585,7 +705,7 @@ public sealed class LeaveRequestListItem
     public string LeaveType { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
-    public int TotalDays { get; set; }
+    public decimal TotalDays { get; set; }
     public string? Reason { get; set; }
     public string Status { get; set; } = string.Empty;
     public int? ApprovedById { get; set; }

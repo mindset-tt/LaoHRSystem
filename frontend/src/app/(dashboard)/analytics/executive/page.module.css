@@ -1,0 +1,58 @@
+.page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.sectionTitle {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.attention {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.attentionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.attentionItem:last-child {
+    border-bottom: none;
+}
+
+.attentionTitle {
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.attentionCount {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--color-warning, #d97706);
+}
+
+.error {
+    color: var(--color-error, #dc2626);
+    padding: 16px;
+}

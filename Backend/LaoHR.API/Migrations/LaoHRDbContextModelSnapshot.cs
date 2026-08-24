@@ -3,8 +3,8 @@ using System;
 using LaoHR.Shared.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -17,49 +17,241 @@ namespace LaoHR.API.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("ProductVersion", "10.0.11")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Account", b =>
+                {
+                    b.Property<int>("AccountId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AccountId"));
+
+                    b.Property<string>("AccountCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("AccountType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsPostingAccount")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("ParentAccountId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AccountId");
+
+                    b.HasIndex("AccountCode")
+                        .IsUnique();
+
+                    b.HasIndex("ParentAccountId");
+
+                    b.ToTable("Accounts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ActivityLog", b =>
+                {
+                    b.Property<long>("ActivityId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("ActivityId"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<int>("ActorId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PayloadJson")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ActivityId");
+
+                    b.HasIndex("ActorId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("ProjectId", "CreatedAt");
+
+                    b.ToTable("ActivityLogs");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Announcement", b =>
+                {
+                    b.Property<int>("AnnouncementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnnouncementId"));
+
+                    b.Property<string>("Audience")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("AudienceDepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("AudienceRoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BodyLao")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsPinned")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("PublishFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PublishUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Severity")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleLao")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AnnouncementId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("Audience", "PublishFrom");
+
+                    b.HasIndex("IsPinned", "CreatedAt");
+
+                    b.ToTable("Announcements");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AnnouncementRead", b =>
+                {
+                    b.Property<int>("AnnouncementReadId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AnnouncementReadId"));
+
+                    b.Property<int>("AnnouncementId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AnnouncementReadId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("AnnouncementId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("AnnouncementReads");
+                });
 
             modelBuilder.Entity("LaoHR.Shared.Models.AppUser", b =>
                 {
                     b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DisplayName")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int?>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("LastLoginAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)");
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<int>("PasswordHashVersion")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.HasKey("UserId");
 
@@ -68,19 +260,355 @@ namespace LaoHR.API.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Application", b =>
+                {
+                    b.Property<int>("ApplicationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ApplicationId"));
+
+                    b.Property<DateTime>("AppliedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentStage")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("OpeningId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RejectionComment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ApplicationId");
+
+                    b.HasIndex("CandidateId");
+
+                    b.HasIndex("OpeningId");
+
+                    b.HasIndex("CurrentStage", "Status");
+
+                    b.ToTable("Applications");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApplicationStageHistory", b =>
+                {
+                    b.Property<int>("StageHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StageHistoryId"));
+
+                    b.Property<int?>("ActorEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FromStage")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("ToStage")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("StageHistoryId");
+
+                    b.HasIndex("ApplicationId", "CreatedAt");
+
+                    b.ToTable("ApplicationStageHistories");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalAction", b =>
+                {
+                    b.Property<int>("ApprovalActionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ApprovalActionId"));
+
+                    b.Property<DateTime>("ActedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("ActorEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ApprovalRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.HasKey("ApprovalActionId");
+
+                    b.HasIndex("ApprovalRequestId", "ActedAt");
+
+                    b.ToTable("ApprovalActions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalRequest", b =>
+                {
+                    b.Property<int>("ApprovalRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ApprovalRequestId"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentStepIndex")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequestType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("RequesterEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ApprovalRequestId");
+
+                    b.HasIndex("RequestType", "EntityId");
+
+                    b.HasIndex("RequesterEmployeeId", "Status");
+
+                    b.ToTable("ApprovalRequests");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalStep", b =>
+                {
+                    b.Property<int>("ApprovalStepId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ApprovalStepId"));
+
+                    b.Property<DateTime?>("ActedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ApprovalRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ApproverEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ResolverType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("RoleName")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("StepOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ApprovalStepId");
+
+                    b.HasIndex("ApprovalRequestId", "StepOrder");
+
+                    b.HasIndex("ApproverEmployeeId", "Status");
+
+                    b.ToTable("ApprovalSteps");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Asset", b =>
+                {
+                    b.Property<int>("AssetId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssetId"));
+
+                    b.Property<decimal?>("AcquisitionCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("AssetCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("CustodianEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("GoodsReceiptItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("PurchaseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("PurchaseOrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AssetId");
+
+                    b.HasIndex("AssetCode")
+                        .IsUnique();
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("CustodianEmployeeId");
+
+                    b.HasIndex("GoodsReceiptItemId");
+
+                    b.HasIndex("PurchaseOrderItemId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("WorkLocationId");
+
+                    b.ToTable("Assets");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AssetAssignment", b =>
+                {
+                    b.Property<int>("AssetAssignmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssetAssignmentId"));
+
+                    b.Property<int>("AssetId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("AssignedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConditionAtAssignment")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("ConditionAtReturn")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ReturnedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AssetAssignmentId");
+
+                    b.HasIndex("AssignedByEmployeeId");
+
+                    b.HasIndex("AssetId", "AssignedAt");
+
+                    b.HasIndex("EmployeeId", "ReturnedAt");
+
+                    b.ToTable("AssetAssignments");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Attendance", b =>
                 {
                     b.Property<int>("AttendanceId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AttendanceId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AttendanceId"));
 
                     b.Property<DateTime>("AttendanceDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ClockIn")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("ClockInLatitude")
                         .HasColumnType("decimal(9,6)");
@@ -90,10 +618,10 @@ namespace LaoHR.API.Migrations
 
                     b.Property<string>("ClockInMethod")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime?>("ClockOut")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal?>("ClockOutLatitude")
                         .HasColumnType("decimal(9,6)");
@@ -103,25 +631,25 @@ namespace LaoHR.API.Migrations
 
                     b.Property<string>("ClockOutMethod")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsEarlyLeave")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsLate")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<decimal?>("WorkHours")
                         .HasColumnType("decimal(5,2)");
@@ -134,102 +662,427 @@ namespace LaoHR.API.Migrations
                     b.ToTable("Attendances");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.AttendanceCorrection", b =>
+                {
+                    b.Property<int>("CorrectionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CorrectionId"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ApprovedById")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApproverNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("AttendanceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("AttendanceId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CorrectedClockIn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CorrectedClockOut")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("CorrectionId");
+
+                    b.HasIndex("AttendanceId");
+
+                    b.HasIndex("EmployeeId", "Status");
+
+                    b.ToTable("AttendanceCorrections");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.AuditLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Action")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("EntityName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("KeyValues")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("NewValues")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("OldValues")
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserId")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.HasKey("Id");
 
                     b.ToTable("AuditLogs");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.BankAccount", b =>
+                {
+                    b.Property<int>("BankAccountId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BankAccountId"));
+
+                    b.Property<string>("AccountName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("AccountNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("BankName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Branch")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("GLAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal?>("OpeningBalance")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Swift")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("BankAccountId");
+
+                    b.HasIndex("AccountNumber");
+
+                    b.HasIndex("GLAccountId");
+
+                    b.ToTable("BankAccounts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Budget", b =>
+                {
+                    b.Property<int>("BudgetId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BudgetId"));
+
+                    b.Property<decimal>("ActualAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("ApprovedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<decimal>("CommittedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FiscalYear")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ReservedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("BudgetId");
+
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("FiscalYear", "CostCenterId");
+
+                    b.HasIndex("FiscalYear", "DepartmentId", "Category");
+
+                    b.ToTable("Budgets");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Candidate", b =>
+                {
+                    b.Property<int>("CandidateId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CandidateId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CurrentCompany")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("CurrentLocation")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("CurrentTitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FirstNameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LastNameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Source")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CandidateId");
+
+                    b.HasIndex("Email");
+
+                    b.ToTable("Candidates");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CandidateDocument", b =>
+                {
+                    b.Property<int>("CandidateDocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CandidateDocumentId"));
+
+                    b.Property<int>("CandidateId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CandidateDocumentId");
+
+                    b.HasIndex("CandidateId");
+
+                    b.ToTable("CandidateDocuments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CareerInterest", b =>
+                {
+                    b.Property<int>("CareerInterestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CareerInterestId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DevelopmentInterests")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FutureRoles")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Interests")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CareerInterestId");
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("CareerInterests");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.CompanySetting", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("BankAccountNo")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("BankName")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("CompanyNameEn")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("CompanyNameLao")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int?>("DistrictId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("LSSOCode")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int?>("ProvinceId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("TaxRisId")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Tel")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("VillageId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -242,34 +1095,351 @@ namespace LaoHR.API.Migrations
                     b.ToTable("CompanySettings");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Competency", b =>
+                {
+                    b.Property<int>("CompetencyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CompetencyId"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("CompetencyId");
+
+                    b.ToTable("Competencies");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CompetencyAssessment", b =>
+                {
+                    b.Property<int>("AssessmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssessmentId"));
+
+                    b.Property<DateTime>("AssessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AssessmentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("AssessorEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CompetencyId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("integer");
+
+                    b.HasKey("AssessmentId");
+
+                    b.HasIndex("AssessorEmployeeId");
+
+                    b.HasIndex("CompetencyId");
+
+                    b.HasIndex("EmployeeId", "CompetencyId");
+
+                    b.ToTable("CompetencyAssessments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ComplianceRule", b =>
+                {
+                    b.Property<int>("ComplianceRuleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ComplianceRuleId"));
+
+                    b.Property<string>("Article")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Authority")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EffectiveFrom")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EffectiveTo")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Jurisdiction")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("LawNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("ParametersJson")
+                        .HasColumnType("text");
+
+                    b.Property<string>("RuleId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("SourceTitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SourceUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("VerifiedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ComplianceRuleId");
+
+                    b.ToTable("ComplianceRules");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Contract", b =>
+                {
+                    b.Property<int>("ContractId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ContractId"));
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<bool>("AutoRenew")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ContractNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ContractType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NoticeDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("NoticePeriodDays")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("OwnerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RenewalType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ContractId");
+
+                    b.HasIndex("ContractNumber")
+                        .IsUnique();
+
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("OwnerEmployeeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("Status", "EndDate");
+
+                    b.ToTable("Contracts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ContractHistory", b =>
+                {
+                    b.Property<int>("ContractHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ContractHistoryId"));
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ChangedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ContractId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("NewAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("NewEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NewStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NewStatus")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<decimal?>("PreviousAmount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime?>("PreviousEndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PreviousStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PreviousStatus")
+                        .HasColumnType("text");
+
+                    b.HasKey("ContractHistoryId");
+
+                    b.HasIndex("ChangedByEmployeeId");
+
+                    b.HasIndex("ContractId");
+
+                    b.ToTable("ContractHistories");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.ConversionRate", b =>
                 {
                     b.Property<int>("ConversionRateId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ConversionRateId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ConversionRateId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("EffectiveDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ExpiryDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FromCurrency")
                         .IsRequired()
                         .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasColumnType("character varying(3)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Notes")
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<decimal>("Rate")
                         .HasColumnType("decimal(18,4)");
@@ -277,44 +1447,338 @@ namespace LaoHR.API.Migrations
                     b.Property<string>("ToCurrency")
                         .IsRequired()
                         .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("ConversionRateId");
 
                     b.ToTable("ConversionRates");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.CorporateDocument", b =>
+                {
+                    b.Property<int>("DocumentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DocumentId"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Confidentiality")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CurrentVersion")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("DocumentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("DocumentType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OwnerEntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("OwnerEntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("DocumentId");
+
+                    b.HasIndex("CreatedByEmployeeId");
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.HasIndex("OwnerEntityType", "OwnerEntityId");
+
+                    b.ToTable("CorporateDocuments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CostCenter", b =>
+                {
+                    b.Property<int>("CostCenterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CostCenterId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("CostCenterId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("CostCenters");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Customer", b =>
+                {
+                    b.Property<int>("CustomerId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CustomerId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CustomerCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LegalName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CustomerId");
+
+                    b.HasIndex("CustomerCode")
+                        .IsUnique();
+
+                    b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CustomerInvoice", b =>
+                {
+                    b.Property<int>("CustomerInvoiceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CustomerInvoiceId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("RemainingAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CustomerInvoiceId");
+
+                    b.HasIndex("CustomerId", "InvoiceNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "DueDate");
+
+                    b.ToTable("CustomerInvoices");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CustomerInvoiceLine", b =>
+                {
+                    b.Property<int>("CustomerInvoiceLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CustomerInvoiceLineId"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CustomerInvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("CustomerInvoiceLineId");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CustomerInvoiceId");
+
+                    b.ToTable("CustomerInvoiceLines");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
                 {
                     b.Property<int>("DepartmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DepartmentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DepartmentId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("DepartmentCode")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("DepartmentName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("DepartmentNameEn")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParentDepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
 
                     b.HasKey("DepartmentId");
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("ParentDepartmentId");
 
                     b.ToTable("Departments");
 
@@ -322,61 +1786,145 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             DepartmentId = 1,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9646),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(9780),
                             DepartmentCode = "ADMIN",
                             DepartmentName = "ບໍລິຫານ",
                             DepartmentNameEn = "Administration",
-                            IsActive = true
+                            IsActive = true,
+                            SortOrder = 0
                         },
                         new
                         {
                             DepartmentId = 2,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(85),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(838),
                             DepartmentCode = "FIN",
                             DepartmentName = "ການເງິນ",
                             DepartmentNameEn = "Finance & Accounting",
-                            IsActive = true
+                            IsActive = true,
+                            SortOrder = 0
                         },
                         new
                         {
                             DepartmentId = 3,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(87),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(840),
                             DepartmentCode = "IT",
                             DepartmentName = "ເຕັກນິກ",
                             DepartmentNameEn = "Information Technology",
-                            IsActive = true
+                            IsActive = true,
+                            SortOrder = 0
                         },
                         new
                         {
                             DepartmentId = 4,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(88),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(841),
                             DepartmentCode = "SALES",
                             DepartmentName = "ການຂາຍ",
                             DepartmentNameEn = "Sales & Marketing",
-                            IsActive = true
+                            IsActive = true,
+                            SortOrder = 0
                         });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.DevelopmentGoal", b =>
+                {
+                    b.Property<int>("DevelopmentGoalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DevelopmentGoalId"));
+
+                    b.Property<int?>("CompetencyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DesiredOutcome")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("DevelopmentPlanId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("TargetDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("DevelopmentGoalId");
+
+                    b.HasIndex("CompetencyId");
+
+                    b.HasIndex("DevelopmentPlanId");
+
+                    b.ToTable("DevelopmentGoals");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.DevelopmentPlan", b =>
+                {
+                    b.Property<int>("DevelopmentPlanId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DevelopmentPlanId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("PeriodEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PeriodStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("DevelopmentPlanId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.ToTable("DevelopmentPlans");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.District", b =>
                 {
                     b.Property<int>("DiId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DiId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DiId"));
 
                     b.Property<string>("DiName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("DiNameEn")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<int>("PrId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("DiId");
 
@@ -385,91 +1933,150 @@ namespace LaoHR.API.Migrations
                     b.ToTable("Districts");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.DocumentVersion", b =>
+                {
+                    b.Property<int>("DocumentVersionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DocumentVersionId"));
+
+                    b.Property<string>("Checksum")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<int>("DocumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("MimeType")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("StorageReference")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("UploadedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VersionNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DocumentVersionId");
+
+                    b.HasIndex("DocumentId");
+
+                    b.HasIndex("UploadedByEmployeeId");
+
+                    b.ToTable("DocumentVersions");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Employee", b =>
                 {
                     b.Property<int>("EmployeeId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EmployeeId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EmployeeId"));
 
                     b.Property<string>("BankAccount")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("BankName")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<decimal>("BaseSalary")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("DateOfBirth")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("DepartmentId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("DependentCount")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("EmployeeCode")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("EnglishName")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("Gender")
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("character varying(10)");
 
                     b.Property<DateTime?>("HireDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("JobTitle")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("LaoName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("NssfId")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("PositionId")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ProfilePath")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("SalaryCurrency")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("text");
 
                     b.Property<string>("TaxId")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
 
                     b.HasKey("EmployeeId");
 
@@ -478,6 +2085,12 @@ namespace LaoHR.API.Migrations
                     b.HasIndex("EmployeeCode")
                         .IsUnique();
 
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("WorkLocationId");
+
                     b.ToTable("Employees");
 
                     b.HasData(
@@ -485,7 +2098,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 1,
                             BaseSalary = 8000000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(1703),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(4120),
                             DepartmentId = 3,
                             DependentCount = 0,
                             Email = "somphon@laohr.la",
@@ -503,7 +2116,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 2,
                             BaseSalary = 12000000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3175),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7371),
                             DepartmentId = 1,
                             DependentCount = 0,
                             Email = "davanh@laohr.la",
@@ -521,7 +2134,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 3,
                             BaseSalary = 9500000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3180),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7378),
                             DepartmentId = 2,
                             DependentCount = 0,
                             Email = "manivanh@laohr.la",
@@ -539,7 +2152,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 4,
                             BaseSalary = 11000000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3182),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7381),
                             DepartmentId = 4,
                             DependentCount = 0,
                             Email = "phouvong@laohr.la",
@@ -557,7 +2170,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 5,
                             BaseSalary = 7500000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3184),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7384),
                             DepartmentId = 4,
                             DependentCount = 0,
                             Email = "bounmi@laohr.la",
@@ -575,7 +2188,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 6,
                             BaseSalary = 6500000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3186),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7386),
                             DepartmentId = 1,
                             DependentCount = 0,
                             Email = "souphaphon@laohr.la",
@@ -593,7 +2206,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 7,
                             BaseSalary = 15000000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3188),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7393),
                             DepartmentId = 3,
                             DependentCount = 0,
                             Email = "vilayphon@laohr.la",
@@ -611,7 +2224,7 @@ namespace LaoHR.API.Migrations
                         {
                             EmployeeId = 8,
                             BaseSalary = 25000000m,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(3190),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(7395),
                             DepartmentId = 2,
                             DependentCount = 0,
                             Email = "chanthala@laohr.la",
@@ -627,34 +2240,74 @@ namespace LaoHR.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.EmployeeCertification", b =>
+                {
+                    b.Property<int>("CertificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CertificationId"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("IssuedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Issuer")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("CertificationId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ExpiryDate");
+
+                    b.ToTable("EmployeeCertifications");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.EmployeeDocument", b =>
                 {
                     b.Property<int>("DocumentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DocumentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DocumentId"));
 
                     b.Property<string>("DocumentType")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("FileName")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("FilePath")
                         .IsRequired()
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("UploadedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("DocumentId");
 
@@ -663,44 +2316,789 @@ namespace LaoHR.API.Migrations
                     b.ToTable("EmployeeDocuments");
                 });
 
-            modelBuilder.Entity("LaoHR.Shared.Models.Holiday", b =>
+            modelBuilder.Entity("LaoHR.Shared.Models.EmployeeLoan", b =>
                 {
-                    b.Property<int>("HolidayId")
+                    b.Property<int>("LoanId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HolidayId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LoanId"));
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ApproverId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApproverNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("ExchangeRateUsed")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<decimal>("InstallmentAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Installments")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("InterestRate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("LoanNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("LoanType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Principal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("PrincipalLak")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("RepaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("LoanId");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("LoanNumber")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId", "Status");
+
+                    b.ToTable("EmployeeLoans");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.EntityComment", b =>
+                {
+                    b.Property<int>("EntityCommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EntityCommentId"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("EntityCommentId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("EntityType", "EntityId", "CreatedAt");
+
+                    b.ToTable("EntityComments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Expense", b =>
+                {
+                    b.Property<int>("ExpenseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExpenseId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("AmountLak")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ApprovedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ApproverId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ApproverNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("ExchangeRateUsed")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<DateTime>("ExpenseDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExpenseNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("PayrollPeriodId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceiptPath")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int?>("TravelRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ExpenseId");
+
+                    b.HasIndex("ApproverId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("ExpenseNumber")
+                        .IsUnique();
+
+                    b.HasIndex("PayrollPeriodId");
+
+                    b.HasIndex("TravelRequestId");
+
+                    b.HasIndex("EmployeeId", "Status");
+
+                    b.HasIndex("Status", "ExpenseDate");
+
+                    b.ToTable("Expenses");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ExpenseCategory", b =>
+                {
+                    b.Property<int>("ExpenseCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ExpenseCategoryId"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal?>("DefaultLimit")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsRecurring")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<string>("NameLao")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("RequiresReceipt")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("ExpenseCategoryId");
+
+                    b.HasIndex("AccountId");
+
+                    b.ToTable("ExpenseCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            ExpenseCategoryId = 1,
+                            Code = "TRAVEL",
+                            DefaultLimit = 2000000m,
+                            Description = "Flights, taxis, mileage",
+                            IsActive = true,
+                            Name = "Travel",
+                            NameLao = "ການເດີນທາງ",
+                            RequiresReceipt = true
+                        },
+                        new
+                        {
+                            ExpenseCategoryId = 2,
+                            Code = "MEALS",
+                            DefaultLimit = 300000m,
+                            IsActive = true,
+                            Name = "Meals & Entertainment",
+                            NameLao = "ອາຫານ ແລະ ການບັນເທີງ",
+                            RequiresReceipt = true
+                        },
+                        new
+                        {
+                            ExpenseCategoryId = 3,
+                            Code = "OFFICE",
+                            DefaultLimit = 500000m,
+                            IsActive = true,
+                            Name = "Office Supplies",
+                            NameLao = "ອຸປະກອນຫ້ອງການ",
+                            RequiresReceipt = true
+                        },
+                        new
+                        {
+                            ExpenseCategoryId = 4,
+                            Code = "TRAINING",
+                            DefaultLimit = 3000000m,
+                            IsActive = true,
+                            Name = "Training & Development",
+                            NameLao = "ການຝຶກອົບຮົມ",
+                            RequiresReceipt = true
+                        },
+                        new
+                        {
+                            ExpenseCategoryId = 5,
+                            Code = "COMMUNICATION",
+                            DefaultLimit = 200000m,
+                            IsActive = true,
+                            Name = "Communication",
+                            NameLao = "ການສື່ສານ",
+                            RequiresReceipt = true
+                        },
+                        new
+                        {
+                            ExpenseCategoryId = 6,
+                            Code = "OTHER",
+                            IsActive = true,
+                            Name = "Other",
+                            NameLao = "ອື່ນໆ",
+                            RequiresReceipt = false
+                        });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Facility", b =>
+                {
+                    b.Property<int>("FacilityId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FacilityId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FacilityCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("FacilityType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("FacilityId");
+
+                    b.HasIndex("FacilityCode")
+                        .IsUnique();
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("WorkLocationId");
+
+                    b.ToTable("Facilities");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Feedback", b =>
+                {
+                    b.Property<int>("FeedbackId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FeedbackId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FromEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("ToEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Visibility")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("FeedbackId");
+
+                    b.HasIndex("FromEmployeeId");
+
+                    b.HasIndex("ToEmployeeId");
+
+                    b.ToTable("Feedbacks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.FiscalPeriod", b =>
+                {
+                    b.Property<int>("FiscalPeriodId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FiscalPeriodId"));
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FiscalYearId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PeriodNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("FiscalPeriodId");
+
+                    b.HasIndex("FiscalYearId", "PeriodNumber")
+                        .IsUnique();
+
+                    b.ToTable("FiscalPeriods");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.FiscalYear", b =>
+                {
+                    b.Property<int>("FiscalYearId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FiscalYearId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("FiscalYearId");
+
+                    b.ToTable("FiscalYears");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.FuelLog", b =>
+                {
+                    b.Property<int>("FuelLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FuelLogId"));
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ExpenseId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Odometer")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("ReceiptDocumentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("FuelLogId");
+
+                    b.HasIndex("ExpenseId");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("FuelLogs");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Goal", b =>
+                {
+                    b.Property<int>("GoalId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GoalId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("GoalType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParentGoalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProgressPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("GoalId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("ParentGoalId");
+
+                    b.HasIndex("Status", "DueDate");
+
+                    b.ToTable("Goals");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoalCheckIn", b =>
+                {
+                    b.Property<int>("CheckInId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CheckInId"));
+
+                    b.Property<string>("Comment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("GoalId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProgressPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("CheckInId");
+
+                    b.HasIndex("GoalId", "CreatedAt");
+
+                    b.ToTable("GoalCheckIns");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoodsReceipt", b =>
+                {
+                    b.Property<int>("GoodsReceiptId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GoodsReceiptId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("ReceivedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ReceivedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("WarehouseId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("GoodsReceiptId");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("ReceiptNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ReceivedByEmployeeId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.ToTable("GoodsReceipts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoodsReceiptItem", b =>
+                {
+                    b.Property<int>("GoodsReceiptItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("GoodsReceiptItemId"));
+
+                    b.Property<decimal>("AcceptedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int>("GoodsReceiptId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PurchaseOrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("QuantityReceived")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("RejectedQuantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.HasKey("GoodsReceiptItemId");
+
+                    b.HasIndex("GoodsReceiptId");
+
+                    b.HasIndex("PurchaseOrderItemId");
+
+                    b.ToTable("GoodsReceiptItems");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Holiday", b =>
+                {
+                    b.Property<int>("HolidayId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("HolidayId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Date")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsRecurring")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Year")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("HolidayId");
 
@@ -713,143 +3111,929 @@ namespace LaoHR.API.Migrations
                         new
                         {
                             HolidayId = 1,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(372),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(1466),
                             Date = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International New Year",
                             NameLao = "ປີໃໝ່ສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(372),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(1467),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 2,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(980),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2947),
                             Date = new DateTime(2026, 3, 8, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Women's Day",
                             NameLao = "ວັນແມ່ຍິງສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(980),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2947),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 3,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(981),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2949),
                             Date = new DateTime(2026, 4, 14, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 1)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(982),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2950),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 4,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(983),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2951),
                             Date = new DateTime(2026, 4, 15, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 2)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(983),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2951),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 5,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(984),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2953),
                             Date = new DateTime(2026, 4, 16, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = false,
                             Name = "Lao New Year (Day 3)",
                             NameLao = "ວັນປີໃໝ່ລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(984),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2953),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 6,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(985),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2954),
                             Date = new DateTime(2026, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Labour Day",
                             NameLao = "ວັນກຳມະກອນສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(985),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2954),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 7,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(986),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2956),
                             Date = new DateTime(2026, 6, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "International Children's Day",
                             NameLao = "ວັນເດັກນ້ອຍສາກົນ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(987),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2956),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 8,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(988),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2957),
                             Date = new DateTime(2026, 7, 20, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "Lao Women's Union Day",
                             NameLao = "ວັນແມ່ຍິງລາວ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(988),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2958),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 9,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(989),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2974),
                             Date = new DateTime(2026, 10, 7, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "National Teacher's Day",
                             NameLao = "ວັນຄູແຫ່ງຊາດ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(989),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2974),
                             Year = 2026
                         },
                         new
                         {
                             HolidayId = 10,
-                            CreatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(990),
+                            CreatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2975),
                             Date = new DateTime(2026, 12, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
                             IsActive = true,
                             IsRecurring = true,
                             Name = "National Day",
                             NameLao = "ວັນຊາດ",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 86, DateTimeKind.Utc).AddTicks(990),
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 133, DateTimeKind.Utc).AddTicks(2975),
                             Year = 2026
                         });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Interview", b =>
+                {
+                    b.Property<int>("InterviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InterviewId"));
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InterviewType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("OrganizerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ScheduledEnd")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ScheduledStart")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("InterviewId");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("OrganizerEmployeeId");
+
+                    b.HasIndex("ScheduledStart");
+
+                    b.ToTable("Interviews");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InterviewEvaluation", b =>
+                {
+                    b.Property<int>("EvaluationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EvaluationId"));
+
+                    b.Property<string>("Comments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("CommunicationScore")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EvaluatorEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ExperienceScore")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("InterviewId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Recommendation")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("RoleFitScore")
+                        .HasColumnType("integer");
+
+                    b.HasKey("EvaluationId");
+
+                    b.HasIndex("EvaluatorEmployeeId");
+
+                    b.HasIndex("InterviewId", "EvaluatorEmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("InterviewEvaluations");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InterviewParticipant", b =>
+                {
+                    b.Property<int>("ParticipantId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ParticipantId"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("InterviewId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ParticipantId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("InterviewId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("InterviewParticipants");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InventoryCategory", b =>
+                {
+                    b.Property<int>("InventoryCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InventoryCategoryId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("ParentCategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("InventoryCategoryId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ParentCategoryId");
+
+                    b.ToTable("InventoryCategories");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InventoryItem", b =>
+                {
+                    b.Property<int>("InventoryItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("InventoryItemId"));
+
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ItemType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("ReorderLevel")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("SKU")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<bool>("TrackInventory")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("UnitOfMeasure")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("InventoryItemId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("SKU")
+                        .IsUnique();
+
+                    b.HasIndex("ItemType", "IsActive");
+
+                    b.ToTable("InventoryItems");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Issue", b =>
+                {
+                    b.Property<int>("IssueId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IssueId"));
+
+                    b.Property<int?>("AssigneeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("IssueId");
+
+                    b.HasIndex("AssigneeId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("TaskId");
+
+                    b.HasIndex("ProjectId", "AssigneeId");
+
+                    b.HasIndex("ProjectId", "Status");
+
+                    b.ToTable("Issues");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.IssueComment", b =>
+                {
+                    b.Property<int>("IssueCommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IssueCommentId"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("IssueId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("IssueCommentId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("IssueId", "CreatedAt");
+
+                    b.ToTable("IssueComments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JobOpening", b =>
+                {
+                    b.Property<int>("OpeningId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OpeningId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Requirements")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("RequisitionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Responsibilities")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleLao")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("OpeningId");
+
+                    b.HasIndex("RequisitionId", "Status");
+
+                    b.ToTable("JobOpenings");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JobRequisition", b =>
+                {
+                    b.Property<int>("RequisitionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RequisitionId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Headcount")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("HiringManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Justification")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("RequestedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RequisitionNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("TargetStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RequisitionId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("HiringManagerEmployeeId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("RequestedByEmployeeId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("WorkLocationId");
+
+                    b.ToTable("JobRequisitions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JournalEntry", b =>
+                {
+                    b.Property<int>("JournalEntryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("JournalEntryId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("FiscalPeriodId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("JournalNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("PostedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("PostedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("PostingDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PostingPurpose")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("ReversesJournalEntryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("SourceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("JournalEntryId");
+
+                    b.HasIndex("FiscalPeriodId");
+
+                    b.HasIndex("JournalNumber")
+                        .IsUnique();
+
+                    b.HasIndex("ReversesJournalEntryId");
+
+                    b.HasIndex("SourceType", "SourceId");
+
+                    b.HasIndex("Status", "PostingDate");
+
+                    b.HasIndex("SourceType", "SourceId", "PostingPurpose")
+                        .IsUnique()
+                        .HasFilter("\"SourceId\" IS NOT NULL AND \"PostingPurpose\" IS NOT NULL");
+
+                    b.ToTable("JournalEntries");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JournalLine", b =>
+                {
+                    b.Property<int>("JournalLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("JournalLineId"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Credit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<decimal>("Debit")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<decimal?>("ExchangeRate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<int>("JournalEntryId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("JournalLineId");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("JournalEntryId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("JournalLines");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.KnowledgeArticle", b =>
+                {
+                    b.Property<int>("KnowledgeArticleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("KnowledgeArticleId"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("BodyLao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleLao")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("integer");
+
+                    b.HasKey("KnowledgeArticleId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("CategoryId", "Status");
+
+                    b.ToTable("KnowledgeArticles");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.KnowledgeCategory", b =>
+                {
+                    b.Property<int>("KnowledgeCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("KnowledgeCategoryId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("KnowledgeCategoryId");
+
+                    b.ToTable("KnowledgeCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            KnowledgeCategoryId = 1,
+                            Code = "HR",
+                            Description = "Leave, attendance, benefits",
+                            IsActive = true,
+                            Name = "HR Policies",
+                            NameLao = "ນະໂຍບາຍ HR",
+                            SortOrder = 1
+                        },
+                        new
+                        {
+                            KnowledgeCategoryId = 2,
+                            Code = "IT",
+                            Description = "How-tos for software and access",
+                            IsActive = true,
+                            Name = "IT & Systems",
+                            NameLao = "IT ແລະ ລະບົບ",
+                            SortOrder = 2
+                        },
+                        new
+                        {
+                            KnowledgeCategoryId = 3,
+                            Code = "PAYROLL",
+                            Description = "Salary, tax, advances",
+                            IsActive = true,
+                            Name = "Payroll & Benefits",
+                            NameLao = "ເງິນເດືອນ ແລະ ສະຫວັດດີການ",
+                            SortOrder = 3
+                        },
+                        new
+                        {
+                            KnowledgeCategoryId = 4,
+                            Code = "GENERAL",
+                            Description = "Company-wide guides",
+                            IsActive = true,
+                            Name = "General",
+                            NameLao = "ທົ່ວໄປ",
+                            SortOrder = 4
+                        });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.LearningCourse", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CourseId"));
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DeliveryType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("TitleLao")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("CourseId");
+
+                    b.ToTable("LearningCourses");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.LeaveBalance", b =>
                 {
                     b.Property<int>("LeaveBalanceId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeaveBalanceId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LeaveBalanceId"));
 
                     b.Property<decimal>("CarriedOverDays")
                         .HasColumnType("decimal(5,1)");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("LeaveType")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<decimal>("TotalDays")
                         .HasColumnType("decimal(5,1)");
@@ -858,7 +4042,7 @@ namespace LaoHR.API.Migrations
                         .HasColumnType("decimal(5,1)");
 
                     b.Property<int>("Year")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("LeaveBalanceId");
 
@@ -872,42 +4056,42 @@ namespace LaoHR.API.Migrations
                 {
                     b.Property<int>("LeavePolicyId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeavePolicyId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LeavePolicyId"));
 
                     b.Property<decimal>("AccrualPerMonth")
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<bool>("AllowHalfDay")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("AnnualQuota")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LeaveType")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("LeaveTypeLao")
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("MaxCarryOver")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<int>("MinDaysForAttachment")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("RequiresAttachment")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("LeavePolicyId");
 
@@ -929,7 +4113,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 5,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(3417)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(2452)
                         },
                         new
                         {
@@ -943,7 +4127,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 3,
                             RequiresAttachment = true,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4386)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(4439)
                         },
                         new
                         {
@@ -957,7 +4141,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4564)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(4870)
                         },
                         new
                         {
@@ -971,7 +4155,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4566)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(4872)
                         },
                         new
                         {
@@ -985,7 +4169,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4577)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(4874)
                         },
                         new
                         {
@@ -999,7 +4183,7 @@ namespace LaoHR.API.Migrations
                             MaxCarryOver = 0,
                             MinDaysForAttachment = 0,
                             RequiresAttachment = false,
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(4578)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(4875)
                         });
                 });
 
@@ -1007,56 +4191,56 @@ namespace LaoHR.API.Migrations
                 {
                     b.Property<int>("LeaveId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LeaveId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LeaveId"));
 
                     b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("ApprovedById")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("ApproverNotes")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("AttachmentPath")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("HalfDayType")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<bool>("IsHalfDay")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("LeaveType")
                         .IsRequired()
                         .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
+                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Reason")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<decimal>("TotalDays")
                         .HasColumnType("decimal(5,1)");
@@ -1068,41 +4252,493 @@ namespace LaoHR.API.Migrations
                     b.ToTable("LeaveRequests");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.LoanRepayment", b =>
+                {
+                    b.Property<int>("RepaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RepaymentId"));
+
+                    b.Property<decimal>("AmountLak")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("LoanId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("PayrollPeriodId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("RepaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("RepaymentId");
+
+                    b.HasIndex("PayrollPeriodId");
+
+                    b.HasIndex("LoanId", "RepaidAt");
+
+                    b.ToTable("LoanRepayments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Milestone", b =>
+                {
+                    b.Property<int>("MilestoneId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("MilestoneId"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("MilestoneId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("Milestones");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Notification", b =>
+                {
+                    b.Property<int>("NotificationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("NotificationId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EntityType")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Message")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("ReadAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("NotificationId");
+
+                    b.HasIndex("UserId", "IsRead", "CreatedAt");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.NumberSequence", b =>
+                {
+                    b.Property<int>("NumberSequenceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("NumberSequenceId"));
+
+                    b.Property<int>("LastValue")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Prefix")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("NumberSequenceId");
+
+                    b.HasIndex("Prefix", "Year")
+                        .IsUnique();
+
+                    b.ToTable("NumberSequences");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Offer", b =>
+                {
+                    b.Property<int>("OfferId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OfferId"));
+
+                    b.Property<DateTime?>("AcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ApplicationId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("DeclineReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("DeclinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EmploymentType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ProposedStartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("Salary")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("OfferId");
+
+                    b.HasIndex("ApplicationId");
+
+                    b.HasIndex("CreatedByEmployeeId");
+
+                    b.HasIndex("PositionId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("Offers");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OnboardingProcess", b =>
+                {
+                    b.Property<int>("OnboardingProcessId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OnboardingProcessId"));
+
+                    b.Property<int?>("ApplicationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CandidateId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("OwnerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("OnboardingProcessId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("OwnerEmployeeId");
+
+                    b.ToTable("OnboardingProcesses");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OnboardingTask", b =>
+                {
+                    b.Property<int>("OnboardingTaskId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OnboardingTaskId"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("OnboardingProcessId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("OwnerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("OnboardingTaskId");
+
+                    b.HasIndex("OnboardingProcessId");
+
+                    b.HasIndex("OwnerEmployeeId", "DueDate");
+
+                    b.ToTable("OnboardingTasks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OneOnOne", b =>
+                {
+                    b.Property<int>("OneOnOneId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("OneOnOneId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("EmployeeNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ManagerPrivateNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SharedNotes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("OneOnOneId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerEmployeeId", "EmployeeId");
+
+                    b.ToTable("OneOnOnes");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Payment", b =>
+                {
+                    b.Property<int>("PaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ApprovedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("BankAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("PaymentDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentMethod")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("PaymentNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("PaymentId");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("PaymentNumber")
+                        .IsUnique();
+
+                    b.HasIndex("Status", "PaymentDate");
+
+                    b.ToTable("Payments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PaymentAllocation", b =>
+                {
+                    b.Property<int>("PaymentAllocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PaymentAllocationId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("PaymentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SupplierInvoiceId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("PaymentAllocationId");
+
+                    b.HasIndex("PaymentId");
+
+                    b.HasIndex("SupplierInvoiceId");
+
+                    b.ToTable("PaymentAllocations");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.PayrollAdjustment", b =>
                 {
                     b.Property<int>("AdjustmentId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AdjustmentId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AdjustmentId"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("IsNssfAssessable")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("IsTaxable")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("character varying(100)");
 
                     b.Property<int>("PeriodId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.HasKey("AdjustmentId");
 
@@ -1117,34 +4753,34 @@ namespace LaoHR.API.Migrations
                 {
                     b.Property<int>("PeriodId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PeriodId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PeriodId"));
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Month")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("PeriodName")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<int>("Year")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.HasKey("PeriodId");
 
@@ -1154,36 +4790,1090 @@ namespace LaoHR.API.Migrations
                     b.ToTable("PayrollPeriods");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.PayrollRuleSnapshot", b =>
+                {
+                    b.Property<int>("PayrollRuleSnapshotId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PayrollRuleSnapshotId"));
+
+                    b.Property<DateTime>("CapturedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExchangeRatesJson")
+                        .HasColumnType("text");
+
+                    b.Property<int>("PeriodId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RulesJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("PayrollRuleSnapshotId");
+
+                    b.HasIndex("PeriodId");
+
+                    b.ToTable("PayrollRuleSnapshots");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PerformanceCycle", b =>
+                {
+                    b.Property<int>("CycleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CycleId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("ReviewDueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("CycleId");
+
+                    b.ToTable("PerformanceCycles");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PerformanceReview", b =>
+                {
+                    b.Property<int>("ReviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReviewId"));
+
+                    b.Property<DateTime?>("AcknowledgedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AcknowledgementComment")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DevelopmentNeeds")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EmployeeSubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ManagerComments")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ManagerSubmittedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("OverallRating")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SelfAchievements")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("SelfChallenges")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ReviewId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("CycleId", "Status");
+
+                    b.ToTable("PerformanceReviews");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Position", b =>
+                {
+                    b.Property<int>("PositionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PositionId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("JobCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("TitleLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("PositionId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("Positions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PositionCompetency", b =>
+                {
+                    b.Property<int>("PositionCompetencyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PositionCompetencyId"));
+
+                    b.Property<int>("CompetencyId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("PositionId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("RequiredLevel")
+                        .HasColumnType("integer");
+
+                    b.HasKey("PositionCompetencyId");
+
+                    b.HasIndex("CompetencyId");
+
+                    b.HasIndex("PositionId");
+
+                    b.ToTable("PositionCompetencies");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Project", b =>
+                {
+                    b.Property<int>("ProjectId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Color")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ProjectId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("OwnerId");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectAssumption", b =>
+                {
+                    b.Property<int>("AssumptionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("AssumptionId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("ValidationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("AssumptionId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ProjectId", "Status");
+
+                    b.ToTable("ProjectAssumptions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectDecision", b =>
+                {
+                    b.Property<int>("DecisionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("DecisionId"));
+
+                    b.Property<string>("Context")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Decision")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("DecisionDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Outcome")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("DecisionId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectDecisions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectMember", b =>
+                {
+                    b.Property<int>("ProjectMemberId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ProjectMemberId"));
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("JoinedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ProjectMemberId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ProjectId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectMembers");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectTask", b =>
+                {
+                    b.Property<int>("TaskId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaskId"));
+
+                    b.Property<decimal?>("ActualHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(5000)
+                        .HasColumnType("character varying(5000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("EstimatedHours")
+                        .HasColumnType("decimal(6,2)");
+
+                    b.Property<int?>("MilestoneId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ParentTaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("ProgressPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReporterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TaskNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TaskId");
+
+                    b.HasIndex("MilestoneId");
+
+                    b.HasIndex("ParentTaskId");
+
+                    b.HasIndex("ReporterId");
+
+                    b.HasIndex("ProjectId", "DueDate");
+
+                    b.HasIndex("ProjectId", "Status");
+
+                    b.ToTable("ProjectTasks");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Province", b =>
                 {
                     b.Property<int>("PrId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("PrId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PrId"));
 
                     b.Property<string>("PrName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("PrNameEn")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("PrId");
 
                     b.ToTable("Provinces");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseOrder", b =>
+                {
+                    b.Property<int>("PurchaseOrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PurchaseOrderId"));
+
+                    b.Property<int?>("BudgetId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("ExpectedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("OrderDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PONumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("PaymentTerms")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("RequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Tax")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PurchaseOrderId");
+
+                    b.HasIndex("BudgetId");
+
+                    b.HasIndex("PONumber")
+                        .IsUnique();
+
+                    b.HasIndex("RequestId");
+
+                    b.HasIndex("SupplierId", "Status");
+
+                    b.ToTable("PurchaseOrders");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseOrderItem", b =>
+                {
+                    b.Property<int>("PurchaseOrderItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PurchaseOrderItemId"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("LineTotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("PurchaseOrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("TaxRate")
+                        .HasColumnType("decimal(18,4)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("PurchaseOrderItemId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.ToTable("PurchaseOrderItems");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseRequest", b =>
+                {
+                    b.Property<int>("PurchaseRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PurchaseRequestId"));
+
+                    b.Property<int?>("BudgetId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("RequestedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RequiredDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("TotalEstimatedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("PurchaseRequestId");
+
+                    b.HasIndex("BudgetId");
+
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RequestNumber")
+                        .IsUnique();
+
+                    b.HasIndex("RequestedByEmployeeId");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("PurchaseRequests");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseRequestItem", b =>
+                {
+                    b.Property<int>("PurchaseRequestItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("PurchaseRequestItemId"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<decimal>("EstimatedAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("EstimatedUnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int?>("PreferredSupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PurchaseRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<string>("Unit")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("PurchaseRequestItemId");
+
+                    b.HasIndex("ItemId");
+
+                    b.HasIndex("PreferredSupplierId");
+
+                    b.HasIndex("PurchaseRequestId");
+
+                    b.ToTable("PurchaseRequestItems");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Receipt", b =>
+                {
+                    b.Property<int>("ReceiptId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReceiptId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("BankAccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime>("ReceiptDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReceiptNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReferenceNumber")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("ReceiptId");
+
+                    b.HasIndex("BankAccountId");
+
+                    b.HasIndex("ReceiptNumber")
+                        .IsUnique();
+
+                    b.ToTable("Receipts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ReceiptAllocation", b =>
+                {
+                    b.Property<int>("ReceiptAllocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ReceiptAllocationId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("CustomerInvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ReceiptId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ReceiptAllocationId");
+
+                    b.HasIndex("CustomerInvoiceId");
+
+                    b.HasIndex("ReceiptId");
+
+                    b.ToTable("ReceiptAllocations");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.RefreshToken", b =>
+                {
+                    b.Property<int>("RefreshTokenId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RefreshTokenId"));
+
+                    b.Property<string>("CreatedByIp")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByHash")
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<DateTime?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("RevokedReason")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RefreshTokenId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "RevokedAt");
+
+                    b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Resource", b =>
+                {
+                    b.Property<int>("ResourceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ResourceId"));
+
+                    b.Property<int>("AllocationPercent")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EndDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("StartDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("ResourceId");
+
+                    b.HasIndex("ProjectId", "EmployeeId")
+                        .IsUnique();
+
+                    b.HasIndex("EmployeeId", "StartDate", "EndDate");
+
+                    b.ToTable("Resources");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Risk", b =>
+                {
+                    b.Property<int>("RiskId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RiskId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Impact")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("Likelihood")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Mitigation")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int?>("OwnerId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("RiskId");
+
+                    b.HasIndex("OwnerId");
+
+                    b.HasIndex("ProjectId", "Priority");
+
+                    b.HasIndex("ProjectId", "Status");
+
+                    b.ToTable("Risks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Room", b =>
+                {
+                    b.Property<int>("RoomId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoomId"));
+
+                    b.Property<bool>("Bookable")
+                        .HasColumnType("boolean");
+
+                    b.Property<int?>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("FacilityId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Floor")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RoomType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("RoomId");
+
+                    b.HasIndex("FacilityId");
+
+                    b.ToTable("Rooms");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.RoomBooking", b =>
+                {
+                    b.Property<int>("RoomBookingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("RoomBookingId"));
+
+                    b.Property<int>("BookedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("BookingNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ParticipantCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("RoomId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("RoomBookingId");
+
+                    b.HasIndex("BookedByEmployeeId");
+
+                    b.HasIndex("RoomId", "StartAt", "EndAt");
+
+                    b.ToTable("RoomBookings");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.SalarySlip", b =>
                 {
                     b.Property<int>("SlipId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SlipId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SlipId"));
 
                     b.Property<decimal>("Allowances")
                         .HasColumnType("decimal(18,2)");
@@ -1200,13 +5890,13 @@ namespace LaoHR.API.Migrations
                     b.Property<string>("ContractCurrency")
                         .IsRequired()
                         .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasColumnType("character varying(3)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("EmployeeId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("ExchangeRateUsed")
                         .HasColumnType("decimal(18,4)");
@@ -1238,15 +5928,15 @@ namespace LaoHR.API.Migrations
                     b.Property<string>("PaymentCurrency")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("character varying(10)");
 
                     b.Property<int>("PeriodId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<decimal>("TaxDeduction")
                         .HasColumnType("decimal(18,2)");
@@ -1263,23 +5953,513 @@ namespace LaoHR.API.Migrations
                     b.ToTable("SalarySlips");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.ServiceRequest", b =>
+                {
+                    b.Property<int>("ServiceRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ServiceRequestId"));
+
+                    b.Property<int?>("AssignedEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("RequesterEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ResolvedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("ServiceRequestId");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("RequestNumber")
+                        .IsUnique();
+
+                    b.HasIndex("RequesterEmployeeId");
+
+                    b.HasIndex("AssignedEmployeeId", "Status");
+
+                    b.HasIndex("Status", "CreatedAt");
+
+                    b.ToTable("ServiceRequests");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ServiceRequestCategory", b =>
+                {
+                    b.Property<int>("ServiceRequestCategoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ServiceRequestCategoryId"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("ServiceRequestCategoryId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.ToTable("ServiceRequestCategories");
+
+                    b.HasData(
+                        new
+                        {
+                            ServiceRequestCategoryId = 1,
+                            Code = "IT",
+                            IsActive = true,
+                            Name = "IT Support",
+                            NameLao = "ສະໜັບສະໜູນ IT"
+                        },
+                        new
+                        {
+                            ServiceRequestCategoryId = 2,
+                            Code = "FACILITIES",
+                            IsActive = true,
+                            Name = "Facilities",
+                            NameLao = "ສິ່ງອຳນວຍຄວາມສະດວກ"
+                        },
+                        new
+                        {
+                            ServiceRequestCategoryId = 3,
+                            Code = "ADMIN",
+                            IsActive = true,
+                            Name = "Administration",
+                            NameLao = "ບໍລິຫານ"
+                        },
+                        new
+                        {
+                            ServiceRequestCategoryId = 4,
+                            Code = "PROCUREMENT",
+                            IsActive = true,
+                            Name = "Procurement",
+                            NameLao = "ການຈັດຊື້"
+                        },
+                        new
+                        {
+                            ServiceRequestCategoryId = 5,
+                            Code = "HR",
+                            IsActive = true,
+                            Name = "Human Resources",
+                            NameLao = "ຊັບພະຍາກອນມະນຸດ"
+                        },
+                        new
+                        {
+                            ServiceRequestCategoryId = 6,
+                            Code = "FINANCE",
+                            IsActive = true,
+                            Name = "Finance",
+                            NameLao = "ການເງິນ"
+                        });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ServiceRequestHistory", b =>
+                {
+                    b.Property<int>("ServiceRequestHistoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("ServiceRequestHistoryId"));
+
+                    b.Property<string>("ChangeType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ChangedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FromValue")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<int>("ServiceRequestId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ToValue")
+                        .HasColumnType("text");
+
+                    b.HasKey("ServiceRequestHistoryId");
+
+                    b.HasIndex("ChangedByEmployeeId");
+
+                    b.HasIndex("ServiceRequestId");
+
+                    b.ToTable("ServiceRequestHistories");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.StockMovement", b =>
+                {
+                    b.Property<int>("StockMovementId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StockMovementId"));
+
+                    b.Property<int>("ItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("MovementType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("OccurredAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PerformedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<int?>("ReferenceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ReferenceType")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int>("WarehouseId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("StockMovementId");
+
+                    b.HasIndex("PerformedByEmployeeId");
+
+                    b.HasIndex("WarehouseId");
+
+                    b.HasIndex("ReferenceType", "ReferenceId");
+
+                    b.HasIndex("ItemId", "WarehouseId", "OccurredAt");
+
+                    b.ToTable("StockMovements");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Supplier", b =>
+                {
+                    b.Property<int>("SupplierId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupplierId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("BankAccount")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Country")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DistrictId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("LegalName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("PaymentTerms")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<int?>("ProvinceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("RegistrationNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("SupplierCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TaxId")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SupplierId");
+
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("ProvinceId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierCode")
+                        .IsUnique();
+
+                    b.ToTable("Suppliers");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.SupplierInvoice", b =>
+                {
+                    b.Property<int>("SupplierInvoiceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupplierInvoiceId"));
+
+                    b.Property<int?>("ApprovedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("DueDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("InvoiceDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("InvoiceNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("MatchStatus")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<decimal>("PaidAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PurchaseOrderId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ReceivedDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("RemainingAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("TotalAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("SupplierInvoiceId");
+
+                    b.HasIndex("CostCenterId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("DueDate");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("PurchaseOrderId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId", "InvoiceNumber")
+                        .IsUnique();
+
+                    b.ToTable("SupplierInvoices");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.SupplierInvoiceLine", b =>
+                {
+                    b.Property<int>("SupplierInvoiceLineId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SupplierInvoiceLineId"));
+
+                    b.Property<int?>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CostCenterId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("InventoryItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("PurchaseOrderItemId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("Quantity")
+                        .HasColumnType("decimal(18,3)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("SupplierInvoiceId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("TaxAmount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("SupplierInvoiceLineId");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("InventoryItemId");
+
+                    b.HasIndex("PurchaseOrderItemId");
+
+                    b.HasIndex("SupplierInvoiceId");
+
+                    b.ToTable("SupplierInvoiceLines");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.SystemSetting", b =>
                 {
                     b.Property<string>("SettingKey")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("character varying(50)");
 
                     b.Property<string>("Description")
                         .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasColumnType("character varying(500)");
 
                     b.Property<string>("SettingValue")
                         .IsRequired()
                         .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
+                        .HasColumnType("character varying(2000)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("SettingKey");
 
@@ -1291,69 +6471,221 @@ namespace LaoHR.API.Migrations
                             SettingKey = "NSSF_CEILING_BASE",
                             Description = "Maximum salary for NSSF calculation",
                             SettingValue = "4500000",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(8891)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(7899)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYEE_RATE",
                             Description = "Employee NSSF contribution rate (5.5%)",
                             SettingValue = "0.055",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9206)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8677)
                         },
                         new
                         {
                             SettingKey = "NSSF_EMPLOYER_RATE",
                             Description = "Employer NSSF contribution rate (6.0%)",
                             SettingValue = "0.060",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9207)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8678)
                         },
                         new
                         {
                             SettingKey = "WORK_START_TIME",
                             Description = "Standard work start time",
                             SettingValue = "08:30",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9208)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8679)
                         },
                         new
                         {
                             SettingKey = "WORK_END_TIME",
                             Description = "Standard work end time",
                             SettingValue = "17:30",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9209)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8680)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_USD",
                             Description = "USD to LAK Exchange Rate",
                             SettingValue = "22000",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9209)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8681)
                         },
                         new
                         {
                             SettingKey = "EX_RATE_THB",
                             Description = "THB to LAK Exchange Rate",
                             SettingValue = "650",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9210)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8681)
                         },
                         new
                         {
                             SettingKey = "ZKTECO_ENABLED",
                             Description = "Global Switch for ZKTeco Integration",
                             SettingValue = "false",
-                            UpdatedAt = new DateTime(2026, 1, 19, 2, 0, 17, 85, DateTimeKind.Utc).AddTicks(9211)
+                            UpdatedAt = new DateTime(2026, 8, 24, 9, 41, 24, 132, DateTimeKind.Utc).AddTicks(8701)
                         });
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TalentReview", b =>
+                {
+                    b.Property<int>("TalentReviewId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TalentReviewId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CycleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("Performance")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Potential")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.Property<string>("Readiness")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("ReviewedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TalentReviewId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.ToTable("TalentReviews");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskAssignee", b =>
+                {
+                    b.Property<int>("TaskAssigneeId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaskAssigneeId"));
+
+                    b.Property<DateTime>("AssignedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TaskAssigneeId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("TaskId", "EmployeeId")
+                        .IsUnique();
+
+                    b.ToTable("TaskAssignees");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskComment", b =>
+                {
+                    b.Property<int>("CommentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CommentId"));
+
+                    b.Property<int>("AuthorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ParentCommentId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("CommentId");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("TaskId");
+
+                    b.ToTable("TaskComments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskDependency", b =>
+                {
+                    b.Property<int>("TaskDependencyId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TaskDependencyId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("PredecessorTaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("SuccessorTaskId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("TaskDependencyId");
+
+                    b.HasIndex("PredecessorTaskId");
+
+                    b.HasIndex("SuccessorTaskId");
+
+                    b.HasIndex("ProjectId", "PredecessorTaskId");
+
+                    b.HasIndex("ProjectId", "SuccessorTaskId");
+
+                    b.ToTable("TaskDependencies");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.TaxBracket", b =>
                 {
                     b.Property<int>("BracketId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BracketId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("BracketId"));
 
                     b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<decimal>("MaxIncome")
                         .HasColumnType("decimal(18,2)");
@@ -1362,7 +6694,7 @@ namespace LaoHR.API.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("SortOrder")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<decimal>("TaxRate")
                         .HasColumnType("decimal(5,4)");
@@ -1376,7 +6708,7 @@ namespace LaoHR.API.Migrations
                         {
                             BracketId = 1,
                             IsActive = true,
-                            MaxIncome = 1300000m,
+                            MaxIncome = 2500000m,
                             MinIncome = 0m,
                             SortOrder = 1,
                             TaxRate = 0.00m
@@ -1386,7 +6718,7 @@ namespace LaoHR.API.Migrations
                             BracketId = 2,
                             IsActive = true,
                             MaxIncome = 5000000m,
-                            MinIncome = 1300001m,
+                            MinIncome = 2500001m,
                             SortOrder = 2,
                             TaxRate = 0.05m
                         },
@@ -1428,26 +6760,478 @@ namespace LaoHR.API.Migrations
                         });
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.TrainingEnrollment", b =>
+                {
+                    b.Property<int>("EnrollmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("EnrollmentId"));
+
+                    b.Property<int?>("AssignedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("EnrolledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Result")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("SessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("EnrollmentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("SessionId", "Status");
+
+                    b.ToTable("TrainingEnrollments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TrainingSession", b =>
+                {
+                    b.Property<int>("SessionId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("SessionId"));
+
+                    b.Property<int?>("Capacity")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("End")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Instructor")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("Start")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("SessionId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("TrainingSessions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelAccommodation", b =>
+                {
+                    b.Property<int>("TravelAccommodationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TravelAccommodationId"));
+
+                    b.Property<string>("BookingReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("CheckIn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CheckOut")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("City")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<decimal?>("Cost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("HotelName")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<int>("TravelRequestId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TravelAccommodationId");
+
+                    b.HasIndex("TravelRequestId");
+
+                    b.ToTable("TravelAccommodations");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelAdvance", b =>
+                {
+                    b.Property<int>("TravelAdvanceId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TravelAdvanceId"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<DateTime?>("IssuedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TravelRequestId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TravelAdvanceId");
+
+                    b.HasIndex("TravelRequestId");
+
+                    b.ToTable("TravelAdvances");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelRequest", b =>
+                {
+                    b.Property<int>("TravelRequestId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TravelRequestId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<int?>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("DepartureDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Destination")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("EmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal?>("EstimatedCost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<DateTime>("ReturnDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("TravelNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("TravelRequestId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("EmployeeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("TravelRequests");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelSegment", b =>
+                {
+                    b.Property<int>("TravelSegmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("TravelSegmentId"));
+
+                    b.Property<DateTime?>("ArrivalAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DepartureAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Origin")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Reference")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("SegmentType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("TravelRequestId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("TravelSegmentId");
+
+                    b.HasIndex("TravelRequestId");
+
+                    b.ToTable("TravelSegments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Vehicle", b =>
+                {
+                    b.Property<int>("VehicleId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VehicleId"));
+
+                    b.Property<int?>("AssetId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurrentOdometer")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FuelType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Make")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Model")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("RegistrationNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("VIN")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("VehicleCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("VehicleType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("Year")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VehicleId");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("RegistrationNumber")
+                        .IsUnique();
+
+                    b.HasIndex("WorkLocationId");
+
+                    b.ToTable("Vehicles");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.VehicleBooking", b =>
+                {
+                    b.Property<int>("VehicleBookingId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VehicleBookingId"));
+
+                    b.Property<string>("BookingNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int?>("DriverEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("EndAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("RequesterEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VehicleBookingId");
+
+                    b.HasIndex("DriverEmployeeId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("RequesterEmployeeId");
+
+                    b.HasIndex("VehicleId", "StartAt", "EndAt");
+
+                    b.ToTable("VehicleBookings");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.VehicleTrip", b =>
+                {
+                    b.Property<int>("VehicleTripId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VehicleTripId"));
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Destination")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("DriverEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("EndOdometer")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<int>("StartOdometer")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("VehicleBookingId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("VehicleId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VehicleTripId");
+
+                    b.HasIndex("DriverEmployeeId");
+
+                    b.HasIndex("VehicleBookingId");
+
+                    b.HasIndex("VehicleId");
+
+                    b.ToTable("VehicleTrips");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Village", b =>
                 {
                     b.Property<int>("VillId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("VillId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VillId"));
 
                     b.Property<int>("DiId")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<string>("VillName")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.Property<string>("VillNameEn")
                         .IsRequired()
                         .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                        .HasColumnType("character varying(200)");
 
                     b.HasKey("VillId");
 
@@ -1456,81 +7240,428 @@ namespace LaoHR.API.Migrations
                     b.ToTable("Villages");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Visit", b =>
+                {
+                    b.Property<int>("VisitId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VisitId"));
+
+                    b.Property<DateTime?>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("CheckedOutAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("CreatedByEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("ExpectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("FacilityId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("HostEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Purpose")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int>("VisitorId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("VisitId");
+
+                    b.HasIndex("CreatedByEmployeeId");
+
+                    b.HasIndex("ExpectedAt");
+
+                    b.HasIndex("FacilityId");
+
+                    b.HasIndex("HostEmployeeId");
+
+                    b.HasIndex("VisitorId");
+
+                    b.ToTable("Visits");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Visitor", b =>
+                {
+                    b.Property<int>("VisitorId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("VisitorId"));
+
+                    b.Property<string>("Company")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("VisitorId");
+
+                    b.ToTable("Visitors");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Warehouse", b =>
+                {
+                    b.Property<int>("WarehouseId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WarehouseId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("ManagerEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("WorkLocationId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("WarehouseId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("ManagerEmployeeId");
+
+                    b.HasIndex("WorkLocationId");
+
+                    b.ToTable("Warehouses");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkLocation", b =>
+                {
+                    b.Property<int>("WorkLocationId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WorkLocationId"));
+
+                    b.Property<string>("Address")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int?>("DistrictId")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("NameLao")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int?>("ProvinceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Timezone")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int?>("VillageId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("WorkLocationId");
+
+                    b.HasIndex("Code")
+                        .IsUnique();
+
+                    b.HasIndex("DistrictId");
+
+                    b.HasIndex("ProvinceId");
+
+                    b.HasIndex("VillageId");
+
+                    b.ToTable("WorkLocations");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkOrder", b =>
+                {
+                    b.Property<int>("WorkOrderId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WorkOrderId"));
+
+                    b.Property<int?>("AssignedEmployeeId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal?>("Cost")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<string>("Priority")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("ScheduledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SourceId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SourceType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<int?>("SupplierId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("WorkOrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.HasKey("WorkOrderId");
+
+                    b.HasIndex("AssignedEmployeeId");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("SupplierId");
+
+                    b.HasIndex("SourceType", "SourceId");
+
+                    b.ToTable("WorkOrders");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.WorkSchedule", b =>
                 {
                     b.Property<int>("WorkScheduleId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WorkScheduleId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("WorkScheduleId"));
 
                     b.Property<TimeSpan>("BreakEndTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<TimeSpan>("BreakStartTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<decimal>("DailyWorkHours")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<bool>("Friday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<int>("LateThresholdMinutes")
-                        .HasColumnType("int");
+                        .HasColumnType("integer");
 
                     b.Property<bool>("Monday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Saturday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<TimeSpan?>("SaturdayEndTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<decimal>("SaturdayHours")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<TimeSpan?>("SaturdayStartTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<string>("SaturdayWeeks")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("SaturdayWorkType")
                         .IsRequired()
                         .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                        .HasColumnType("character varying(10)");
 
                     b.Property<decimal>("StandardMonthlyHours")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<bool>("Sunday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Thursday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("Tuesday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("Wednesday")
-                        .HasColumnType("bit");
+                        .HasColumnType("boolean");
 
                     b.Property<TimeSpan>("WorkEndTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.Property<TimeSpan>("WorkStartTime")
-                        .HasColumnType("time");
+                        .HasColumnType("interval");
 
                     b.HasKey("WorkScheduleId");
 
                     b.ToTable("WorkSchedules");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Account", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "ParentAccount")
+                        .WithMany()
+                        .HasForeignKey("ParentAccountId");
+
+                    b.Navigation("ParentAccount");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ActivityLog", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Actor")
+                        .WithMany()
+                        .HasForeignKey("ActorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany("Activities")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId");
+
+                    b.Navigation("Actor");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Announcement", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AnnouncementRead", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Announcement", "Announcement")
+                        .WithMany()
+                        .HasForeignKey("AnnouncementId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Announcement");
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.AppUser", b =>
@@ -1542,10 +7673,210 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Application", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Candidate", "Candidate")
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.JobOpening", "Opening")
+                        .WithMany()
+                        .HasForeignKey("OpeningId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+
+                    b.Navigation("Opening");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApplicationStageHistory", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Application", "Application")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalAction", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.ApprovalRequest", "ApprovalRequest")
+                        .WithMany()
+                        .HasForeignKey("ApprovalRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ApprovalRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalRequest", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Requester");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalStep", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.ApprovalRequest", "ApprovalRequest")
+                        .WithMany("Steps")
+                        .HasForeignKey("ApprovalRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverEmployeeId");
+
+                    b.Navigation("ApprovalRequest");
+
+                    b.Navigation("Approver");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Asset", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Custodian")
+                        .WithMany()
+                        .HasForeignKey("CustodianEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.GoodsReceiptItem", "GoodsReceiptItem")
+                        .WithMany()
+                        .HasForeignKey("GoodsReceiptItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrderItem", "PurchaseOrderItem")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany()
+                        .HasForeignKey("WorkLocationId");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Custodian");
+
+                    b.Navigation("GoodsReceiptItem");
+
+                    b.Navigation("PurchaseOrderItem");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AssetAssignment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "AssignedBy")
+                        .WithMany()
+                        .HasForeignKey("AssignedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("AssignedBy");
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Attendance", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
                         .WithMany("AttendanceRecords")
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.AttendanceCorrection", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Attendance", "Attendance")
+                        .WithMany()
+                        .HasForeignKey("AttendanceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Attendance");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.BankAccount", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "GLAccount")
+                        .WithMany()
+                        .HasForeignKey("GLAccountId");
+
+                    b.Navigation("GLAccount");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Budget", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId");
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CandidateDocument", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Candidate", "Candidate")
+                        .WithMany()
+                        .HasForeignKey("CandidateId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Candidate");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CareerInterest", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
                         .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1574,6 +7905,182 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Village");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.CompetencyAssessment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Assessor")
+                        .WithMany()
+                        .HasForeignKey("AssessorEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Competency", "Competency")
+                        .WithMany()
+                        .HasForeignKey("CompetencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Assessor");
+
+                    b.Navigation("Competency");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Contract", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId");
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId");
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ContractHistory", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Contract", "Contract")
+                        .WithMany()
+                        .HasForeignKey("ContractId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("Contract");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CorporateDocument", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeId");
+
+                    b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CostCenter", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CustomerInvoice", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Customer", "Customer")
+                        .WithMany()
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CustomerInvoiceLine", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
+
+                    b.HasOne("LaoHR.Shared.Models.CustomerInvoice", "CustomerInvoice")
+                        .WithMany("Lines")
+                        .HasForeignKey("CustomerInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("CustomerInvoice");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "ParentDepartment")
+                        .WithMany("ChildDepartments")
+                        .HasForeignKey("ParentDepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("ParentDepartment");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.DevelopmentGoal", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Competency", "Competency")
+                        .WithMany()
+                        .HasForeignKey("CompetencyId");
+
+                    b.HasOne("LaoHR.Shared.Models.DevelopmentPlan", "DevelopmentPlan")
+                        .WithMany()
+                        .HasForeignKey("DevelopmentPlanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Competency");
+
+                    b.Navigation("DevelopmentPlan");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.DevelopmentPlan", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Manager");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.District", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Province", "Province")
@@ -1585,13 +8092,60 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Province");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.DocumentVersion", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.CorporateDocument", "Document")
+                        .WithMany("Versions")
+                        .HasForeignKey("DocumentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "UploadedBy")
+                        .WithMany()
+                        .HasForeignKey("UploadedByEmployeeId");
+
+                    b.Navigation("Document");
+
+                    b.Navigation("UploadedBy");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Employee", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Department", "Department")
                         .WithMany("Employees")
                         .HasForeignKey("DepartmentId");
 
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany("DirectReports")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("LaoHR.Shared.Models.Position", "Position")
+                        .WithMany("Employees")
+                        .HasForeignKey("PositionId");
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany("Employees")
+                        .HasForeignKey("WorkLocationId");
+
                     b.Navigation("Department");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("Position");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.EmployeeCertification", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.EmployeeDocument", b =>
@@ -1603,6 +8157,482 @@ namespace LaoHR.API.Migrations
                         .IsRequired();
 
                     b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.EmployeeLoan", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.EntityComment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.EntityComment", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentCommentId");
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Expense", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Approver")
+                        .WithMany()
+                        .HasForeignKey("ApproverId");
+
+                    b.HasOne("LaoHR.Shared.Models.ExpenseCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.PayrollPeriod", "PayrollPeriod")
+                        .WithMany()
+                        .HasForeignKey("PayrollPeriodId");
+
+                    b.HasOne("LaoHR.Shared.Models.TravelRequest", "TravelRequest")
+                        .WithMany()
+                        .HasForeignKey("TravelRequestId");
+
+                    b.Navigation("Approver");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("PayrollPeriod");
+
+                    b.Navigation("TravelRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ExpenseCategory", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
+
+                    b.Navigation("Account");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Facility", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany()
+                        .HasForeignKey("WorkLocationId");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Feedback", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "FromEmployee")
+                        .WithMany()
+                        .HasForeignKey("FromEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "ToEmployee")
+                        .WithMany()
+                        .HasForeignKey("ToEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FromEmployee");
+
+                    b.Navigation("ToEmployee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.FiscalPeriod", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.FiscalYear", "FiscalYear")
+                        .WithMany()
+                        .HasForeignKey("FiscalYearId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("FiscalYear");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.FuelLog", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Expense", "Expense")
+                        .WithMany()
+                        .HasForeignKey("ExpenseId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId");
+
+                    b.HasOne("LaoHR.Shared.Models.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Expense");
+
+                    b.Navigation("Supplier");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Goal", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Goal", "ParentGoal")
+                        .WithMany()
+                        .HasForeignKey("ParentGoalId");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("ParentGoal");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoalCheckIn", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Goal", "Goal")
+                        .WithMany()
+                        .HasForeignKey("GoalId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Goal");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoodsReceipt", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "ReceivedBy")
+                        .WithMany()
+                        .HasForeignKey("ReceivedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId");
+
+                    b.Navigation("PurchaseOrder");
+
+                    b.Navigation("ReceivedBy");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoodsReceiptItem", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.GoodsReceipt", "GoodsReceipt")
+                        .WithMany("Items")
+                        .HasForeignKey("GoodsReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrderItem", "PurchaseOrderItem")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("GoodsReceipt");
+
+                    b.Navigation("PurchaseOrderItem");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Interview", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Application", "Application")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Organizer")
+                        .WithMany()
+                        .HasForeignKey("OrganizerEmployeeId");
+
+                    b.Navigation("Application");
+
+                    b.Navigation("Organizer");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InterviewEvaluation", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Evaluator")
+                        .WithMany()
+                        .HasForeignKey("EvaluatorEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Interview", "Interview")
+                        .WithMany()
+                        .HasForeignKey("InterviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Evaluator");
+
+                    b.Navigation("Interview");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InterviewParticipant", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Interview", "Interview")
+                        .WithMany("Participants")
+                        .HasForeignKey("InterviewId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Interview");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InventoryCategory", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryCategory", "ParentCategory")
+                        .WithMany()
+                        .HasForeignKey("ParentCategoryId");
+
+                    b.Navigation("ParentCategory");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.InventoryItem", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Issue", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Assignee")
+                        .WithMany()
+                        .HasForeignKey("AssigneeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Task")
+                        .WithMany()
+                        .HasForeignKey("TaskId");
+
+                    b.Navigation("Assignee");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Reporter");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.IssueComment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Issue", "Issue")
+                        .WithMany("Comments")
+                        .HasForeignKey("IssueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.IssueComment", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentCommentId");
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Issue");
+
+                    b.Navigation("Parent");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JobOpening", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.JobRequisition", "Requisition")
+                        .WithMany()
+                        .HasForeignKey("RequisitionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Requisition");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JobRequisition", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "HiringManager")
+                        .WithMany()
+                        .HasForeignKey("HiringManagerEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Position", "Position")
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "RequestedBy")
+                        .WithMany()
+                        .HasForeignKey("RequestedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany()
+                        .HasForeignKey("WorkLocationId");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("HiringManager");
+
+                    b.Navigation("Position");
+
+                    b.Navigation("RequestedBy");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JournalEntry", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.FiscalPeriod", "FiscalPeriod")
+                        .WithMany()
+                        .HasForeignKey("FiscalPeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.JournalEntry", "ReversesJournalEntry")
+                        .WithMany()
+                        .HasForeignKey("ReversesJournalEntryId");
+
+                    b.Navigation("FiscalPeriod");
+
+                    b.Navigation("ReversesJournalEntry");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JournalLine", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId");
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.JournalEntry", "JournalEntry")
+                        .WithMany("Lines")
+                        .HasForeignKey("JournalEntryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.Navigation("Account");
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("JournalEntry");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.KnowledgeArticle", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.KnowledgeCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.LeaveBalance", b =>
@@ -1627,6 +8657,151 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.LoanRepayment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.EmployeeLoan", "Loan")
+                        .WithMany("Repayments")
+                        .HasForeignKey("LoanId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.PayrollPeriod", "PayrollPeriod")
+                        .WithMany()
+                        .HasForeignKey("PayrollPeriodId");
+
+                    b.Navigation("Loan");
+
+                    b.Navigation("PayrollPeriod");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Milestone", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany("Milestones")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Notification", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Offer", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Application", "Application")
+                        .WithMany()
+                        .HasForeignKey("ApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Position", "Position")
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Application");
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Position");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OnboardingProcess", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OnboardingTask", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.OnboardingProcess", "OnboardingProcess")
+                        .WithMany("Tasks")
+                        .HasForeignKey("OnboardingProcessId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerEmployeeId");
+
+                    b.Navigation("OnboardingProcess");
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OneOnOne", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Payment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId");
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PaymentAllocation", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Payment", "Payment")
+                        .WithMany("Allocations")
+                        .HasForeignKey("PaymentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.SupplierInvoice", "SupplierInvoice")
+                        .WithMany()
+                        .HasForeignKey("SupplierInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Payment");
+
+                    b.Navigation("SupplierInvoice");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.PayrollAdjustment", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
@@ -1644,6 +8819,368 @@ namespace LaoHR.API.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("PayrollPeriod");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PayrollRuleSnapshot", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.PayrollPeriod", "PayrollPeriod")
+                        .WithMany()
+                        .HasForeignKey("PeriodId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("PayrollPeriod");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PerformanceReview", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.PerformanceCycle", "Cycle")
+                        .WithMany()
+                        .HasForeignKey("CycleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId");
+
+                    b.Navigation("Cycle");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Position", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PositionCompetency", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Competency", "Competency")
+                        .WithMany()
+                        .HasForeignKey("CompetencyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Position", "Position")
+                        .WithMany()
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Competency");
+
+                    b.Navigation("Position");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Project", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectAssumption", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectDecision", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectMember", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany("Members")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectTask", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Milestone", "Milestone")
+                        .WithMany("Tasks")
+                        .HasForeignKey("MilestoneId");
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "ParentTask")
+                        .WithMany("ChildTasks")
+                        .HasForeignKey("ParentTaskId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany("Tasks")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Milestone");
+
+                    b.Navigation("ParentTask");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Reporter");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseOrder", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Budget", "Budget")
+                        .WithMany()
+                        .HasForeignKey("BudgetId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseRequest", "Request")
+                        .WithMany()
+                        .HasForeignKey("RequestId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Budget");
+
+                    b.Navigation("Request");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseOrderItem", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("PurchaseOrder");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseRequest", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Budget", "Budget")
+                        .WithMany()
+                        .HasForeignKey("BudgetId");
+
+                    b.HasOne("LaoHR.Shared.Models.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId");
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "RequestedBy")
+                        .WithMany()
+                        .HasForeignKey("RequestedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Budget");
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("RequestedBy");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseRequestItem", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "PreferredSupplier")
+                        .WithMany()
+                        .HasForeignKey("PreferredSupplierId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseRequest", "PurchaseRequest")
+                        .WithMany("Items")
+                        .HasForeignKey("PurchaseRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("PreferredSupplier");
+
+                    b.Navigation("PurchaseRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Receipt", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.BankAccount", "BankAccount")
+                        .WithMany()
+                        .HasForeignKey("BankAccountId");
+
+                    b.Navigation("BankAccount");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ReceiptAllocation", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.CustomerInvoice", "CustomerInvoice")
+                        .WithMany()
+                        .HasForeignKey("CustomerInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Receipt", "Receipt")
+                        .WithMany("Allocations")
+                        .HasForeignKey("ReceiptId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CustomerInvoice");
+
+                    b.Navigation("Receipt");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.RefreshToken", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Resource", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Risk", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Owner")
+                        .WithMany()
+                        .HasForeignKey("OwnerId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Room", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Facility", "Facility")
+                        .WithMany("Rooms")
+                        .HasForeignKey("FacilityId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Facility");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.RoomBooking", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "BookedBy")
+                        .WithMany()
+                        .HasForeignKey("BookedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Room", "Room")
+                        .WithMany("Bookings")
+                        .HasForeignKey("RoomId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BookedBy");
+
+                    b.Navigation("Room");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.SalarySlip", b =>
@@ -1665,6 +9202,399 @@ namespace LaoHR.API.Migrations
                     b.Navigation("PayrollPeriod");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.ServiceRequest", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.ServiceRequestCategory", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("Category");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Requester");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ServiceRequestHistory", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "ChangedBy")
+                        .WithMany()
+                        .HasForeignKey("ChangedByEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.ServiceRequest", "ServiceRequest")
+                        .WithMany()
+                        .HasForeignKey("ServiceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedBy");
+
+                    b.Navigation("ServiceRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.StockMovement", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.InventoryItem", "Item")
+                        .WithMany()
+                        .HasForeignKey("ItemId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "PerformedBy")
+                        .WithMany()
+                        .HasForeignKey("PerformedByEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Warehouse", "Warehouse")
+                        .WithMany()
+                        .HasForeignKey("WarehouseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Item");
+
+                    b.Navigation("PerformedBy");
+
+                    b.Navigation("Warehouse");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Supplier", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId");
+
+                    b.HasOne("LaoHR.Shared.Models.Province", "Province")
+                        .WithMany()
+                        .HasForeignKey("ProvinceId");
+
+                    b.Navigation("District");
+
+                    b.Navigation("Province");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.SupplierInvoice", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.CostCenter", "CostCenter")
+                        .WithMany()
+                        .HasForeignKey("CostCenterId");
+
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrder", "PurchaseOrder")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CostCenter");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("PurchaseOrder");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.SupplierInvoiceLine", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Account", "Account")
+                        .WithMany()
+                        .HasForeignKey("AccountId");
+
+                    b.HasOne("LaoHR.Shared.Models.InventoryItem", "InventoryItem")
+                        .WithMany()
+                        .HasForeignKey("InventoryItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.PurchaseOrderItem", "PurchaseOrderItem")
+                        .WithMany()
+                        .HasForeignKey("PurchaseOrderItemId");
+
+                    b.HasOne("LaoHR.Shared.Models.SupplierInvoice", "SupplierInvoice")
+                        .WithMany("Lines")
+                        .HasForeignKey("SupplierInvoiceId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+
+                    b.Navigation("InventoryItem");
+
+                    b.Navigation("PurchaseOrderItem");
+
+                    b.Navigation("SupplierInvoice");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TalentReview", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskAssignee", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Task")
+                        .WithMany("Assignees")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskComment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Author")
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.TaskComment", "Parent")
+                        .WithMany()
+                        .HasForeignKey("ParentCommentId");
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Task")
+                        .WithMany("Comments")
+                        .HasForeignKey("TaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+
+                    b.Navigation("Parent");
+
+                    b.Navigation("Task");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TaskDependency", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Predecessor")
+                        .WithMany()
+                        .HasForeignKey("PredecessorTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.ProjectTask", "Successor")
+                        .WithMany()
+                        .HasForeignKey("SuccessorTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Predecessor");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Successor");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TrainingEnrollment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.TrainingSession", "Session")
+                        .WithMany()
+                        .HasForeignKey("SessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Session");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TrainingSession", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.LearningCourse", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelAccommodation", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.TravelRequest", "TravelRequest")
+                        .WithMany("Accommodations")
+                        .HasForeignKey("TravelRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TravelRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelAdvance", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.TravelRequest", "TravelRequest")
+                        .WithMany()
+                        .HasForeignKey("TravelRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TravelRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelRequest", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Department", "Department")
+                        .WithMany()
+                        .HasForeignKey("DepartmentId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Employee");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelSegment", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.TravelRequest", "TravelRequest")
+                        .WithMany("Segments")
+                        .HasForeignKey("TravelRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("TravelRequest");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Vehicle", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Asset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId");
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany()
+                        .HasForeignKey("WorkLocationId");
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.VehicleBooking", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Requester")
+                        .WithMany()
+                        .HasForeignKey("RequesterEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Vehicle", "Vehicle")
+                        .WithMany("Bookings")
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("Requester");
+
+                    b.Navigation("Vehicle");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.VehicleTrip", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Driver")
+                        .WithMany()
+                        .HasForeignKey("DriverEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.VehicleBooking", "VehicleBooking")
+                        .WithMany()
+                        .HasForeignKey("VehicleBookingId");
+
+                    b.HasOne("LaoHR.Shared.Models.Vehicle", "Vehicle")
+                        .WithMany()
+                        .HasForeignKey("VehicleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Driver");
+
+                    b.Navigation("Vehicle");
+
+                    b.Navigation("VehicleBooking");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Village", b =>
                 {
                     b.HasOne("LaoHR.Shared.Models.District", "District")
@@ -1676,8 +9606,107 @@ namespace LaoHR.API.Migrations
                     b.Navigation("District");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Visit", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Facility", "Facility")
+                        .WithMany()
+                        .HasForeignKey("FacilityId");
+
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Host")
+                        .WithMany()
+                        .HasForeignKey("HostEmployeeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("LaoHR.Shared.Models.Visitor", "Visitor")
+                        .WithMany("Visits")
+                        .HasForeignKey("VisitorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("Facility");
+
+                    b.Navigation("Host");
+
+                    b.Navigation("Visitor");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Warehouse", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "Manager")
+                        .WithMany()
+                        .HasForeignKey("ManagerEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.WorkLocation", "WorkLocation")
+                        .WithMany()
+                        .HasForeignKey("WorkLocationId");
+
+                    b.Navigation("Manager");
+
+                    b.Navigation("WorkLocation");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkLocation", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.District", "District")
+                        .WithMany()
+                        .HasForeignKey("DistrictId");
+
+                    b.HasOne("LaoHR.Shared.Models.Province", "Province")
+                        .WithMany()
+                        .HasForeignKey("ProvinceId");
+
+                    b.HasOne("LaoHR.Shared.Models.Village", "Village")
+                        .WithMany()
+                        .HasForeignKey("VillageId");
+
+                    b.Navigation("District");
+
+                    b.Navigation("Province");
+
+                    b.Navigation("Village");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkOrder", b =>
+                {
+                    b.HasOne("LaoHR.Shared.Models.Employee", "AssignedTo")
+                        .WithMany()
+                        .HasForeignKey("AssignedEmployeeId");
+
+                    b.HasOne("LaoHR.Shared.Models.Supplier", "Supplier")
+                        .WithMany()
+                        .HasForeignKey("SupplierId");
+
+                    b.Navigation("AssignedTo");
+
+                    b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ApprovalRequest", b =>
+                {
+                    b.Navigation("Steps");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CorporateDocument", b =>
+                {
+                    b.Navigation("Versions");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.CustomerInvoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Department", b =>
                 {
+                    b.Navigation("ChildDepartments");
+
                     b.Navigation("Employees");
                 });
 
@@ -1690,9 +9719,56 @@ namespace LaoHR.API.Migrations
                 {
                     b.Navigation("AttendanceRecords");
 
+                    b.Navigation("DirectReports");
+
                     b.Navigation("LeaveRequests");
 
                     b.Navigation("SalarySlips");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.EmployeeLoan", b =>
+                {
+                    b.Navigation("Repayments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Facility", b =>
+                {
+                    b.Navigation("Rooms");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.GoodsReceipt", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Interview", b =>
+                {
+                    b.Navigation("Participants");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Issue", b =>
+                {
+                    b.Navigation("Comments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.JournalEntry", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Milestone", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.OnboardingProcess", b =>
+                {
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Payment", b =>
+                {
+                    b.Navigation("Allocations");
                 });
 
             modelBuilder.Entity("LaoHR.Shared.Models.PayrollPeriod", b =>
@@ -1700,9 +9776,81 @@ namespace LaoHR.API.Migrations
                     b.Navigation("SalarySlips");
                 });
 
+            modelBuilder.Entity("LaoHR.Shared.Models.Position", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Project", b =>
+                {
+                    b.Navigation("Activities");
+
+                    b.Navigation("Members");
+
+                    b.Navigation("Milestones");
+
+                    b.Navigation("Tasks");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.ProjectTask", b =>
+                {
+                    b.Navigation("Assignees");
+
+                    b.Navigation("ChildTasks");
+
+                    b.Navigation("Comments");
+                });
+
             modelBuilder.Entity("LaoHR.Shared.Models.Province", b =>
                 {
                     b.Navigation("Districts");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseOrder", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.PurchaseRequest", b =>
+                {
+                    b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Receipt", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Room", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.SupplierInvoice", b =>
+                {
+                    b.Navigation("Lines");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.TravelRequest", b =>
+                {
+                    b.Navigation("Accommodations");
+
+                    b.Navigation("Segments");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Vehicle", b =>
+                {
+                    b.Navigation("Bookings");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.Visitor", b =>
+                {
+                    b.Navigation("Visits");
+                });
+
+            modelBuilder.Entity("LaoHR.Shared.Models.WorkLocation", b =>
+                {
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }

@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { UserInfo, UserRole, LoginRequest, LoginResponse, Permission } from '@/lib/types';
-import { apiClient, setAccessToken, clearAccessToken, hasValidToken, getAccessToken } from '@/lib/apiClient';
+import { apiClient, setAccessToken, setRefreshToken, clearAccessToken, hasValidToken, getAccessToken, getRefreshToken } from '@/lib/apiClient';
 import { hasPermission, getPermissions } from '@/lib/permissions';
 
 interface AuthContextType {
@@ -66,8 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 noAuth: true,
             });
 
-            // Store token in memory
+            // Phase 6c — store access + refresh tokens together so the
+            // background refresh path can rotate them on expiry.
             setAccessToken(response.token, new Date(response.expiresAt));
+            if (response.refreshToken && response.refreshExpiresAt) {
+                setRefreshToken(response.refreshToken, new Date(response.refreshExpiresAt));
+            }
 
             // Set user info
             setUser({
@@ -83,9 +87,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     /**
-     * Logout function
+     * Logout function — Phase 6c.
+     * Best-effort revocation of the refresh token on the server, then
+     * local clear of all tokens. We tolerate network errors so that
+     * offline / 5xx doesn't leave the user stuck in a half-logged-in state.
      */
-    const logout = useCallback(() => {
+    const logout = useCallback(async () => {
+        const rt = getRefreshToken();
+        try {
+            if (rt) {
+                await apiClient.post('/api/auth/logout', { refreshToken: rt });
+            }
+        } catch {
+            // intentional: local clear below is the source of truth.
+        }
         clearAccessToken();
         setUser(null);
         router.push('/login');

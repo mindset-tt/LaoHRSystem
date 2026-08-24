@@ -121,7 +121,7 @@ public class PayrollController : ControllerBase
                 NetSalary = s.NetSalary,
                 GrossIncome = s.GrossIncome,
                 Status = s.Status,
-                SalaryCurrency = s.SalaryCurrency
+                SalaryCurrency = s.Employee != null ? s.Employee.SalaryCurrency : "LAK"
             })
             .ToListAsync();
 

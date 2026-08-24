@@ -45,7 +45,7 @@ export const leaveApi = {
      */
     create: async (request: CreateLeaveRequest): Promise<LeaveRequest> => {
         const formData = new FormData();
-        formData.append('employeeId', (request.employeeId ?? 1).toString());
+        // Phase 3C2 — employeeId is resolved server-side from the JWT; never sent by the client.
         formData.append('leaveType', request.leaveType);
         formData.append('startDate', request.startDate);
         formData.append('endDate', request.endDate);

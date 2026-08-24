@@ -1,0 +1,25 @@
+# Build artefacts
+bin/
+obj/
+out/
+
+# IDE / OS noise
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+Thumbs.db
+.DS_Store
+
+# Tests — keep the test project out of API image (restored above, never copied)
+LaoHR.Tests/bin/
+LaoHR.Tests/obj/
+
+# Docker artefacts
+Dockerfile*
+.dockerignore
+
+# Git
+.git/
+.gitignore

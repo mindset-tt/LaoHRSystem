@@ -12,6 +12,9 @@ public class DocumentsControllerTests : TestBase
     [Fact]
     public async Task GetDocuments_ValidId_ReturnsOk()
     {
+        // Arrange
+        await AuthenticateAsync();
+
         // Act
         var response = await _client.GetAsync("/api/documents/employee/1");
 

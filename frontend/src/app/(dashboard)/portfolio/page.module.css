@@ -1,0 +1,74 @@
+.page {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.table th,
+.table td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border, rgba(0, 0, 0, 0.08));
+}
+
+.table th {
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.link {
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.badge {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--surface-hover, rgba(99, 102, 241, 0.1));
+    color: var(--text-primary);
+}
+
+.health_green {
+    background: rgba(22, 163, 74, 0.12);
+    color: #16a34a;
+}
+
+.health_amber {
+    background: rgba(217, 119, 6, 0.12);
+    color: #d97706;
+}
+
+.health_red {
+    background: rgba(220, 38, 38, 0.12);
+    color: #dc2626;
+}
+
+.error {
+    color: var(--color-error, #dc2626);
+    padding: 16px;
+}
+
+.empty {
+    color: var(--text-secondary);
+    padding: 16px;
+    text-align: center;
+}

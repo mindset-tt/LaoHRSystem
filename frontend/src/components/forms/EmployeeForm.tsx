@@ -56,12 +56,8 @@ export function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
                 const data = await departmentsApi.getAll();
                 setDepartments(data);
             } catch {
-                // Fallback to mock data
-                setDepartments([
-                    { departmentId: 1, departmentName: 'Engineering', isActive: true, createdAt: '' },
-                    { departmentId: 2, departmentName: 'Human Resources', isActive: true, createdAt: '' },
-                    { departmentId: 3, departmentName: 'Finance', isActive: true, createdAt: '' },
-                ]);
+                // Phase 3B — no mock fallback. Show empty state on failure.
+                setDepartments([]);
             }
         };
         loadDepartments();

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using LaoHR.Shared.Data;
 using LaoHR.Shared.Models;
 using LaoHR.Shared.Pagination;
+using LaoHR.API.Services;
 
 namespace LaoHR.API.Controllers;
 
@@ -49,10 +50,12 @@ public class TaskAssigneeSummary
 public class ProjectTasksController : ControllerBase
 {
     private readonly LaoHRDbContext _context;
+    private readonly IPmPlanningService _planning;
 
-    public ProjectTasksController(LaoHRDbContext context)
+    public ProjectTasksController(LaoHRDbContext context, IPmPlanningService planning)
     {
         _context = context;
+        _planning = planning;
     }
 
     /// <summary>
@@ -272,6 +275,7 @@ public class ProjectTasksController : ControllerBase
         {
             ProjectId = projectId,
             MilestoneId = request.MilestoneId,
+            ParentTaskId = request.ParentTaskId,
             TaskNumber = $"{project.Code}-{seq}",
             Title = request.Title,
             Description = request.Description,
@@ -325,6 +329,13 @@ public class ProjectTasksController : ControllerBase
         if (request.Status != null) task.Status = request.Status;
         if (request.Priority != null) task.Priority = request.Priority;
         if (request.MilestoneId.HasValue) task.MilestoneId = request.MilestoneId.Value == 0 ? null : request.MilestoneId.Value;
+        if (request.ParentTaskId.HasValue)
+        {
+            int? newParent = request.ParentTaskId.Value == 0 ? (int?)null : request.ParentTaskId.Value;
+            if (newParent.HasValue && await _planning.WouldCreateTaskCycleAsync(taskId, newParent.Value))
+                return BadRequest("Assigning this parent would create a task hierarchy cycle.");
+            task.ParentTaskId = newParent;
+        }
         if (request.StartDate.HasValue) task.StartDate = request.StartDate;
         if (request.DueDate.HasValue) task.DueDate = request.DueDate;
         if (request.ProgressPercent.HasValue) task.ProgressPercent = Math.Clamp(request.ProgressPercent.Value, 0, 100);
@@ -580,6 +591,7 @@ public class CreateTaskRequest
     public string? Status { get; set; }
     public string? Priority { get; set; }
     public int? MilestoneId { get; set; }
+    public int? ParentTaskId { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? DueDate { get; set; }
     public decimal? EstimatedHours { get; set; }
@@ -595,6 +607,7 @@ public class UpdateTaskRequest
     public string? Status { get; set; }
     public string? Priority { get; set; }
     public int? MilestoneId { get; set; }
+    public int? ParentTaskId { get; set; }
     public DateTime? StartDate { get; set; }
     public DateTime? DueDate { get; set; }
     public int? ProgressPercent { get; set; }
