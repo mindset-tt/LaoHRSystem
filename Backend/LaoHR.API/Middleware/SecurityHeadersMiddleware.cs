@@ -15,11 +15,18 @@ public class SecurityHeadersMiddleware
 {
     private readonly RequestDelegate _next;
     private readonly IHostEnvironment _env;
+    private readonly bool _emitHsts;
 
-    public SecurityHeadersMiddleware(RequestDelegate next, IHostEnvironment env)
+    public SecurityHeadersMiddleware(RequestDelegate next, IHostEnvironment env,
+        IConfiguration config)
     {
         _next = next;
         _env = env;
+        // Phase 4D.2: when a TLS-terminating reverse proxy (e.g. Caddy) already
+        // emits HSTS at the edge, set SecurityHeaders__EmitHsts=false on the API
+        // to avoid duplicate headers. Default remains ON for direct-HTTPS
+        // deployments with no proxy.
+        _emitHsts = config.GetValue("SecurityHeaders:EmitHsts", true);
     }
 
     public async Task InvokeAsync(HttpContext context)
@@ -42,7 +49,7 @@ public class SecurityHeadersMiddleware
         // HSTS only over HTTPS (or behind a trusted proxy reporting https).
         var isHttps = context.Request.IsHttps
             || string.Equals(context.Request.Headers["X-Forwarded-Proto"], "https", StringComparison.OrdinalIgnoreCase);
-        if (isHttps && !_env.IsDevelopment())
+        if (isHttps && _emitHsts && !_env.IsDevelopment())
         {
             headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
         }

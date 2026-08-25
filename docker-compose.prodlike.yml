@@ -43,6 +43,8 @@ services:
       Jwt__Audience: LaoHRClient
       Cors__AllowedOrigins: https://localhost,https://127.0.0.1
       ForwardedHeaders__KnownProxy: 172.31.0.10
+      # Phase 4D.2: HSTS is owned by the TLS edge (Caddy); avoid duplicate header.
+      SecurityHeaders__EmitHsts: "false"
       Storage__DocumentsRoot: /data/documents
       NPGSQL_LEGACY_TIMESTAMP: "1"
       Serilog__WriteToFile: "true"
