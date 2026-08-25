@@ -117,3 +117,13 @@ TestResults/
 
 # Phase 4D.1 — backup artifacts (synthetic-data dumps; never commit)
 backup/
+
+# =====================
+# Phase 4D.2 — P1-SEC-001: private signing material NEVER tracked.
+# The license signing key is operator-held off-repo; see
+# docs/production-phase-4d.2/02-LICENSE-KEY-ROTATION.md
+# =====================
+Backend/LaoHR.LicenseGen/private.key
+Backend/LaoHR.LicenseGen/license.key
+Backend/LaoHR.LicenseGen/public.key
+*.pem.key

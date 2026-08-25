@@ -5,126 +5,89 @@ using LaoHR.Shared.Models;
 
 namespace LaoHR.LicenseGen;
 
+// Phase 4D.2 — P1-SEC-001 closure.
+//
+// The private signing key NO LONGER lives in this repository and this tool
+// no longer generates keys into its working directory. The operator supplies
+// the signing key from secure off-repo storage:
+//
+//   1) path to the private key file:
+//        arg[0], or env LICENSEGEN_PRIVATE_KEY
+//   2) passphrase (only when the key is an ENCRYPTED PKCS#8 PEM):
+//        env LICENSEGEN_KEY_PASSPHRASE
+//
+// The matching PUBLIC verification key ships with the application
+// (LaoHR.API/public.key). See docs/production-phase-4d.2/01+02.
+
 class Program
 {
-    static string PrivateKeyPath = "private.key";
-    static string PublicKeyPath = "public.key";
-
     static void Main(string[] args)
     {
         Console.WriteLine("=== LaoHR License Generator ===");
-        
-        if (!File.Exists(PrivateKeyPath))
+
+        var keyPath = args.Length > 0 ? args[0] : Environment.GetEnvironmentVariable("LICENSEGEN_PRIVATE_KEY");
+        if (string.IsNullOrWhiteSpace(keyPath) || !File.Exists(keyPath))
         {
-            Console.WriteLine("⚠️ No keys found. Generating new RSA Key Pair...");
-            GenerateKeys();
+            Console.WriteLine("❌ Signing key not provided or not found.");
+            Console.WriteLine("   Pass the OPERATOR-held key path as arg[0] or set LICENSEGEN_PRIVATE_KEY.");
+            Console.WriteLine("   This tool never creates or stores private keys itself.");
+            Environment.Exit(1);
+            return;
+        }
+
+        try
+        {
+            GenerateLicense(keyPath);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ {ex.Message}");
+            Environment.Exit(1);
+        }
+    }
+
+    static RSA LoadOperatorKey(string keyPath)
+    {
+        string pem = File.ReadAllText(keyPath);
+        var rsa = RSA.Create();
+        if (pem.Contains("ENCRYPTED PRIVATE KEY"))
+        {
+            var pass = Environment.GetEnvironmentVariable("LICENSEGEN_KEY_PASSPHRASE");
+            if (string.IsNullOrEmpty(pass))
+                throw new InvalidOperationException(
+                    "Key is an ENCRYPTED PRIVATE KEY; set LICENSEGEN_KEY_PASSPHRASE.");
+            rsa.ImportFromEncryptedPem(pem, pass);
         }
         else
         {
-            Console.WriteLine("✅ Keys found.");
+            rsa.ImportFromPem(pem);
         }
-
-        while (true)
-        {
-            Console.WriteLine("\nMenu:");
-            Console.WriteLine("1. Generate New License");
-            Console.WriteLine("2. Verify License (Test)");
-            Console.WriteLine("3. Exit");
-            Console.Write("Select: ");
-            var choice = Console.ReadLine();
-
-            GenerateLicense();
-            return;
-        }
+        return rsa;
     }
 
-    static void GenerateKeys()
+    static void GenerateLicense(string keyPath)
     {
-        using var rsa = RSA.Create(2048);
-        var privateKey = rsa.ExportRSAPrivateKeyPem();
-        var publicKey = rsa.ExportSubjectPublicKeyInfoPem();
-
-        File.WriteAllText(PrivateKeyPath, privateKey);
-        File.WriteAllText(PublicKeyPath, publicKey);
-        
-        Console.WriteLine($"✅ Private Key saved to {Path.GetFullPath(PrivateKeyPath)}");
-        Console.WriteLine($"✅ Public Key saved to {Path.GetFullPath(PublicKeyPath)}");
-        Console.WriteLine("⚠️ IMPORTANT: Copy public.key to your API root folder!");
-    }
-
-    static void GenerateLicense()
-    {
-        string name = "Lao HR Demo";
-        int days = 365;
-        int maxEmp = 100;
-        string hwId = "*";
+        using var rsa = LoadOperatorKey(keyPath);
 
         var data = new LicenseData
         {
-            CustomerName = name,
-            ExpirationDate = DateTime.UtcNow.AddDays(days),
-            MaxEmployees = maxEmp,
-            HardwareId = hwId,
+            CustomerName = "Lao HR Demo",
+            ExpirationDate = DateTime.UtcNow.AddDays(365),
+            MaxEmployees = 100,
+            HardwareId = "*",
             Type = "ENTERPRISE"
         };
 
         string json = JsonConvert.SerializeObject(data);
-        string licenseKey = SignData(json);
+        byte[] dataBytes = Encoding.UTF8.GetBytes(json);
+        byte[] signature = rsa.SignData(dataBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+
+        string licenseKey = $"{Convert.ToBase64String(dataBytes)}.{Convert.ToBase64String(signature)}";
 
         Console.WriteLine("\n=== LICENSE KEY ===");
         Console.WriteLine(licenseKey);
         Console.WriteLine("===================");
         File.WriteAllText("license.key", licenseKey);
-        Console.WriteLine("Saved to license.key");
-    }
-
-    static string SignData(string data)
-    {
-        using var rsa = RSA.Create();
-        rsa.ImportFromPem(File.ReadAllText(PrivateKeyPath));
-        
-        byte[] dataBytes = Encoding.UTF8.GetBytes(data);
-        byte[] signature = rsa.SignData(dataBytes, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
-
-        string base64Payload = Convert.ToBase64String(dataBytes);
-        string base64Sig = Convert.ToBase64String(signature);
-
-        return $"{base64Payload}.{base64Sig}";
-    }
-
-    static void VerifyLicense()
-    {
-        Console.WriteLine("Paste License Key:");
-        string key = Console.ReadLine() ?? "";
-        
-        try
-        {
-            var parts = key.Split('.');
-            if (parts.Length != 2) throw new Exception("Invalid format");
-
-            byte[] payload = Convert.FromBase64String(parts[0]);
-            byte[] signature = Convert.FromBase64String(parts[1]);
-
-            using var rsa = RSA.Create();
-            rsa.ImportFromPem(File.ReadAllText(PublicKeyPath));
-
-            if (rsa.VerifyData(payload, signature, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1))
-            {
-                string json = Encoding.UTF8.GetString(payload);
-                var data = JsonConvert.DeserializeObject<LicenseData>(json);
-                Console.WriteLine("✅ Valid Signature!");
-                Console.WriteLine($"Customer: {data.CustomerName}");
-                Console.WriteLine($"Expires: {data.ExpirationDate}");
-                Console.WriteLine($"Max Emp: {data.MaxEmployees}");
-            }
-            else
-            {
-                Console.WriteLine("❌ Invalid Signature!");
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error: {ex.Message}");
-        }
+        Console.WriteLine("Saved to license.key (untracked operator output)");
     }
 }

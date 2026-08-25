@@ -8,6 +8,13 @@ using Xunit;
 
 namespace LaoHR.Tests.Unit.Services;
 
+// Both license test classes use the same CWD-relative public.key file; xUnit
+// runs classes in parallel by default, so force them into one sequential
+// collection (Phase 4D.2).
+[CollectionDefinition("LicenseKeyFileSequential")]
+public class LicenseKeyFileSequentialCollection { }
+
+[Collection("LicenseKeyFileSequential")]
 public class LicenseServiceTests : IDisposable
 {
     private const string KeyFile = "public.key";
